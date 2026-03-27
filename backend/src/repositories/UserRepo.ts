@@ -12,8 +12,19 @@ export class UserRepo {
     });
   }
 
+  async findByUsername(username: string) {
+    return this.repo.findOne({
+      where: { username },
+    });
+  }
+
   async createUser(data: Partial<User>) {
     const user = this.repo.create(data);
     return this.repo.save(user);
+  }
+
+  async updateUser(id: number, data: Partial<User>) {
+    await this.repo.update(id, data);
+    return this.repo.findOne({ where: { id } });
   }
 }
