@@ -8,3 +8,13 @@ export interface RegisterInput extends AuthBase {
 }
 
 export type LoginInput = AuthBase;
+
+export interface CurrentUserResponse {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  role: string;
+  avatar: string;
+  isVerified: boolean;
+}

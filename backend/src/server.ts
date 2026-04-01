@@ -2,10 +2,15 @@ import "reflect-metadata";
 import "dotenv/config";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
-import { useContainer, useExpressServer } from "routing-controllers";
+import { Action, useContainer, useExpressServer } from "routing-controllers";
 import { UserController } from "./controllers/UserController";
 import { ErrorHandler } from "./middlewares/ErrorHandler";
 import Container from "typedi";
+import {
+  AuthMiddleware,
+  authorizationChecker,
+} from "./middlewares/AuthMiddleware";
+import cookieParser from "cookie-parser";
 
 useContainer(Container);
 
@@ -17,13 +22,20 @@ AppDataSource.initialize()
 
     const app = express();
 
+    app.use(cookieParser());
+
     app.get("/", (req, res) => {
       res.send("API is running...");
     });
 
     useExpressServer(app, {
       controllers: [UserController],
-      middlewares: [ErrorHandler],
+      middlewares: [ErrorHandler, AuthMiddleware],
+      authorizationChecker: authorizationChecker,
+      currentUserChecker: async (action: Action) => {
+        const req = action.request;
+        return req.user;
+      },
       cors: {
         origin: [process.env.FRONTEND_URL],
         credentials: true,

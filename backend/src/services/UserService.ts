@@ -5,7 +5,7 @@ import { LoginDto, RegisterDto } from "../dtos/UserDto";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { AuthCodeError } from "../constants/code";
 
 @Service()
@@ -56,7 +56,15 @@ export class UserService {
         throw new BadRequestError(AuthCodeError.ACCOUNT_DEACTIVATED);
       }
 
-      const payload = { id: user.id, role: user.role };
+      const payload = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+      };
       const accessToken = this.jwtService.signAccessToken(payload);
       const refreshToken = this.jwtService.signRefreshToken(payload);
 
@@ -79,6 +87,87 @@ export class UserService {
       return { accessToken, user: userData };
     } catch (error: any) {
       throw new BadRequestError(error.message);
+    }
+  }
+
+  async refresh(req: Request, res: Response) {
+    try {
+      const token = req.cookies.refreshToken;
+      if (!token) {
+        throw new UnauthorizedError(AuthCodeError.MISSING_REFRESH_TOKEN);
+      }
+
+      const payload = this.jwtService.verifyRefreshToken(token);
+
+      const user = await this.userRepo.findById(payload.id);
+      if (!user || user.refreshToken !== token) {
+        throw new UnauthorizedError(AuthCodeError.INVALID_REFRESH_TOKEN);
+      }
+
+      if (!user.isActive) {
+        throw new BadRequestError(AuthCodeError.ACCOUNT_DEACTIVATED);
+      }
+
+      // Rotate refresh token — cấp token mới mỗi lần refresh
+      const newPayload = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+      };
+      const newAccessToken = this.jwtService.signAccessToken(newPayload);
+      const newRefreshToken = this.jwtService.signRefreshToken(newPayload);
+
+      await this.userRepo.updateUser(user.id, {
+        refreshToken: newRefreshToken,
+      });
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+      });
+
+      return { accessToken: newAccessToken };
+    } catch (error: any) {
+      // Clear cookie nếu token không hợp lệ
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+      throw new UnauthorizedError(error.message);
+    }
+  }
+
+  async logout(req: Request, res: Response) {
+    try {
+      const token = req.cookies.refreshToken;
+
+      if (token) {
+        // Xóa refreshToken trong DB — vô hiệu hóa token ngay lập tức
+        const payload = this.jwtService.verifyRefreshToken(token);
+        await this.userRepo.updateUser(payload.id, { refreshToken: undefined });
+      }
+
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+
+      return { success: true };
+    } catch {
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+      return { success: true };
     }
   }
 }

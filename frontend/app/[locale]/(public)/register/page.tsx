@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RegisterForm } from "@/components/Auth/RegisterForm";
 
 export const metadata: Metadata = {
-  title: "Register",
+  title: "Sign up | DevHub",
   description:
     "Create your DevHub account and start connecting with developers.",
 };

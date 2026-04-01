@@ -39,10 +39,43 @@
         "passwordMismatch": "Mật khẩu không khớp."
       },
       "response": {
-        "EMAIL_ALREADY_EXISTS": "Email đã tồn tại",
-        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng",
+        "EMAIL_ALREADY_EXISTS": "Email đã tồn tại"
+      }
+    },
+    "login": {
+      "title": "Đăng nhập vào tài khoản của bạn",
+      "description": "Nhập thông tin để truy cập tài khoản của bạn.",
+      "success": {
+        "title": "Đăng nhập thành công!",
+        "description": "Chào mừng trở lại!",
+        "cta": "Đăng nhập lại"
+      },
+      "form": {
+        "email": "Email",
+        "password": "Mật khẩu"
+      },
+      "placeholder": {
+        "email": "ví dụ: email@domain.com",
+        "password": "Tối thiểu 6 ký tự"
+      },
+      "actions": {
+        "submit": "Đăng nhập",
+        "reset": "Đặt lại"
+      },
+      "footer": {
+        "noAccount": "Chưa có tài khoản?",
+        "register": "Đăng ký"
+      },
+      "errors": {
+        "emailRequired": "Email là bắt buộc.",
+        "emailInvalid": "Vui lòng nhập địa chỉ email hợp lệ.",
+        "passwordRequired": "Mật khẩu là bắt buộc.",
+        "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự."
+      },
+      "response": {
+        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không hợp lệ",
         "ACCOUNT_DEACTIVATED": "Tài khoản của bạn đã bị vô hiệu hóa",
-        "UNKNOWN_ERROR": "Đã xảy ra lỗi"
+        "UNKNOWN_ERROR": "Đã có lỗi xảy ra"
       }
     }
   }

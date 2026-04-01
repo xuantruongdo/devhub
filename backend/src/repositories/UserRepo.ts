@@ -6,6 +6,12 @@ import { User } from "../entities/User";
 export class UserRepo {
   private repo = AppDataSource.getRepository(User);
 
+  async findById(id: number) {
+    return this.repo.findOne({
+      where: { id },
+    });
+  }
+
   async findByEmail(email: string) {
     return this.repo.findOne({
       where: { email },

@@ -39,7 +39,40 @@
         "passwordMismatch": "Passwords do not match."
       },
       "response": {
-        "EMAIL_ALREADY_EXISTS": "Email already exists",
+        "EMAIL_ALREADY_EXISTS": "Email already exists"
+      }
+    },
+    "login": {
+      "title": "Sign in to your account",
+      "description": "Enter your credentials to access your account.",
+      "success": {
+        "title": "Login successful!",
+        "description": "Welcome back!",
+        "cta": "Sign in again"
+      },
+      "form": {
+        "email": "Email",
+        "password": "Password"
+      },
+      "placeholder": {
+        "email": "example@email.com",
+        "password": "Min. 6 characters"
+      },
+      "actions": {
+        "submit": "Sign in",
+        "reset": "Reset"
+      },
+      "footer": {
+        "noAccount": "Don't have an account?",
+        "register": "Register"
+      },
+      "errors": {
+        "emailRequired": "Email is required.",
+        "emailInvalid": "Please enter a valid email address.",
+        "passwordRequired": "Password is required.",
+        "passwordMin": "Password must be at least 6 characters."
+      },
+      "response": {
         "INVALID_CREDENTIALS": "Invalid email or password",
         "ACCOUNT_DEACTIVATED": "Your account has been deactivated",
         "UNKNOWN_ERROR": "Something went wrong"
