@@ -2,7 +2,7 @@ import { LoginForm } from "@/components/Auth/LoginForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign in | DevHub",
+  title: "Sign in",
   description: "Sign in to your DevHub account and connect with developers.",
 };
 

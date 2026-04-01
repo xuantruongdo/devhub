@@ -78,5 +78,21 @@
         "UNKNOWN_ERROR": "Something went wrong"
       }
     }
+  },
+  "header": {
+    "searchPlaceholder": "Search posts, people...",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "composePost": {
+    "placeholder": "What's on your mind?",
+    "post": "Post"
+  },
+  "leftSidebar": {
+    "home": "Home",
+    "explore": "Explore",
+    "messages": "Messages",
+    "saved": "Saved",
+    "post": "Post"
   }
 }

@@ -8,14 +8,6 @@ const instance = axios.create({
   withCredentials: true, // gửi cookie refresh token
 });
 
-// Load access token từ localStorage khi app start
-if (typeof window !== "undefined") {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  }
-}
-
 // Queue tránh vòng lặp refresh token
 let isRefreshing = false;
 let failedQueue: {
@@ -33,6 +25,17 @@ const processQueue = (error: any, token: string | null = null) => {
   });
   failedQueue = [];
 };
+
+// Load access token từ localStorage khi app start
+instance.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
 
 instance.interceptors.response.use(
   (response) => response,
@@ -54,7 +57,7 @@ instance.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/refresh`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/refresh`,
           {},
           { withCredentials: true },
         );

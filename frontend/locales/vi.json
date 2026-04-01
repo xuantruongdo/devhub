@@ -78,5 +78,21 @@
         "UNKNOWN_ERROR": "Đã có lỗi xảy ra"
       }
     }
+  },
+  "header": {
+    "searchPlaceholder": "Tìm kiếm bài viết, người dùng...",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
+  },
+  "composePost": {
+    "placeholder": "Bạn đang nghĩ gì?",
+    "post": "Đăng"
+  },
+  "leftSidebar": {
+    "home": "Trang chủ",
+    "explore": "Khám phá",
+    "messages": "Tin nhắn",
+    "saved": "Đã lưu",
+    "post": "Đăng"
   }
 }

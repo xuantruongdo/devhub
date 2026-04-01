@@ -7,10 +7,14 @@ import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { useAppSelector } from "@/redux/hooks";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ComposePost() {
   const [content, setContent] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const user = useAppSelector((state) => state.currentUser);
+  const { t } = useTranslation();
 
   const handlePost = () => {
     if (content.trim() || selectedImage) {
@@ -35,28 +39,28 @@ export default function ComposePost() {
 
   return (
     <div className="border-b border-border bg-card">
-      {/* Compact Mobile View */}
       <div className="md:hidden px-4 py-3 border-b border-border">
         <div className="flex flex-col gap-2">
           <div className="flex gap-3 items-center">
             <Avatar size="lg">
-              {false ? (
-                <AvatarImage src={""} alt={"User"} />
+              {user.avatar ? (
+                <AvatarImage src={user.avatar} alt={user.fullName} />
               ) : (
-                <AvatarFallback>T</AvatarFallback>
+                <AvatarFallback>
+                  {user.fullName.charAt(0).toUpperCase()}
+                </AvatarFallback>
               )}
             </Avatar>
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
+              placeholder={t("composePost.placeholder")}
               className="flex-1 bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none resize-none overflow-y-auto max-h-[calc(1.5rem*4)] px-4 py-2 text-sm"
               rows={1}
               maxLength={500}
             />
           </div>
 
-          {/* Image Preview */}
           {selectedImage && (
             <div className="relative mt-2">
               <Image
@@ -76,7 +80,6 @@ export default function ComposePost() {
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex gap-2">
               <Label
@@ -123,21 +126,22 @@ export default function ComposePost() {
         </div>
       </div>
 
-      {/* Desktop View */}
       <div className="hidden md:block px-4 sm:px-6 py-6">
         <div className="flex gap-4">
           <Avatar size="lg">
-            {false ? (
-              <AvatarImage src={""} alt={"User"} />
+            {user.avatar ? (
+              <AvatarImage src={user.avatar} alt={user.fullName} />
             ) : (
-              <AvatarFallback>T</AvatarFallback>
+              <AvatarFallback>
+                {user.fullName.charAt(0).toUpperCase()}
+              </AvatarFallback>
             )}
           </Avatar>
           <div className="flex-1 min-w-0">
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
+              placeholder={t("composePost.placeholder")}
               className="w-full bg-transparent text-xl text-foreground placeholder-muted-foreground focus:outline-none resize-none overflow-y-auto max-h-[calc(1.5rem*6)]"
               rows={1}
               maxLength={500}
@@ -202,7 +206,7 @@ export default function ComposePost() {
                 onClick={handlePost}
                 className="px-8 py-2 bg-primary text-primary-foreground rounded-full font-bold hover:shadow-lg transition"
               >
-                Post
+                {t("composePost.post")}
               </button>
             </div>
           </div>

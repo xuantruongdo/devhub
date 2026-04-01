@@ -45,7 +45,7 @@ export function LoginForm() {
       dispatch(setCurrentUser(data.user));
       localStorage.setItem("accessToken", data.accessToken);
       toastSuccess(t("auth.login.success.title"));
-      router.push("/");
+      router.push(`/${locale}`);
     } catch (error) {
       toastError(t(`auth.login.response.${error}`));
     } finally {

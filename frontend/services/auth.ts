@@ -14,6 +14,14 @@ class AuthService extends BaseService {
   async login(data: LoginInput) {
     return await instance.post(`/users/login`, data);
   }
+
+  async current() {
+    return await instance.get(`/users/current`);
+  }
+
+  async logout() {
+    return await instance.post(`/users/logout`);
+  }
 }
 
 const authService = new AuthService();

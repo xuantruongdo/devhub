@@ -1,10 +1,21 @@
 import { UserRepo } from "../repositories/UserRepo";
 
+export const removeVietnameseTones = (str: string): string => {
+  return str
+    .normalize("NFD") // tách dấu ra khỏi ký tự
+    .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+};
+
 export const generateUsername = async (
   fullName: string,
   userRepo: UserRepo,
 ): Promise<string> => {
-  let baseUsername = fullName.toLowerCase().replace(/\s+/g, "");
+  let baseUsername = removeVietnameseTones(fullName)
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
   let username = baseUsername;
   let counter = 0;
 
