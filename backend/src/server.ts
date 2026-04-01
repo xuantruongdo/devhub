@@ -5,7 +5,7 @@ import { AppDataSource } from "./config/data-source";
 import { useContainer, useExpressServer } from "routing-controllers";
 import { UserController } from "./controllers/UserController";
 import { ErrorHandler } from "./middlewares/ErrorHandler";
-import Container from "typedi"; 
+import Container from "typedi";
 
 useContainer(Container);
 
@@ -25,7 +25,7 @@ AppDataSource.initialize()
       controllers: [UserController],
       middlewares: [ErrorHandler],
       cors: {
-        origin: "*",
+        origin: [process.env.FRONTEND_URL],
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -34,7 +34,7 @@ AppDataSource.initialize()
         whitelist: true,
         forbidNonWhitelisted: true,
       },
-      routePrefix: "/api",
+      routePrefix: "/api/v1",
       defaultErrorHandler: false,
     });
 

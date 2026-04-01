@@ -6,6 +6,7 @@ import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
 import { Response } from "express";
+import { AuthCodeError } from "../constants/code";
 
 @Service()
 export class UserService {
@@ -18,7 +19,7 @@ export class UserService {
     try {
       const existingUser = await this.userRepo.findByEmail(data.email);
       if (existingUser) {
-        throw new BadRequestError("Email already exists");
+        throw new BadRequestError(AuthCodeError.EMAIL_ALREADY_EXISTS);
       }
 
       const username = await generateUsername(data.fullName, this.userRepo);
@@ -43,16 +44,16 @@ export class UserService {
     try {
       const user = await this.userRepo.findByEmail(data.email);
       if (!user) {
-        throw new UnauthorizedError("Invalid email or password");
+        throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
       }
 
       const isMatch = await bcrypt.compare(data.password, user.password);
       if (!isMatch) {
-        throw new UnauthorizedError("Invalid email or password");
+        throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
       }
 
       if (!user.isActive) {
-        throw new BadRequestError("Your account has been deactivated");
+        throw new BadRequestError(AuthCodeError.ACCOUNT_DEACTIVATED);
       }
 
       const payload = { id: user.id, role: user.role };

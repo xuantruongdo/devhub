@@ -1,0 +1,49 @@
+{
+  "auth": {
+    "register": {
+      "title": "Create an account",
+      "description": "Fill in the details below to register a new account.",
+      "success": {
+        "title": "Registration successful!",
+        "description": "Please check your email to verify your account.",
+        "cta": "Register another account"
+      },
+      "form": {
+        "fullName": "Full Name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password"
+      },
+      "placeholder": {
+        "fullName": "John Doe",
+        "email": "example@email.com",
+        "password": "Min. 6 characters",
+        "confirmPassword": "Re-enter your password"
+      },
+      "actions": {
+        "submit": "Register",
+        "reset": "Reset"
+      },
+      "footer": {
+        "haveAccount": "Already have an account?",
+        "login": "Sign in"
+      },
+      "errors": {
+        "fullNameMin": "Full name must be at least 2 characters.",
+        "fullNameMax": "Full name must be at most 50 characters.",
+        "fullNameInvalid": "Full name can only contain letters and spaces.",
+        "emailRequired": "Email is required.",
+        "emailInvalid": "Please enter a valid email address.",
+        "passwordMin": "Password must be at least 6 characters.",
+        "confirmPasswordRequired": "Please confirm your password.",
+        "passwordMismatch": "Passwords do not match."
+      },
+      "response": {
+        "EMAIL_ALREADY_EXISTS": "Email already exists",
+        "INVALID_CREDENTIALS": "Invalid email or password",
+        "ACCOUNT_DEACTIVATED": "Your account has been deactivated",
+        "UNKNOWN_ERROR": "Something went wrong"
+      }
+    }
+  }
+}

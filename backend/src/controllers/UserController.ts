@@ -12,7 +12,6 @@ export class UserController {
   @Post("/register")
   async register(@Body({ validate: true }) body: RegisterDto) {
     await this.userService.register(body);
-
     return { success: true };
   }
 
