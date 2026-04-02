@@ -1,5 +1,6 @@
 import { Service } from "typedi";
 import jwt, { JwtPayload, SignOptions, Secret } from "jsonwebtoken";
+import { UserProps } from "../types/auth";
 
 @Service()
 export class JwtService {
@@ -15,12 +16,12 @@ export class JwtService {
     this.refreshExpiresIn = 7 * 24 * 60 * 60; // 7d
   }
 
-  signAccessToken(payload: object): string {
+  signAccessToken(payload: UserProps): string {
     const options: SignOptions = { expiresIn: this.accessExpiresIn };
     return jwt.sign(payload, this.accessSecret, options);
   }
 
-  signRefreshToken(payload: object): string {
+  signRefreshToken(payload: UserProps): string {
     const options: SignOptions = { expiresIn: this.refreshExpiresIn };
     return jwt.sign(payload, this.refreshSecret, options);
   }

@@ -6,6 +6,10 @@ export interface UserProps {
   fullName: string;
   email: string;
   role: UserRole;
-  avatar: string;
+  avatar?: string;
   isVerified: boolean;
 }
+
+export type FindUserOptions = {
+  includeRefreshToken?: boolean;
+};

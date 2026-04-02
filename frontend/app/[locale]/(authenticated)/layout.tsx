@@ -7,6 +7,7 @@ import authService from "@/services/auth";
 import { setCurrentUser } from "@/redux/reducers/currentUser";
 import LoadingPage from "@/components/LoadingPage";
 import Header from "@/components/Header";
+import { useRouter } from "next/navigation";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -15,15 +16,16 @@ interface AuthenticatedLayoutProps {
 const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
   const [loading, setLoading] = useState(true);
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const fetchInitData = async () => {
     try {
       const { data: user } = await authService.current();
       dispatch(setCurrentUser(user));
+      setLoading(false);
     } catch (error) {
       toastError(error);
-    } finally {
-      setLoading(false);
+      router.push("/login");
     }
   };
 
@@ -31,11 +33,13 @@ const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
     fetchInitData();
   }, [dispatch]);
 
+  if (loading) return <LoadingPage />;
+
   return (
-    <LoadingPage loading={loading}>
+    <>
       <Header />
       {children}
-    </LoadingPage>
+    </>
   );
 };
 

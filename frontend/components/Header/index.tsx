@@ -26,6 +26,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Input } from "../ui/input";
 import { useState, useRef, useEffect } from "react";
+import { CurrentUserResponse } from "@/types/auth";
 
 const FAKE_USERS = [
   {
@@ -448,7 +449,7 @@ function UserDropdown({
   onLogout,
   t,
 }: {
-  user: any;
+  user: CurrentUserResponse;
   onLogout: () => void;
   t: (key: string) => string;
 }) {
@@ -551,6 +552,7 @@ export default function Header() {
     try {
       await authService.logout();
       router.push(`/${locale}/login`);
+      localStorage.removeItem("accessToken");
     } catch (error) {
       toastError(error);
     }

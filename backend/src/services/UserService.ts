@@ -7,6 +7,7 @@ import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
 import { Request, Response } from "express";
 import { AuthCodeError } from "../constants/code";
+import { UserProps } from "../types/auth";
 
 @Service()
 export class UserService {
@@ -99,7 +100,10 @@ export class UserService {
 
       const payload = this.jwtService.verifyRefreshToken(token);
 
-      const user = await this.userRepo.findById(payload.id);
+      const user = await this.userRepo.findById(payload.id, {
+        includeRefreshToken: true,
+      });
+
       if (!user || user.refreshToken !== token) {
         throw new UnauthorizedError(AuthCodeError.INVALID_REFRESH_TOKEN);
       }
@@ -134,7 +138,6 @@ export class UserService {
 
       return { accessToken: newAccessToken };
     } catch (error: any) {
-      // Clear cookie nếu token không hợp lệ
       res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -161,13 +164,8 @@ export class UserService {
       });
 
       return { success: true };
-    } catch {
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
-      return { success: true };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
     }
   }
 }
