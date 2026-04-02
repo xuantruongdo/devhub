@@ -27,7 +27,7 @@ export default function LeftSidebar() {
   const user = useAppSelector((state) => state.currentUser);
   const router = useRouter();
   const pathname = usePathname();
-  const { t, locale } = useTranslation();
+  const { t, locale, ready } = useTranslation();
 
   const menuItems = [
     {
@@ -60,6 +60,8 @@ export default function LeftSidebar() {
       toastError(error);
     }
   };
+
+  if (!ready) return null;
 
   return (
     <aside className="hidden lg:flex w-72 border-r border-border bg-card flex-col sticky top-16 h-[calc(100vh-4rem)]">

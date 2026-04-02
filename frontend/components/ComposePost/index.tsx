@@ -1,41 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { Smile, Calendar, MapPin, X, Image as ImageIcon } from "lucide-react";
-import Image from "next/image";
+import { Smile, Calendar, MapPin } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
+import ComposePostUpload, { ComposePostPreview } from "../ComposePostUpload";
 
 export default function ComposePost() {
   const [content, setContent] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+
   const user = useAppSelector((state) => state.currentUser);
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
 
-  const handlePost = () => {
-    if (content.trim() || selectedImage) {
-      console.log("[v0] Posting:", content, selectedImage);
-      setContent("");
-      setSelectedImage(null);
-    }
+  const handlePost = async () => {
+    if (!content.trim() && images.length === 0) return;
+
+    const formData = new FormData();
+    formData.append("content", content);
+
+    images.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    console.log("[POST DATA]", { content, images });
+
+    // TODO: call API
+    // await fetch("/api/posts", { method: "POST", body: formData });
+
+    setContent("");
+    setImages([]);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => setSelectedImage(null);
+  if (!ready) return null;
 
   return (
     <div className="border-b border-border bg-card">
@@ -55,70 +54,35 @@ export default function ComposePost() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={t("composePost.placeholder")}
-              className="flex-1 bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none resize-none overflow-y-auto max-h-[calc(1.5rem*4)] px-4 py-2 text-sm"
+              className="flex-1 bg-muted resize-none max-h-[calc(1.5rem*4)] px-4 py-2 text-sm"
               rows={1}
               maxLength={500}
             />
           </div>
 
-          {selectedImage && (
-            <div className="relative mt-2">
-              <Image
-                src={selectedImage}
-                alt="Preview"
-                className="max-h-48 w-full object-contain rounded-md border border-border"
-                width={80}
-                height={80}
-              />
-              <button
-                onClick={removeImage}
-                className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition"
-                title="Remove image"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+          <ComposePostPreview images={images} setImages={setImages} />
 
           <div className="flex items-center justify-between mt-2">
-            <div className="flex gap-2">
-              <Label
-                htmlFor="compose-post-image-mobile"
-                className="p-2 text-primary hover:bg-primary/10 rounded-full transition cursor-pointer"
-                title="Upload image"
-              >
-                <ImageIcon className="h-5 w-5" />
-              </Label>
-              <Input
-                id="compose-post-image-mobile"
-                type="file"
-                name="compose-post-image-mobile"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
+            <div className="flex items-center gap-2">
+              <ComposePostUpload
+                images={images}
+                setImages={setImages}
+                inputId="compose-post-image-mobile"
               />
-              <button
-                className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                title="Add emoji"
-              >
+              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                 <Smile className="h-5 w-5" />
               </button>
-              <button
-                className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                title="Schedule post"
-              >
+              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                 <Calendar className="h-5 w-5" />
               </button>
-              <button
-                className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                title="Add location"
-              >
+              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                 <MapPin className="h-5 w-5" />
               </button>
             </div>
+
             <button
               onClick={handlePost}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-full font-bold hover:shadow-lg transition"
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-full font-bold"
             >
               Post
             </button>
@@ -137,74 +101,40 @@ export default function ComposePost() {
               </AvatarFallback>
             )}
           </Avatar>
-          <div className="flex-1 min-w-0">
+
+          <div className="flex-1">
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={t("composePost.placeholder")}
-              className="w-full bg-transparent text-xl text-foreground placeholder-muted-foreground focus:outline-none resize-none overflow-y-auto max-h-[calc(1.5rem*6)]"
+              className="w-full text-xl resize-none max-h-[calc(1.5rem*6)]"
               rows={1}
               maxLength={500}
             />
 
-            {selectedImage && (
-              <div className="relative mt-4">
-                <Image
-                  src={selectedImage}
-                  alt="Preview"
-                  className="max-h-64 w-full object-contain rounded-md border border-border"
-                  width={80}
-                  height={80}
-                />
-                <button
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition"
-                  title="Remove image"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+            <ComposePostPreview images={images} setImages={setImages} />
 
             <div className="flex items-center justify-between mt-4">
-              <div className="flex gap-2">
-                <Label
-                  htmlFor="compose-post-image-desktop"
-                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition cursor-pointer"
-                  title="Upload image"
-                >
-                  <ImageIcon className="h-5 w-5" />
-                </Label>
-                <Input
-                  id="compose-post-image-desktop"
-                  type="file"
-                  name="compose-post-image-desktop"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
+              <div className="flex items-center gap-2">
+                <ComposePostUpload
+                  images={images}
+                  setImages={setImages}
+                  inputId="compose-post-image-desktop"
                 />
-                <button
-                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                  title="Add emoji"
-                >
+                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                   <Smile className="h-5 w-5" />
                 </button>
-                <button
-                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                  title="Schedule post"
-                >
+                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                   <Calendar className="h-5 w-5" />
                 </button>
-                <button
-                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition"
-                  title="Add location"
-                >
+                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
                   <MapPin className="h-5 w-5" />
                 </button>
               </div>
+
               <button
                 onClick={handlePost}
-                className="px-8 py-2 bg-primary text-primary-foreground rounded-full font-bold hover:shadow-lg transition"
+                className="px-8 py-2 bg-primary text-primary-foreground rounded-full font-bold"
               >
                 {t("composePost.post")}
               </button>

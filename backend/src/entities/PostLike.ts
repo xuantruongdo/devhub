@@ -4,6 +4,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   Unique,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
@@ -15,9 +16,11 @@ export class PostLike {
   id!: number;
 
   @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user!: User;
 
   @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "postId" })
   post!: Post;
 
   @CreateDateColumn()

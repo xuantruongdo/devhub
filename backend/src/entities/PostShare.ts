@@ -4,6 +4,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   Column,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
@@ -14,12 +15,13 @@ export class PostShare {
   id!: number;
 
   @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user!: User;
 
   @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "postId" })
   post!: Post;
 
-  // optional: caption khi share
   @Column({ type: "text", nullable: true })
   content?: string;
 

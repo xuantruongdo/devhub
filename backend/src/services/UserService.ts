@@ -26,7 +26,7 @@ export class UserService {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      const user = await this.userRepo.createUser({
+      const user = await this.userRepo.create({
         username,
         fullName: data.fullName,
         email: data.email,
@@ -70,7 +70,7 @@ export class UserService {
 
       user.refreshToken = refreshToken;
       user.lastLogin = new Date();
-      await this.userRepo.updateUser(user.id, {
+      await this.userRepo.update(user.id, {
         refreshToken: user.refreshToken,
         lastLogin: user.lastLogin,
       });
@@ -121,7 +121,7 @@ export class UserService {
       const newAccessToken = this.jwtService.signAccessToken(newPayload);
       const newRefreshToken = this.jwtService.signRefreshToken(newPayload);
 
-      await this.userRepo.updateUser(user.id, {
+      await this.userRepo.update(user.id, {
         refreshToken: newRefreshToken,
       });
 
@@ -151,7 +151,7 @@ export class UserService {
       if (token) {
         // Xóa refreshToken trong DB — vô hiệu hóa token ngay lập tức
         const payload = this.jwtService.verifyRefreshToken(token);
-        await this.userRepo.updateUser(payload.id, { refreshToken: undefined });
+        await this.userRepo.update(payload.id, { refreshToken: undefined });
       }
 
       res.clearCookie("refreshToken", {

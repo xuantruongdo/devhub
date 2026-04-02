@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   OneToMany,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
@@ -18,16 +19,18 @@ export class Comment {
   content!: string;
 
   @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "authorId" })
   author!: User;
 
   @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "postId" })
   post!: Post;
 
-  // reply comment
   @ManyToOne(() => Comment, (comment) => comment.replies, {
     nullable: true,
     onDelete: "CASCADE",
   })
+  @JoinColumn({ name: "parentId" })
   parent?: Comment;
 
   @OneToMany(() => Comment, (comment) => comment.parent)

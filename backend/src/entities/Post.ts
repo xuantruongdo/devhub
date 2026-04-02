@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   Index,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { PostLike } from "./PostLike";
@@ -16,7 +17,6 @@ import { PostShare } from "./PostShare";
 
 export enum PostVisibility {
   PUBLIC = "public",
-  FRIENDS = "friends",
   PRIVATE = "private",
 }
 
@@ -25,10 +25,11 @@ export class Post {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.posts, {
-    onDelete: "CASCADE",
-  })
-  @Index()
+  @Column()
+  authorId!: number;
+
+  @ManyToOne(() => User, (user) => user.posts)
+  @JoinColumn({ name: "authorId" })
   author!: User;
 
   @Column("text", { nullable: true })
@@ -37,7 +38,6 @@ export class Post {
   @Column({ type: "jsonb", nullable: true })
   images?: string[];
 
-  // Privacy
   @Column({
     type: "enum",
     enum: PostVisibility,
@@ -46,7 +46,6 @@ export class Post {
   @Index()
   visibility!: PostVisibility;
 
-  // Share (reference post gốc)
   @ManyToOne(() => Post, {
     nullable: true,
     onDelete: "SET NULL",
@@ -70,9 +69,6 @@ export class Post {
 
   @OneToMany(() => PostShare, (share) => share.post)
   shares!: PostShare[];
-
-  @Column({ nullable: true })
-  lastInteractionAt?: Date;
 
   @CreateDateColumn()
   @Index()

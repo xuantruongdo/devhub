@@ -11,6 +11,7 @@ import {
   authorizationChecker,
 } from "./middlewares/AuthMiddleware";
 import cookieParser from "cookie-parser";
+import { PostController } from "./controllers/PostController";
 
 useContainer(Container);
 
@@ -29,7 +30,7 @@ AppDataSource.initialize()
     });
 
     useExpressServer(app, {
-      controllers: [UserController],
+      controllers: [UserController, PostController],
       middlewares: [ErrorHandler, AuthMiddleware],
       authorizationChecker: authorizationChecker,
       currentUserChecker: async (action: Action) => {
