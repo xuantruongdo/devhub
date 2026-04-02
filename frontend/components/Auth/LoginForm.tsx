@@ -23,6 +23,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useAppDispatch } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { setCurrentUser } from "@/redux/reducers/currentUser";
+import Link from "next/link";
 
 export function LoginForm() {
   const { t, locale, ready } = useTranslation();
@@ -115,12 +116,12 @@ export function LoginForm() {
 
           <p className="text-sm text-muted-foreground text-center">
             {t("auth.login.footer.noAccount")}{" "}
-            <a
+            <Link
               href={`/${locale}/register`}
               className="text-primary font-medium hover:underline underline-offset-4 transition-colors"
             >
               {t("auth.login.footer.register")}
-            </a>
+            </Link>
           </p>
         </CardFooter>
       </Card>

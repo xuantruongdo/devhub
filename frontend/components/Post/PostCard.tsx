@@ -25,14 +25,17 @@ import { ConfirmDeleteDialog } from "../ConfirmDeleteDialog";
 import { useModal } from "@/hooks/useModal";
 import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
+import { useState } from "react";
+import { ImageLightbox } from "./ImageLightbox";
+import { EditPostDialog } from "./EditPostDialog";
 
 interface PostCardProps {
   post: Post;
-  onEdit?: (post: Post) => void;
-  onDelete?: () => void;
+  onUpdate: (post: Post) => void;
+  onDelete: () => void;
 }
 
-export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
+export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
   const {
     author,
@@ -46,11 +49,13 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
 
   const isAuthor = currentUser?.id === author.id;
   const { isOpen: isDialogOpen, openModal, closeModal } = useModal();
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const handleDelete = async () => {
     try {
       await postService.delete(post.id);
-      onDelete?.();
+      onDelete();
     } catch (error) {
       toastError(error);
     }
@@ -101,7 +106,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      onClick={() => onEdit?.(post)}
+                      onClick={() => setSelectedPost(post)}
                       className="flex items-center gap-2"
                     >
                       <Edit className="h-4 w-4" />
@@ -118,9 +123,21 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
                 </DropdownMenu>
 
                 <ConfirmDeleteDialog
-                  isOpen={isDialogOpen}
-                  onOpenChange={closeModal}
+                  open={isDialogOpen}
+                  title="Delete post ?"
+                  description="Are you sure you want to delete this item? This action cannot be undone."
+                  onCancel={closeModal}
                   onConfirm={handleDelete}
+                />
+
+                <EditPostDialog
+                  open={selectedPost !== null}
+                  post={selectedPost ?? post}
+                  onCancel={() => setSelectedPost(null)}
+                  onSuccess={(updated) => {
+                    setSelectedPost(null);
+                    onUpdate(updated);
+                  }}
                 />
               </>
             )}
@@ -131,11 +148,13 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           </p>
 
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {images &&
-              images.map((url, i) => (
+            {images.slice(0, 2).map((url, i) => {
+              const isLast = i === 1 && images.length > 2;
+              return (
                 <div
                   key={i}
-                  className="w-full relative overflow-hidden rounded-lg"
+                  className={`w-full relative overflow-hidden rounded-lg cursor-pointer`}
+                  onClick={() => setLightboxIndex(i)}
                 >
                   <Image
                     src={url}
@@ -145,8 +164,16 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
                     className="w-full h-auto max-h-[600px] object-contain"
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
+                  {isLast && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
+                      <span className="text-white text-2xl font-semibold">
+                        +{images.length - 1}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              ))}
+              );
+            })}
           </div>
 
           <div className="flex justify-between mt-4 max-w-xs text-muted-foreground text-sm">
@@ -179,6 +206,14 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           </div>
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={images ?? []}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </article>
   );
 }

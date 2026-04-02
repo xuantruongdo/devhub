@@ -6,19 +6,18 @@ import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
-import ComposePostUpload, { ComposePostPreview } from "../ComposePostUpload";
-import storageService from "@/services/storage";
-import { uploadFileToS3 } from "@/lib/utils";
+import { uploadStorage } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
 import { Post, PostInput } from "@/types/post";
+import ComposePostUpload, { ComposePostPreview } from "./ComposePostUpload";
 
 interface ComposePostProps {
-  onPostCreated?: (post: Post) => void;
+  onSuccess: (post: Post) => void;
 }
 
-export default function ComposePost({ onPostCreated }: ComposePostProps) {
+export default function ComposePost({ onSuccess }: ComposePostProps) {
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,35 +30,14 @@ export default function ComposePost({ onPostCreated }: ComposePostProps) {
     setLoading(true);
 
     try {
-      const storageDomain = process.env.NEXT_PUBLIC_S3_DOMAIN!;
-
-      const uploadPromises = images.map(async (file) => {
-        try {
-          const { data: presignedUrl } = await storageService.getPresignUrl({
-            fileName: file.name,
-            fileType: file.type,
-          });
-
-          const uploadedUrl = await uploadFileToS3(file, presignedUrl);
-
-          const pathOnly = uploadedUrl.replace(storageDomain, "").split("?")[0];
-
-          return pathOnly;
-        } catch (err) {
-          console.error("Upload failed for", file.name, err);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(uploadPromises);
-      const uploadedFiles = results.filter(Boolean) as string[];
+      const uploadedFiles = await uploadStorage(images);
 
       const { data } = await postService.create<PostInput, Post>({
         content,
         images: uploadedFiles,
       });
 
-      if (onPostCreated) onPostCreated(data);
+      onSuccess(data);
 
       setContent("");
       setImages([]);

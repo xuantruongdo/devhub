@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ComposePost from "../ComposePost";
 import { Post } from "@/types/post";
-import PostCard from "../PostCard";
 import postService from "@/services/post";
 import { toastError } from "@/lib/toast";
+import ComposePost from "../Post/ComposePost";
+import PostCard from "../Post/PostCard";
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -23,6 +23,10 @@ export default function Feed() {
     fetchFeed();
   }, []);
 
+  const handleUpdatePost = (updated: Post) => {
+    setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
   const handleDeletePost = (id: number) => {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
@@ -30,9 +34,7 @@ export default function Feed() {
   return (
     <div className="flex-1 border-r border-border bg-card overflow-y-auto flex flex-col">
       <ComposePost
-        onPostCreated={(newPost: Post) =>
-          setPosts((prev) => [newPost, ...prev])
-        }
+        onSuccess={(newPost: Post) => setPosts((prev) => [newPost, ...prev])}
       />
 
       <div className="flex-1 flex flex-col">
@@ -45,6 +47,7 @@ export default function Feed() {
             <PostCard
               key={post.id}
               post={post}
+              onUpdate={handleUpdatePost}
               onDelete={() => handleDeletePost(post.id)}
             />
           ))

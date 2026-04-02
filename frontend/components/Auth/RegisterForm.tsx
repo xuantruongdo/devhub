@@ -23,6 +23,7 @@ import { RegisterFormValues, registerSchema } from "@/validations/auth";
 import { toastError, toastSuccess } from "@/lib/toast";
 import authService from "@/services/auth";
 import { useTranslation } from "@/hooks/useTranslation";
+import Link from "next/link";
 
 export function RegisterForm() {
   const { t, locale, ready } = useTranslation();
@@ -159,12 +160,12 @@ export function RegisterForm() {
 
             <p className="text-sm text-muted-foreground text-center">
               {t("auth.register.footer.haveAccount")}{" "}
-              <a
+              <Link
                 href={`/${locale}/login`}
                 className="text-primary font-medium hover:underline underline-offset-4 transition-colors"
               >
                 {t("auth.register.footer.login")}
-              </a>
+              </Link>
             </p>
           </CardFooter>
         )}

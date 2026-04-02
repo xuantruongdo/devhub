@@ -1,3 +1,4 @@
+import storageService from "@/services/storage";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -17,3 +18,32 @@ export const uploadFileToS3 = async (file: File, presignedUrl: string) => {
 
   return presignedUrl;
 };
+
+export async function uploadStorage(files: File[]) {
+  const storageDomain = process.env.NEXT_PUBLIC_S3_DOMAIN!;
+
+  const results = await Promise.allSettled(
+    files.map(async (file) => {
+      const { data: presignedUrl } = await storageService.getPresignUrl({
+        fileName: file.name,
+        fileType: file.type,
+      });
+
+      const uploadedUrl = await uploadFileToS3(file, presignedUrl);
+
+      return uploadedUrl.replace(storageDomain, "").split("?")[0];
+    }),
+  );
+
+  const success = results
+    .filter((r) => r.status === "fulfilled")
+    .map((r: any) => r.value);
+
+  const failed = results.filter((r) => r.status === "rejected");
+
+  if (failed.length) {
+    console.warn(`${failed.length} uploads failed`);
+  }
+
+  return success;
+}
