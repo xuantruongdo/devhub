@@ -22,3 +22,8 @@ export interface Post {
   updatedAt: Date;
   author: Author;
 }
+
+export interface PostInput {
+  content: string;
+  images: string[];
+}

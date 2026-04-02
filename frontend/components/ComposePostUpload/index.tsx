@@ -24,6 +24,18 @@ function RemoveButton({ onRemove }: { onRemove: () => void }) {
   );
 }
 
+function PreviewImg({ src }: { src: string }) {
+  return (
+    <Image
+      src={src}
+      alt="preview"
+      width={500}
+      height={500}
+      className="w-auto h-auto object-cover"
+    />
+  );
+}
+
 export function ComposePostPreview({
   images,
   setImages,
@@ -32,9 +44,10 @@ export function ComposePostPreview({
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const previewUrls = useMemo(() => {
-    return images.map((file) => URL.createObjectURL(file));
-  }, [images]);
+  const previewUrls = useMemo(
+    () => images.map((file) => URL.createObjectURL(file)),
+    [images],
+  );
 
   useEffect(() => {
     return () => {
@@ -50,103 +63,57 @@ export function ComposePostPreview({
     case 1:
       return (
         <div className="relative mt-3">
-          <Image
-            src={previewUrls[0]}
-            alt="preview"
-            width={500}
-            height={400}
-            className="w-full max-h-[400px] object-cover rounded-lg"
-          />
+          <PreviewImg src={previewUrls[0]} />
           <RemoveButton onRemove={() => removeImage(0)} />
         </div>
       );
-
     case 2:
       return (
         <div className="grid grid-cols-2 gap-2 mt-3">
           {previewUrls.map((url, i) => (
             <div key={i} className="relative">
-              <Image
-                src={url}
-                alt="preview"
-                width={300}
-                height={300}
-                className="w-full h-48 object-cover rounded-lg"
-              />
+              <PreviewImg src={url} />
               <RemoveButton onRemove={() => removeImage(i)} />
             </div>
           ))}
         </div>
       );
-
     case 3:
       return (
         <div className="grid grid-cols-2 gap-2 mt-3">
           <div className="relative row-span-2">
-            <Image
-              src={previewUrls[0]}
-              alt="preview"
-              width={300}
-              height={400}
-              className="w-full h-full object-cover rounded-lg"
-            />
+            <PreviewImg src={previewUrls[0]} />
             <RemoveButton onRemove={() => removeImage(0)} />
           </div>
           {previewUrls.slice(1).map((url, i) => (
             <div key={i + 1} className="relative">
-              <Image
-                src={url}
-                alt="preview"
-                width={300}
-                height={200}
-                className="w-full h-full object-cover rounded-lg"
-              />
+              <PreviewImg src={url} />
               <RemoveButton onRemove={() => removeImage(i + 1)} />
             </div>
           ))}
         </div>
       );
-
     case 4:
       return (
         <div className="grid grid-cols-2 gap-2 mt-3">
           {previewUrls.map((url, i) => (
             <div key={i} className="relative">
-              <Image
-                src={url}
-                alt="preview"
-                width={300}
-                height={300}
-                className="w-full h-40 object-cover rounded-lg"
-              />
+              <PreviewImg src={url} />
               <RemoveButton onRemove={() => removeImage(i)} />
             </div>
           ))}
         </div>
       );
-
     default:
       return (
         <div className="grid grid-cols-2 gap-2 mt-3">
           <div className="relative row-span-2">
-            <Image
-              src={previewUrls[0]}
-              alt="preview"
-              width={300}
-              height={400}
-              className="w-full h-full object-cover rounded-lg"
-            />
+            <PreviewImg src={previewUrls[0]} />
             <RemoveButton onRemove={() => removeImage(0)} />
           </div>
           {previewUrls.slice(1, 5).map((url, i) => (
             <div key={i + 1} className="relative">
-              <Image
-                src={url}
-                alt="preview"
-                width={300}
-                height={200}
-                className="w-full h-full object-cover rounded-lg"
-              />
+              <PreviewImg src={url} />
               {i === 3 && images.length > 5 && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xl font-bold rounded-lg">
                   +{images.length - 4}

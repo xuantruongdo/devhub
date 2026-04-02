@@ -23,17 +23,31 @@ export default function Feed() {
     fetchFeed();
   }, []);
 
+  const handleDeletePost = (id: number) => {
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+  };
+
   return (
     <div className="flex-1 border-r border-border bg-card overflow-y-auto flex flex-col">
-      <ComposePost />
+      <ComposePost
+        onPostCreated={(newPost: Post) =>
+          setPosts((prev) => [newPost, ...prev])
+        }
+      />
 
       <div className="flex-1 flex flex-col">
         {posts.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          <div className="flex items-center justify-center h-24 text-muted-foreground">
             No posts yet.
           </div>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onDelete={() => handleDeletePost(post.id)}
+            />
+          ))
         )}
       </div>
     </div>

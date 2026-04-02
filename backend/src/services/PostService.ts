@@ -43,12 +43,14 @@ export class PostService {
     }
   }
 
-  async create(data: CreatePostDto, user: { id: number }) {
+  async create(data: CreatePostDto, user: UserProps) {
     try {
-      return this.postRepo.create({
+      const post = await this.postRepo.create({
         ...data,
         authorId: user.id,
       });
+
+      return this.postRepo.findById(post.id);
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

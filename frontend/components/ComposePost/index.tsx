@@ -7,31 +7,67 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
 import ComposePostUpload, { ComposePostPreview } from "../ComposePostUpload";
+import storageService from "@/services/storage";
+import { uploadFileToS3 } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { toastError } from "@/lib/toast";
+import postService from "@/services/post";
+import { Post, PostInput } from "@/types/post";
 
-export default function ComposePost() {
+interface ComposePostProps {
+  onPostCreated?: (post: Post) => void;
+}
+
+export default function ComposePost({ onPostCreated }: ComposePostProps) {
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const user = useAppSelector((state) => state.currentUser);
   const { t, ready } = useTranslation();
 
   const handlePost = async () => {
     if (!content.trim() && images.length === 0) return;
+    setLoading(true);
 
-    const formData = new FormData();
-    formData.append("content", content);
+    try {
+      const storageDomain = process.env.NEXT_PUBLIC_S3_DOMAIN!;
 
-    images.forEach((file) => {
-      formData.append("images", file);
-    });
+      const uploadPromises = images.map(async (file) => {
+        try {
+          const { data: presignedUrl } = await storageService.getPresignUrl({
+            fileName: file.name,
+            fileType: file.type,
+          });
 
-    console.log("[POST DATA]", { content, images });
+          const uploadedUrl = await uploadFileToS3(file, presignedUrl);
 
-    // TODO: call API
-    // await fetch("/api/posts", { method: "POST", body: formData });
+          const pathOnly = uploadedUrl.replace(storageDomain, "").split("?")[0];
 
-    setContent("");
-    setImages([]);
+          return pathOnly;
+        } catch (err) {
+          console.error("Upload failed for", file.name, err);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const uploadedFiles = results.filter(Boolean) as string[];
+
+      const { data } = await postService.create<PostInput, Post>({
+        content,
+        images: uploadedFiles,
+      });
+
+      if (onPostCreated) onPostCreated(data);
+
+      setContent("");
+      setImages([]);
+    } catch (error) {
+      toastError(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!ready) return null;
@@ -43,7 +79,11 @@ export default function ComposePost() {
           <div className="flex gap-3 items-center">
             <Avatar size="lg">
               {user.avatar ? (
-                <AvatarImage src={user.avatar} alt={user.fullName} />
+                <AvatarImage
+                  src={user.avatar}
+                  alt={user.fullName}
+                  className="w-auto h-auto object-cover"
+                />
               ) : (
                 <AvatarFallback>
                   {user.fullName.charAt(0).toUpperCase()}
@@ -80,12 +120,21 @@ export default function ComposePost() {
               </button>
             </div>
 
-            <button
+            <Button
               onClick={handlePost}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-full font-bold"
+              disabled={!content.trim() && images.length === 0}
+              loading={loading}
+              className={`
+                px-6 py-4 rounded-full font-bold text-primary-foreground 
+                ${
+                  !content.trim() && images.length === 0
+                    ? "bg-primary opacity-50 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary/90 transition-colors duration-200"
+                }
+              `}
             >
-              Post
-            </button>
+              {t("composePost.post")}
+            </Button>
           </div>
         </div>
       </div>
@@ -94,7 +143,11 @@ export default function ComposePost() {
         <div className="flex gap-4">
           <Avatar size="lg">
             {user.avatar ? (
-              <AvatarImage src={user.avatar} alt={user.fullName} />
+              <AvatarImage
+                src={user.avatar}
+                alt={user.fullName}
+                className="w-auto h-auto object-cover"
+              />
             ) : (
               <AvatarFallback>
                 {user.fullName.charAt(0).toUpperCase()}
@@ -132,12 +185,21 @@ export default function ComposePost() {
                 </button>
               </div>
 
-              <button
+              <Button
                 onClick={handlePost}
-                className="px-8 py-2 bg-primary text-primary-foreground rounded-full font-bold"
+                disabled={!content.trim() && images.length === 0}
+                loading={loading}
+                className={`
+                  px-8 py-5 rounded-full font-bold text-primary-foreground cursor-pointer 
+                  ${
+                    !content.trim() && images.length === 0
+                      ? "bg-primary opacity-50 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary/90 transition-colors duration-200"
+                  }
+                `}
               >
                 {t("composePost.post")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

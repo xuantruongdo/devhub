@@ -16,7 +16,7 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsArray({ message: "Images must be an array of strings" })
-  @ArrayNotEmpty({ message: "Images array cannot be empty", each: true })
+  @ArrayNotEmpty({ message: "Images array cannot be empty" })
   @IsString({ each: true, message: "Each image must be a string URL" })
   images?: string[];
 

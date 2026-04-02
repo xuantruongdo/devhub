@@ -16,15 +16,17 @@ export class BaseService {
     return await instance.get<T>(`${this.route}/${id}`);
   }
 
-  async create<T>(data: Omit<T, "id">): Promise<AxiosResponse<T>> {
-    return await instance.post<T>(this.route, data);
+  async create<TCreate, TResult>(
+    data: TCreate,
+  ): Promise<AxiosResponse<TResult>> {
+    return await instance.post<TResult>(this.route, data);
   }
 
-  async update<T>(
+  async update<TUpdate, TResult>(
     id: number | string,
-    data: Partial<T>
-  ): Promise<AxiosResponse<T>> {
-    return await instance.put<T>(`${this.route}/${id}`, data);
+    data: TUpdate,
+  ): Promise<AxiosResponse<TResult>> {
+    return await instance.put<TResult>(`${this.route}/${id}`, data);
   }
 
   async delete<T>(id: number | string): Promise<AxiosResponse<T>> {
