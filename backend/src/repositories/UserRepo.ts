@@ -7,9 +7,29 @@ export class UserRepo {
   private repo = AppDataSource.getRepository(User);
 
   async findById(id: number) {
-    return this.repo.findOne({
-      where: { id },
-    });
+    return this.repo
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.followers", "follower")
+      .leftJoinAndSelect("user.followings", "following")
+      .select([
+        "user.id",
+        "user.username",
+        "user.fullName",
+        "user.avatar",
+        "user.isVerified",
+        "follower.id",
+        "follower.username",
+        "follower.fullName",
+        "follower.avatar",
+        "follower.isVerified",
+        "following.id",
+        "following.username",
+        "following.fullName",
+        "following.avatar",
+        "following.isVerified",
+      ])
+      .where("user.id = :id", { id })
+      .getOne();
   }
 
   async findByEmail(email: string) {
@@ -24,12 +44,12 @@ export class UserRepo {
     });
   }
 
-  async createUser(data: Partial<User>) {
+  async create(data: Partial<User>) {
     const user = this.repo.create(data);
     return this.repo.save(user);
   }
 
-  async updateUser(id: number, data: Partial<User>) {
+  async update(id: number, data: Partial<User>) {
     await this.repo.update(id, data);
     return this.repo.findOne({ where: { id } });
   }

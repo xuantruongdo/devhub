@@ -3,20 +3,20 @@
 import { Loader2 } from "lucide-react";
 
 interface LoadingPageProps {
-  loading: boolean;
-  children: React.ReactNode;
+  loading?: boolean;
+  children?: React.ReactNode;
 }
 
-export default function LoadingPage({ loading, children }: LoadingPageProps) {
+export default function LoadingPage({
+  loading = true,
+  children,
+}: LoadingPageProps) {
   if (!loading) return <>{children}</>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-6">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-lg">
-            D
-          </div>
           <span className="text-2xl font-semibold text-foreground">DevHub</span>
         </div>
 

@@ -7,7 +7,14 @@ import {
   DeleteDateColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
+  Index,
 } from "typeorm";
+
+import { Post } from "./Post";
+import { PostLike } from "./PostLike";
+import { Comment } from "./Comment";
+import { PostShare } from "./PostShare";
 
 export enum UserRole {
   USER = "user",
@@ -20,12 +27,14 @@ export class User {
   id!: number;
 
   @Column({ unique: true })
+  @Index()
   username!: string;
 
   @Column()
   fullName!: string;
 
   @Column({ unique: true })
+  @Index()
   email!: string;
 
   @Column()
@@ -62,6 +71,9 @@ export class User {
   @Column({ nullable: true })
   refreshToken?: string;
 
+  @Column({ nullable: true })
+  lastLogin?: Date;
+
   @ManyToMany(() => User, (user) => user.followings)
   @JoinTable({
     name: "user_followers",
@@ -73,10 +85,29 @@ export class User {
   @ManyToMany(() => User, (user) => user.followers)
   followings!: User[];
 
-  @Column({ nullable: true })
-  lastLogin?: Date;
+  @Column({ default: 0 })
+  followerCount!: number;
+
+  @Column({ default: 0 })
+  followingCount!: number;
+
+  @Column({ default: 0 })
+  postCount!: number;
+
+  @OneToMany(() => Post, (post) => post.author)
+  posts!: Post[];
+
+  @OneToMany(() => PostLike, (like) => like.user)
+  likes!: PostLike[];
+
+  @OneToMany(() => Comment, (comment) => comment.author)
+  comments!: Comment[];
+
+  @OneToMany(() => PostShare, (share) => share.user)
+  shares!: PostShare[];
 
   @CreateDateColumn()
+  @Index()
   createdAt!: Date;
 
   @UpdateDateColumn()

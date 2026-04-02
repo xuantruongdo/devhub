@@ -14,3 +14,8 @@ export enum ThemeType {
   DARK = "dark",
   SYSTEM = "system",
 }
+
+export enum PostVisibility {
+  PUBLIC = "public",
+  PRIVATE = "private",
+}

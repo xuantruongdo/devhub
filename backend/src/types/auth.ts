@@ -1,7 +1,7 @@
 import { UserRole } from "../entities/User";
 
 export interface UserProps {
-  id: string;
+  id: number;
   username: string;
   fullName: string;
   email: string;
