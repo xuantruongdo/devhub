@@ -141,10 +141,14 @@ export function DetailPostContent({ post }: DetailPostContentProps) {
           setCommentCountState((prev) => prev + 1);
         }}
       />
+
       <CommentList
         postId={post.id}
         comments={comments}
         setComments={setComments}
+        onCommentDeleted={(deletedCount) =>
+          setCommentCountState((prev) => prev - deletedCount)
+        }
       />
     </div>
   );

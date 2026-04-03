@@ -20,12 +20,14 @@ interface CommentListProps {
   postId: number;
   comments: Comment[];
   setComments: Dispatch<SetStateAction<Comment[]>>;
+  onCommentDeleted: (count: number) => void;
 }
 
 export function CommentList({
   postId,
   comments,
   setComments,
+  onCommentDeleted,
 }: CommentListProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
@@ -69,9 +71,17 @@ export function CommentList({
     try {
       await postService.removeComment(commentId);
 
+      let deletedCount = 0;
+
       const removeCommentRecursive = (commentsList: Comment[]): Comment[] => {
         return commentsList
-          .filter((c) => c.id !== commentId)
+          .filter((c) => {
+            if (c.id === commentId) {
+              deletedCount += 1 + (c.replies?.length || 0);
+              return false;
+            }
+            return true;
+          })
           .map((c) => ({
             ...c,
             replies: c.replies ? removeCommentRecursive(c.replies) : [],
@@ -79,6 +89,10 @@ export function CommentList({
       };
 
       setComments((prev) => removeCommentRecursive(prev));
+
+      if (deletedCount > 0) {
+        onCommentDeleted(deletedCount);
+      }
     } catch (err) {
       toastError(err);
     }
