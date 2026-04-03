@@ -55,10 +55,7 @@ export function ImageLightbox({
         </div>
       )}
 
-      <div
-        className="w-full max-w-4xl px-4 sm:px-12"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="max-w-4xl mx-auto" onClick={(e) => e.stopPropagation()}>
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
             {images.map((url, i) => (

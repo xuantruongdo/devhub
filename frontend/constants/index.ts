@@ -19,3 +19,5 @@ export enum PostVisibility {
   PUBLIC = "public",
   PRIVATE = "private",
 }
+
+export const MAX_COUNT_FILE = 5;

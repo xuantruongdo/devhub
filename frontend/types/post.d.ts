@@ -21,6 +21,7 @@ export interface Post {
   createdAt: Date;
   updatedAt: Date;
   author: Author;
+  isLiked: boolean;
 }
 
 export interface PostInput {

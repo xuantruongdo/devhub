@@ -6,11 +6,15 @@ import {
   CreateDateColumn,
   OneToMany,
   JoinColumn,
+  Index,
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
 
 @Entity()
+@Index(["postId"])
+@Index(["authorId"])
+@Index(["parentId"])
 export class Comment {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -18,11 +22,24 @@ export class Comment {
   @Column("text")
   content!: string;
 
-  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @Column()
+  authorId!: number;
+
+  @Column()
+  postId!: number;
+
+  @Column({ nullable: true })
+  parentId?: number;
+
+  @ManyToOne(() => User, (user) => user.comments, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "authorId" })
   author!: User;
 
-  @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @ManyToOne(() => Post, (post) => post.comments, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "postId" })
   post!: Post;
 

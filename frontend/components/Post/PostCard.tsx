@@ -28,6 +28,7 @@ import postService from "@/services/post";
 import { useState } from "react";
 import { ImageLightbox } from "./ImageLightbox";
 import { EditPostDialog } from "./EditPostDialog";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PostCardProps {
   post: Post;
@@ -37,6 +38,7 @@ interface PostCardProps {
 
 export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
+  const { t, ready } = useTranslation();
   const {
     author,
     content,
@@ -45,7 +47,10 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
     likeCount,
     commentCount,
     shareCount,
+    isLiked,
   } = post;
+  const [liked, setLiked] = useState(() => isLiked);
+  const [likes, setLikes] = useState(() => likeCount);
 
   const isAuthor = currentUser?.id === author.id;
   const { isOpen: isDialogOpen, openModal, closeModal } = useModal();
@@ -60,6 +65,21 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
       toastError(error);
     }
   };
+
+  const handleLike = async () => {
+    try {
+      setLiked((prev) => !prev);
+      setLikes((prev) => (liked ? prev - 1 : prev + 1));
+
+      await postService.like(post.id);
+    } catch (error) {
+      setLiked(isLiked);
+      setLikes(likeCount);
+      toastError(error);
+    }
+  };
+
+  if (!ready) return null;
 
   return (
     <article className="border-b border-border px-4 sm:px-6 py-4 hover:bg-muted/30 transition">
@@ -110,27 +130,30 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                       className="flex items-center gap-2"
                     >
                       <Edit className="h-4 w-4" />
-                      Edit
+                      {t("post.edit")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={openModal}
                       className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
-                      Delete
+                      {t("post.delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
                 <ConfirmDeleteDialog
                   open={isDialogOpen}
-                  title="Delete post ?"
-                  description="Are you sure you want to delete this item? This action cannot be undone."
+                  title={t("post.deleteTitle")}
+                  description={t("post.deleteDescription")}
                   onCancel={closeModal}
                   onConfirm={handleDelete}
+                  cancelText={t("post.cancelButton")}
+                  confirmText={t("post.deleteButton")}
                 />
 
                 <EditPostDialog
+                  key={post.id}
                   open={selectedPost !== null}
                   post={selectedPost ?? post}
                   onCancel={() => setSelectedPost(null)}
@@ -148,36 +171,37 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
           </p>
 
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {images.slice(0, 2).map((url, i) => {
-              const isLast = i === 1 && images.length > 2;
-              return (
-                <div
-                  key={i}
-                  className={`w-full relative overflow-hidden rounded-lg cursor-pointer`}
-                  onClick={() => setLightboxIndex(i)}
-                >
-                  <Image
-                    src={url}
-                    alt={`post image ${i}`}
-                    width={800}
-                    height={600}
-                    className="w-full h-auto max-h-[600px] object-contain"
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                  />
-                  {isLast && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
-                      <span className="text-white text-2xl font-semibold">
-                        +{images.length - 1}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {images &&
+              images.slice(0, 2).map((url, i) => {
+                const isLast = i === 1 && images.length > 2;
+                return (
+                  <div
+                    key={i}
+                    className="relative w-full aspect-[4/3] overflow-hidden rounded-lg cursor-pointer"
+                    onClick={() => setLightboxIndex(i)}
+                  >
+                    <Image
+                      src={url}
+                      alt={`post image ${i}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      priority
+                    />
+                    {isLast && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
+                        <span className="text-white text-2xl font-semibold">
+                          +{images.length - 1}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
 
           <div className="flex justify-between mt-4 max-w-xs text-muted-foreground text-sm">
-            <button className="flex items-center gap-2 group flex-1">
+            <button className="flex items-center gap-2 group flex-1 cursor-pointer">
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
                 <MessageCircle className="h-4 w-4 group-hover:text-primary" />
               </div>
@@ -186,7 +210,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
               </span>
             </button>
 
-            <button className="flex items-center gap-2 group flex-1">
+            <button className="flex items-center gap-2 group flex-1 cursor-pointer">
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
                 <Share className="h-4 w-4 group-hover:text-primary" />
               </div>
@@ -195,12 +219,25 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
               </span>
             </button>
 
-            <button className="flex items-center gap-2 group flex-1">
+            <button
+              className="flex items-center gap-2 group flex-1 cursor-pointer"
+              onClick={handleLike}
+            >
               <div className="p-2 group-hover:bg-destructive/10 rounded-full transition">
-                <Heart className="h-4 w-4 group-hover:text-destructive" />
+                <Heart
+                  className={`h-4 w-4 transition ${
+                    liked
+                      ? "text-red-500 fill-red-500"
+                      : "group-hover:text-destructive"
+                  }`}
+                />
               </div>
-              <span className="text-xs sm:text-sm group-hover:text-destructive">
-                {likeCount}
+              <span
+                className={`text-xs sm:text-sm ${
+                  liked ? "text-red-500" : "group-hover:text-destructive"
+                }`}
+              >
+                {likes}
               </span>
             </button>
           </div>

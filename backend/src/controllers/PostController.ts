@@ -54,4 +54,9 @@ export class PostController {
   async remove(@Param("id") id: number, @CurrentUser() user: UserProps) {
     return this.postService.remove(id, user);
   }
+
+  @Post("/:id/like")
+  async toggleLike(@Param("id") id: number, @CurrentUser() user: UserProps) {
+    return this.postService.toggleLike(id, user);
+  }
 }

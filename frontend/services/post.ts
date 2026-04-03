@@ -9,6 +9,10 @@ class PostService extends BaseService {
   async getFeed() {
     return await instance.get(`/posts/feed`);
   }
+
+  async like(id: number) {
+    return await instance.post(`/posts/${id}/like`);
+  }
 }
 
 const postService = new PostService();

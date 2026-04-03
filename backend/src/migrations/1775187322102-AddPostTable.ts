@@ -1,12 +1,20 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddPostTable1775117076630 implements MigrationInterface {
-    name = 'AddPostTable1775117076630'
+export class AddPostTable1775187322102 implements MigrationInterface {
+    name = 'AddPostTable1775187322102'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "post_like" ("id" SERIAL NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "userId" integer, "postId" integer, CONSTRAINT "UQ_754a5e1d4e513c739e9c39a8d79" UNIQUE ("userId", "postId"), CONSTRAINT "PK_0e95caa8a8b56d7797569cf5dc6" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "comment" ("id" SERIAL NOT NULL, "content" text NOT NULL, "likeCount" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "authorId" integer, "postId" integer, "parentId" integer, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "post_share" ("id" SERIAL NOT NULL, "content" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "userId" integer, "postId" integer, CONSTRAINT "PK_77619741bae0a19103e9af87f46" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "post_like" ("id" SERIAL NOT NULL, "userId" integer NOT NULL, "postId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_754a5e1d4e513c739e9c39a8d79" UNIQUE ("userId", "postId"), CONSTRAINT "PK_0e95caa8a8b56d7797569cf5dc6" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_754a5e1d4e513c739e9c39a8d7" ON "post_like" ("postId", "userId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_909fc474ef645901d01f0cc066" ON "post_like" ("userId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_789b3f929eb3d8760419f87c8a" ON "post_like" ("postId") `);
+        await queryRunner.query(`CREATE TABLE "comment" ("id" SERIAL NOT NULL, "content" text NOT NULL, "authorId" integer NOT NULL, "postId" integer NOT NULL, "parentId" integer, "likeCount" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_e3aebe2bd1c53467a07109be59" ON "comment" ("parentId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_276779da446413a0d79598d4fb" ON "comment" ("authorId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_94a85bb16d24033a2afdd5df06" ON "comment" ("postId") `);
+        await queryRunner.query(`CREATE TABLE "post_share" ("id" SERIAL NOT NULL, "userId" integer NOT NULL, "postId" integer NOT NULL, "content" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_77619741bae0a19103e9af87f46" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_68c00adaed141c9e477a99e225" ON "post_share" ("userId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_489f6ed6c502cd6e97a7cb2965" ON "post_share" ("postId") `);
         await queryRunner.query(`CREATE TYPE "public"."post_visibility_enum" AS ENUM('public', 'private')`);
         await queryRunner.query(`CREATE TABLE "post" ("id" SERIAL NOT NULL, "authorId" integer NOT NULL, "content" text, "images" jsonb, "visibility" "public"."post_visibility_enum" NOT NULL DEFAULT 'public', "likeCount" integer NOT NULL DEFAULT '0', "commentCount" integer NOT NULL DEFAULT '0', "shareCount" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, "sharedPostId" integer, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_a80ca3bf4ca3711c488cb82cf7" ON "post" ("visibility") `);
@@ -48,8 +56,16 @@ export class AddPostTable1775117076630 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX "public"."IDX_a80ca3bf4ca3711c488cb82cf7"`);
         await queryRunner.query(`DROP TABLE "post"`);
         await queryRunner.query(`DROP TYPE "public"."post_visibility_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_489f6ed6c502cd6e97a7cb2965"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_68c00adaed141c9e477a99e225"`);
         await queryRunner.query(`DROP TABLE "post_share"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_94a85bb16d24033a2afdd5df06"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_276779da446413a0d79598d4fb"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e3aebe2bd1c53467a07109be59"`);
         await queryRunner.query(`DROP TABLE "comment"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_789b3f929eb3d8760419f87c8a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_909fc474ef645901d01f0cc066"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_754a5e1d4e513c739e9c39a8d7"`);
         await queryRunner.query(`DROP TABLE "post_like"`);
     }
 

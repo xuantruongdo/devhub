@@ -5,21 +5,36 @@ import {
   CreateDateColumn,
   Unique,
   JoinColumn,
+  Column,
+  Index,
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
 
 @Entity()
-@Unique(["user", "post"])
+@Unique(["userId", "postId"])
+@Index(["postId"])
+@Index(["userId"])
+@Index(["postId", "userId"])
 export class PostLike {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @Column()
+  userId!: number;
+
+  @Column()
+  postId!: number;
+
+  @ManyToOne(() => User, (user) => user.likes, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "userId" })
   user!: User;
 
-  @ManyToOne(() => Post, { onDelete: "CASCADE" })
+  @ManyToOne(() => Post, (post) => post.likes, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "postId" })
   post!: Post;
 

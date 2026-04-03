@@ -5,6 +5,9 @@ import { UserProps } from "../types/auth";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import { AuthCodeError, PostCodeError } from "../constants/code";
 import { UserRepo } from "../repositories/UserRepo";
+import { AppDataSource } from "../config/data-source";
+import { Post } from "../entities/Post";
+import { PostLike } from "../entities/PostLike";
 
 @Service()
 export class PostService {
@@ -85,6 +88,46 @@ export class PostService {
       post.deletedAt = new Date();
 
       return this.postRepo.save(post);
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async toggleLike(postId: number, user: UserProps) {
+    try {
+      return await AppDataSource.transaction(async (manager) => {
+        const post = await manager.findOne(Post, {
+          where: { id: postId },
+        });
+
+        if (!post) {
+          throw new BadRequestError(PostCodeError.POST_NOT_FOUND);
+        }
+
+        const existing = await manager.findOne(PostLike, {
+          where: { userId: user.id, postId },
+        });
+
+        if (existing) {
+          await manager.delete(PostLike, {
+            userId: user.id,
+            postId,
+          });
+
+          await manager.decrement(Post, { id: postId }, "likeCount", 1);
+
+          return { liked: false };
+        }
+
+        await manager.insert(PostLike, {
+          userId: user.id,
+          postId,
+        });
+
+        await manager.increment(Post, { id: postId }, "likeCount", 1);
+
+        return { liked: true };
+      });
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

@@ -7,8 +7,10 @@ import { Textarea } from "../ui/textarea";
 import { Post, PostInput } from "@/types/post";
 import postService from "@/services/post";
 import { toastError } from "@/lib/toast";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { uploadStorage } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
+import { MAX_COUNT_FILE } from "@/constants";
 
 interface EditPostDialogProps {
   open: boolean;
@@ -28,6 +30,7 @@ export function EditPostDialog({
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t, ready } = useTranslation();
 
   const totalImages = useMemo(
     () => images.length + previews.length,
@@ -35,13 +38,6 @@ export function EditPostDialog({
   );
 
   const canAddMore = useMemo(() => totalImages < 5, [totalImages]);
-
-  useEffect(() => {
-    setContent(post.content);
-    setImages(post.images ?? []);
-    setNewFiles([]);
-    setPreviews([]);
-  }, [post.id]);
 
   const handleAddImages = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -79,22 +75,22 @@ export function EditPostDialog({
     }
   };
 
-  if (!open) return null;
+  if (!open || !ready) return null;
 
   return (
     <CustomDialog
-      title="Edit post"
+      title={t("editPost.title")}
       onCancel={onCancel}
       onConfirm={handleConfirm}
-      confirmText="Save"
-      cancelText="Cancel"
+      confirmText={t("editPost.save")}
+      cancelText={t("editPost.cancel")}
       className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
     >
       <div className="flex flex-col gap-4">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What's on your mind?"
+          placeholder={t("editPost.placeholder")}
           rows={4}
           className="resize-none"
         />
@@ -152,7 +148,7 @@ export function EditPostDialog({
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition w-fit"
             >
               <ImagePlus className="h-4 w-4" />
-              Add images ({totalImages}/5)
+              {t("editPost.addImages")} ({totalImages}/{MAX_COUNT_FILE})
             </button>
             <input
               ref={fileInputRef}

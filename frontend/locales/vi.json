@@ -94,5 +94,23 @@
     "messages": "Tin nhắn",
     "saved": "Đã lưu",
     "post": "Đăng"
+  },
+  "post": {
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "deleteTitle": "Xóa bài viết?",
+    "deleteDescription": "Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.",
+    "comment": "Bình luận",
+    "share": "Chia sẻ",
+    "like": "Thích",
+    "cancelButton": "Hủy",
+    "deleteButton": "Xóa"
+  },
+  "editPost": {
+    "title": "Chỉnh sửa bài viết",
+    "placeholder": "Bạn đang nghĩ gì?",
+    "addImages": "Thêm ảnh",
+    "save": "Lưu",
+    "cancel": "Hủy"
   }
 }

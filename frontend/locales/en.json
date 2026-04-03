@@ -94,5 +94,23 @@
     "messages": "Messages",
     "saved": "Saved",
     "post": "Post"
+  },
+  "post": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteTitle": "Delete post?",
+    "deleteDescription": "Are you sure you want to delete this item? This action cannot be undone.",
+    "comment": "Comments",
+    "share": "Shares",
+    "like": "Likes",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete"
+  },
+  "editPost": {
+    "title": "Edit post",
+    "placeholder": "What's on your mind?",
+    "addImages": "Add images",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

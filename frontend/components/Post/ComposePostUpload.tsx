@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Image as ImageIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { MAX_COUNT_FILE } from "@/constants";
 
 interface ComposePostUploadProps {
   images: File[];
@@ -65,7 +66,7 @@ export function ComposePostPreview({
 export default function ComposePostUpload({
   images,
   setImages,
-  max = 5,
+  max = MAX_COUNT_FILE,
   inputId,
 }: ComposePostUploadProps) {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

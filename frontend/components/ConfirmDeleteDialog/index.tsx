@@ -8,6 +8,8 @@ interface ConfirmDeleteDialogProps {
   description?: string;
   onCancel: () => void;
   onConfirm: () => Promise<void> | void;
+  cancelText?: string;
+  confirmText?: string;
 }
 
 export function ConfirmDeleteDialog({
@@ -16,6 +18,8 @@ export function ConfirmDeleteDialog({
   description,
   onCancel,
   onConfirm,
+  cancelText = "Cancel",
+  confirmText = "Delete",
 }: ConfirmDeleteDialogProps) {
   if (!open) return null;
 
@@ -25,8 +29,8 @@ export function ConfirmDeleteDialog({
       description={description}
       onCancel={onCancel}
       onConfirm={onConfirm}
-      confirmText="Delete"
-      cancelText="Cancel"
+      cancelText={cancelText}
+      confirmText={confirmText}
       confirmVariant="destructive"
     />
   );

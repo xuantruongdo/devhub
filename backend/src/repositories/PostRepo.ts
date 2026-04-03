@@ -1,6 +1,7 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
+import { FindOptionsWhere } from "typeorm";
 
 @Service()
 export class PostRepo {
@@ -33,6 +34,11 @@ export class PostRepo {
     const query = this.repo
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
+
+      .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
+        currentUserId,
+      })
+
       .select([
         "post",
         "author.id",
@@ -42,6 +48,15 @@ export class PostRepo {
         "author.avatar",
         "author.isVerified",
       ])
+
+      .addSelect(
+        `CASE 
+        WHEN like.id IS NOT NULL THEN 1
+        ELSE 0
+      END`,
+        "isLiked",
+      )
+
       .andWhere(
         "(post.visibility = :publicVisibility OR post.authorId = :currentUserId)",
         {
@@ -50,15 +65,13 @@ export class PostRepo {
         },
       );
 
-    if (followingsIds && followingsIds.length > 0) {
+    if (followingsIds?.length) {
       query
         .addSelect(
-          `
-      CASE 
-        WHEN post.authorId IN (:...followingsIds) THEN 1
-        ELSE 0
-      END
-    `,
+          `CASE 
+          WHEN post.authorId IN (:...followingsIds) THEN 1
+          ELSE 0
+        END`,
           "isFollowingPost",
         )
         .setParameter("followingsIds", followingsIds)
@@ -71,7 +84,15 @@ export class PostRepo {
       .addOrderBy("post.shareCount", "DESC")
       .addOrderBy("post.createdAt", "DESC");
 
-    return query.getMany();
+    const { entities, raw } = await query.getRawAndEntities();
+
+    return entities.map((post) => {
+      const found = raw.find((r) => r.post_id === post.id);
+      return {
+        ...post,
+        isLiked: !!found?.isLiked,
+      };
+    });
   }
 
   async findById(id: number) {
@@ -120,5 +141,21 @@ export class PostRepo {
 
   async remove(post: Post) {
     return this.repo.remove(post);
+  }
+
+  async increment(
+    conditions: FindOptionsWhere<Post>,
+    field: keyof Post,
+    value: number,
+  ) {
+    return this.repo.increment(conditions, field as string, value);
+  }
+
+  async decrement(
+    conditions: FindOptionsWhere<Post>,
+    field: keyof Post,
+    value: number,
+  ) {
+    return this.repo.decrement(conditions, field as string, value);
   }
 }
