@@ -201,14 +201,18 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
           </div>
 
           <div className="flex justify-between mt-4 max-w-xs text-muted-foreground text-sm">
-            <button className="flex items-center gap-2 group flex-1 cursor-pointer">
+            <Link
+              href={`/posts/${post.id}`}
+              className="flex items-center gap-2 group flex-1 cursor-pointer"
+              scroll={false}
+            >
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
                 <MessageCircle className="h-4 w-4 group-hover:text-primary" />
               </div>
               <span className="text-xs sm:text-sm group-hover:text-primary">
                 {commentCount}
               </span>
-            </button>
+            </Link>
 
             <button className="flex items-center gap-2 group flex-1 cursor-pointer">
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">

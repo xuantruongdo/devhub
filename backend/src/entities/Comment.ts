@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { Post } from "./Post";
+import { CommentLike } from "./CommentLike";
 
 @Entity()
 @Index(["postId"])
@@ -52,6 +53,9 @@ export class Comment {
 
   @OneToMany(() => Comment, (comment) => comment.parent)
   replies!: Comment[];
+
+  @OneToMany(() => CommentLike, (like) => like.comment)
+  likes!: CommentLike[];
 
   @Column({ default: 0 })
   likeCount!: number;

@@ -162,6 +162,8 @@ interface CustomDialogProps {
   confirmText?: string;
   cancelText?: string;
   confirmVariant?: React.ComponentProps<typeof Button>["variant"];
+  hideCancelButton?: boolean;
+  hideConfirmButton?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
@@ -176,6 +178,8 @@ function CustomDialog({
   confirmVariant,
   className,
   children,
+  hideCancelButton = false,
+  hideConfirmButton = false,
 }: CustomDialogProps) {
   const [loading, setLoading] = React.useState(false);
 
@@ -189,6 +193,8 @@ function CustomDialog({
     }
   };
 
+  const showFooter = !hideCancelButton || !hideConfirmButton;
+
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent showCloseButton={false} className={className}>
@@ -199,18 +205,24 @@ function CustomDialog({
 
         {children && <div>{children}</div>}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={loading}>
-            {cancelText}
-          </Button>
-          <Button
-            variant={confirmVariant}
-            onClick={handleConfirm}
-            loading={loading}
-          >
-            {loading ? "Loading..." : confirmText}
-          </Button>
-        </DialogFooter>
+        {showFooter && (
+          <DialogFooter>
+            {!hideCancelButton && (
+              <Button variant="outline" onClick={onCancel} disabled={loading}>
+                {cancelText}
+              </Button>
+            )}
+            {!hideConfirmButton && (
+              <Button
+                variant={confirmVariant}
+                onClick={handleConfirm}
+                loading={loading}
+              >
+                {loading ? "Loading..." : confirmText}
+              </Button>
+            )}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

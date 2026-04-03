@@ -22,7 +22,6 @@ export default function Feed() {
 
     fetchFeed();
   }, []);
-  console.log("===posts", posts);
 
   const handleUpdatePost = (updated: Post) => {
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));

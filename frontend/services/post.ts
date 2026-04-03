@@ -1,5 +1,6 @@
 import instance from "@/lib/api";
 import { BaseService } from "./base";
+import { CommentInput } from "@/types/post";
 
 class PostService extends BaseService {
   constructor() {
@@ -12,6 +13,10 @@ class PostService extends BaseService {
 
   async like(id: number) {
     return await instance.post(`/posts/${id}/like`);
+  }
+
+  async comment(id: number, data: CommentInput) {
+    return await instance.post(`/posts/${id}/comment`, data);
   }
 }
 

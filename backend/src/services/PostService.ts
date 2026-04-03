@@ -1,13 +1,22 @@
 import { Service } from "typedi";
 import { PostRepo } from "../repositories/PostRepo";
-import { CreatePostDto, UpdatePostDto } from "../dtos/PostDto";
+import {
+  CreateCommentDto,
+  CreatePostDto,
+  UpdatePostDto,
+} from "../dtos/PostDto";
 import { UserProps } from "../types/auth";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
-import { AuthCodeError, PostCodeError } from "../constants/code";
+import {
+  AuthCodeError,
+  CommentCodeError,
+  PostCodeError,
+} from "../constants/code";
 import { UserRepo } from "../repositories/UserRepo";
 import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
 import { PostLike } from "../entities/PostLike";
+import { Comment } from "../entities/Comment";
 
 @Service()
 export class PostService {
@@ -16,9 +25,9 @@ export class PostService {
     private readonly userRepo: UserRepo,
   ) {}
 
-  async findOne(id: number) {
+  async findOne(id: number, user: UserProps) {
     try {
-      return this.postRepo.findById(id);
+      return this.postRepo.findOne(id, user.id);
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
@@ -127,6 +136,88 @@ export class PostService {
         await manager.increment(Post, { id: postId }, "likeCount", 1);
 
         return { liked: true };
+      });
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async createComment(id: number, data: CreateCommentDto, user: UserProps) {
+    try {
+      const { content, parentId } = data;
+
+      return await AppDataSource.transaction(async (manager) => {
+        const comment = await manager.save(Comment, {
+          content,
+          postId: id,
+          parentId: parentId,
+          authorId: user.id,
+          likeCount: 0,
+        });
+
+        await manager.increment(Post, { id }, "commentCount", 1);
+
+        const normalizeComment = await manager
+          .createQueryBuilder(Comment, "comment")
+          .leftJoinAndSelect("comment.author", "author")
+          .leftJoinAndSelect("comment.replies", "replies")
+          .leftJoinAndSelect("replies.author", "replyAuthor")
+          .select([
+            "comment.id",
+            "comment.content",
+            "comment.postId",
+            "comment.parentId",
+            "comment.likeCount",
+            "comment.createdAt",
+            "author.id",
+            "author.username",
+            "author.fullName",
+            "author.avatar",
+            "author.isVerified",
+            "replies.id",
+            "replies.content",
+            "replies.postId",
+            "replies.parentId",
+            "replies.likeCount",
+            "replies.createdAt",
+            "replyAuthor.id",
+            "replyAuthor.username",
+            "replyAuthor.fullName",
+            "replyAuthor.avatar",
+            "replyAuthor.isVerified",
+          ])
+          .where("comment.id = :id", { id: comment.id })
+          .getOne();
+
+        return normalizeComment;
+      });
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async removeComment(commentId: number, user: UserProps) {
+    try {
+      return await AppDataSource.transaction(async (manager) => {
+        const commentRepo = manager.getRepository(Comment);
+        const postRepo = manager.getRepository(Post);
+
+        const comment = await commentRepo.findOne({
+          where: { id: commentId },
+        });
+
+        if (!comment) {
+          throw new BadRequestError(CommentCodeError.COMMENT_NOT_FOUND);
+        }
+
+        if (comment.authorId !== user.id) {
+          throw new BadRequestError(CommentCodeError.UNAUTHORIZED);
+        }
+
+        await commentRepo.remove(comment);
+        await postRepo.decrement({ id: comment.postId }, "commentCount", 1);
+
+        return { success: true };
       });
     } catch (error: any) {
       throw new BadRequestError(error.message);

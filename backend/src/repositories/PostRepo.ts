@@ -95,6 +95,62 @@ export class PostRepo {
     });
   }
 
+  async findOne(id: number, currentUserId: number) {
+    const query = this.repo
+      .createQueryBuilder("post")
+      .leftJoinAndSelect("post.author", "author")
+      .leftJoinAndSelect("post.comments", "comment")
+      .leftJoinAndSelect("comment.author", "commentAuthor")
+      .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
+        currentUserId,
+      })
+      .select([
+        "post",
+        "author.id",
+        "author.username",
+        "author.fullName",
+        "author.email",
+        "author.avatar",
+        "author.isVerified",
+        "comment.id",
+        "comment.content",
+        "comment.createdAt",
+        "comment.authorId",
+        "commentAuthor.id",
+        "commentAuthor.username",
+        "commentAuthor.fullName",
+        "commentAuthor.avatar",
+        "commentAuthor.isVerified",
+      ])
+      .addSelect(
+        `CASE 
+        WHEN like.id IS NOT NULL THEN 1
+        ELSE 0
+      END`,
+        "isLiked",
+      )
+      .andWhere(
+        "(post.visibility = :publicVisibility OR post.authorId = :currentUserId)",
+        {
+          publicVisibility: "public",
+          currentUserId,
+        },
+      )
+      .andWhere("post.id = :id", { id });
+
+    const { raw, entities } = await query.getRawAndEntities();
+    const post = entities[0];
+
+    if (!post) return null;
+
+    const found = raw.find((r) => r.post_id === post.id);
+    return {
+      ...post,
+      isLiked: !!found?.isLiked,
+      comments: post.comments || [],
+    };
+  }
+
   async findById(id: number) {
     return this.repo
       .createQueryBuilder("post")

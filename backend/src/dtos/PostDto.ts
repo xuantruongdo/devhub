@@ -6,6 +6,7 @@ import {
   ArrayNotEmpty,
   IsInt,
   Min,
+  IsNumber,
 } from "class-validator";
 import { PostVisibility } from "../entities/Post";
 
@@ -16,7 +17,6 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsArray({ message: "Images must be an array of strings" })
-  @ArrayNotEmpty({ message: "Images array cannot be empty" })
   @IsString({ each: true, message: "Each image must be a string URL" })
   images?: string[];
 
@@ -33,3 +33,12 @@ export class CreatePostDto {
 }
 
 export class UpdatePostDto extends CreatePostDto {}
+
+export class CreateCommentDto {
+  @IsString({ message: "Content must be a string" })
+  content?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: "parentId must be a number" })
+  parentId?: number;
+}

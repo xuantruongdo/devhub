@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Input } from "../ui/input";
 import { useState, useRef, useEffect } from "react";
 import { CurrentUserResponse } from "@/types/auth";
+import Link from "next/link";
 
 const FAKE_USERS = [
   {
@@ -563,9 +564,11 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
       <div className="flex h-16 items-center justify-between px-3 sm:px-6 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          DevHub
-        </h1>
+        <Link href={`/${locale}`}>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            DevHub
+          </h1>
+        </Link>
 
         <div className="flex-1 max-w-[200px] sm:max-w-md" ref={searchRef}>
           <div className="relative w-full">

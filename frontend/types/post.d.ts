@@ -15,6 +15,7 @@ export interface Post {
   content: string;
   images: string[];
   visibility: PostVisibility;
+  comments: Comment[];
   likeCount: number;
   commentCount: number;
   shareCount: number;
@@ -27,4 +28,19 @@ export interface Post {
 export interface PostInput {
   content: string;
   images: string[];
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  author: Author;
+  likeCount: number;
+  createdAt: Date;
+  isLiked: boolean;
+  replies: Comment[];
+}
+
+export interface CommentInput {
+  content: string;
+  parentId?: number;
 }
