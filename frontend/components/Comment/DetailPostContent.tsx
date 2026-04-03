@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { CircleCheck, Heart, MessageCircle, Share } from "lucide-react";
@@ -11,26 +10,22 @@ import { Comment, Post } from "@/types/post";
 import postService from "@/services/post";
 import { toastError } from "@/lib/toast";
 import { CommentList } from "./CommentList";
+import { ImageLightbox } from "../Post/ImageLightbox";
 
 interface DetailPostContentProps {
   post: Post;
 }
 
 export function DetailPostContent({ post }: DetailPostContentProps) {
-  const {
-    author,
-    content,
-    images,
-    createdAt,
-    likeCount,
-    shareCount,
-    isLiked,
-  } = post;
+  const { author, content, images, createdAt, likeCount, shareCount, isLiked } =
+    post;
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
   const [commentCountState, setCommentCountState] = useState(post.commentCount);
-
   const [liked, setLiked] = useState(() => isLiked);
   const [likes, setLikes] = useState(() => likeCount);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const handleLike = async () => {
     try {
@@ -78,20 +73,34 @@ export function DetailPostContent({ post }: DetailPostContentProps) {
             images.length === 1 ? "grid-cols-1" : "grid-cols-2"
           }`}
         >
-          {images.map((url: string, i: number) => (
+          {images.map((url, i) => (
             <div
               key={i}
-              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg"
+              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg cursor-pointer"
+              onClick={() => {
+                setLightboxIndex(i);
+                setLightboxOpen(true);
+              }}
             >
               <Image
                 src={url}
                 alt={`post image ${i}`}
                 fill
                 className="object-cover"
+                sizes="(max-width: 640px) 100vw, 50vw"
+                priority
               />
             </div>
           ))}
         </div>
+      )}
+
+      {lightboxOpen && (
+        <ImageLightbox
+          images={images}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
       )}
 
       <div className="flex gap-5 text-sm text-muted-foreground border-y py-3">
@@ -132,7 +141,6 @@ export function DetailPostContent({ post }: DetailPostContentProps) {
           setCommentCountState((prev) => prev + 1);
         }}
       />
-
       <CommentList
         postId={post.id}
         comments={comments}

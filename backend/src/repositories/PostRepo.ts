@@ -99,8 +99,10 @@ export class PostRepo {
     const query = this.repo
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
-      .leftJoinAndSelect("post.comments", "comment")
+      .leftJoinAndSelect("post.comments", "comment", "comment.parentId IS NULL")
       .leftJoinAndSelect("comment.author", "commentAuthor")
+      .leftJoinAndSelect("comment.replies", "reply")
+      .leftJoinAndSelect("reply.author", "replyAuthor")
       .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
         currentUserId,
       })
@@ -112,15 +114,28 @@ export class PostRepo {
         "author.email",
         "author.avatar",
         "author.isVerified",
+        // Top-level comments
         "comment.id",
         "comment.content",
         "comment.createdAt",
         "comment.authorId",
+        // Author của comment
         "commentAuthor.id",
         "commentAuthor.username",
         "commentAuthor.fullName",
         "commentAuthor.avatar",
         "commentAuthor.isVerified",
+        // Replies
+        "reply.id",
+        "reply.content",
+        "reply.createdAt",
+        "reply.authorId",
+        // Author của reply
+        "replyAuthor.id",
+        "replyAuthor.username",
+        "replyAuthor.fullName",
+        "replyAuthor.avatar",
+        "replyAuthor.isVerified",
       ])
       .addSelect(
         `CASE 
