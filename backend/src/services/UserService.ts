@@ -7,6 +7,7 @@ import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
 import { Request, Response } from "express";
 import { AuthCodeError } from "../constants/code";
+import { UserProps } from "../types/auth";
 
 @Service()
 export class UserService {
@@ -163,6 +164,14 @@ export class UserService {
       });
 
       return { success: true };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async findByUsername(username: string, user: UserProps) {
+    try {
+      return this.userRepo.findByUsername(username, user.id);
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

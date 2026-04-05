@@ -6,6 +6,7 @@ import {
   Req,
   Get,
   CurrentUser,
+  Param,
 } from "routing-controllers";
 import { Service } from "typedi";
 import { UserService } from "../services/UserService";
@@ -35,6 +36,14 @@ export class UserController {
   @Get("/current")
   async getCurrent(@CurrentUser() user: UserProps) {
     return user;
+  }
+
+  @Get("/:username")
+  async findByUsername(
+    @Param("username") username: string,
+    @CurrentUser() user: UserProps,
+  ) {
+    return await this.userService.findByUsername(username, user);
   }
 
   @Public()

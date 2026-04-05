@@ -1,7 +1,7 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { FindUserOptions } from "../types/auth";
+import { FindUserOptions, UserProps } from "../types/auth";
 
 @Service()
 export class UserRepo {
@@ -52,12 +52,6 @@ export class UserRepo {
     });
   }
 
-  async findByUsername(username: string) {
-    return this.repo.findOne({
-      where: { username },
-    });
-  }
-
   async create(data: Partial<User>) {
     const user = this.repo.create(data);
     return this.repo.save(user);
@@ -66,5 +60,53 @@ export class UserRepo {
   async update(id: number, data: Partial<User>) {
     await this.repo.update(id, data);
     return this.repo.findOne({ where: { id } });
+  }
+
+  async findByUsername(username: string, currentUserId: number) {
+    const qb = this.repo
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.posts", "post")
+      .where("user.username = :username", { username });
+
+    qb.select([
+      "user.id",
+      "user.username",
+      "user.fullName",
+      "user.email",
+      "user.role",
+      "user.avatar",
+      "user.bio",
+      "user.website",
+      "user.birthday",
+      "user.location",
+      "user.isActive",
+      "user.isVerified",
+      "user.lastLogin",
+      "user.followerCount",
+      "user.followingCount",
+      "user.postCount",
+      "user.createdAt",
+      "user.updatedAt",
+      "user.deletedAt",
+
+      "post.id",
+      "post.content",
+      "post.images",
+      "post.visibility",
+      "post.likeCount",
+      "post.commentCount",
+      "post.shareCount",
+      "post.createdAt",
+    ]);
+
+    qb.andWhere(
+      `(user.id = :currentUserId OR post.visibility = :publicVisibility)`,
+      {
+        currentUserId: currentUserId,
+        publicVisibility: "public",
+      },
+    );
+
+    return await qb.getOne();
   }
 }

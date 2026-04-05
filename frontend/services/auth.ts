@@ -2,11 +2,7 @@ import instance from "@/lib/api";
 import { BaseService } from "./base";
 import { LoginInput, RegisterInput } from "@/types/auth";
 
-class AuthService extends BaseService {
-  constructor() {
-    super("/auth");
-  }
-
+class AuthService {
   async register(data: RegisterInput) {
     return await instance.post(`/users/register`, data);
   }
@@ -21,6 +17,10 @@ class AuthService extends BaseService {
 
   async logout() {
     return await instance.post(`/users/logout`);
+  }
+
+  async findByUsername(username: string) {
+    return await instance.get(`/users/${username}`);
   }
 }
 
