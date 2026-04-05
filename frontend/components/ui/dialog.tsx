@@ -62,7 +62,7 @@ function DialogContent({
         data-slot="dialog-content"
         aria-describedby={undefined}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none overflow-visible sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className,
         )}
         {...props}
@@ -162,7 +162,10 @@ interface CustomDialogProps {
   confirmText?: string;
   cancelText?: string;
   confirmVariant?: React.ComponentProps<typeof Button>["variant"];
+  hideCancelButton?: boolean;
+  hideConfirmButton?: boolean;
   className?: string;
+  contentClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -175,7 +178,10 @@ function CustomDialog({
   cancelText = "Cancel",
   confirmVariant,
   className,
+  contentClassName,
   children,
+  hideCancelButton = false,
+  hideConfirmButton = false,
 }: CustomDialogProps) {
   const [loading, setLoading] = React.useState(false);
 
@@ -189,6 +195,8 @@ function CustomDialog({
     }
   };
 
+  const showFooter = !hideCancelButton || !hideConfirmButton;
+
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent showCloseButton={false} className={className}>
@@ -197,20 +205,30 @@ function CustomDialog({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        {children && <div>{children}</div>}
+        {children && (
+          <div className={cn("overflow-y-auto", contentClassName)}>
+            {children}
+          </div>
+        )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={loading}>
-            {cancelText}
-          </Button>
-          <Button
-            variant={confirmVariant}
-            onClick={handleConfirm}
-            loading={loading}
-          >
-            {loading ? "Loading..." : confirmText}
-          </Button>
-        </DialogFooter>
+        {showFooter && (
+          <DialogFooter>
+            {!hideCancelButton && (
+              <Button variant="outline" onClick={onCancel} disabled={loading}>
+                {cancelText}
+              </Button>
+            )}
+            {!hideConfirmButton && (
+              <Button
+                variant={confirmVariant}
+                onClick={handleConfirm}
+                loading={loading}
+              >
+                {loading ? "Loading..." : confirmText}
+              </Button>
+            )}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

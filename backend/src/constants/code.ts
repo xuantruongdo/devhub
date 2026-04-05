@@ -7,7 +7,16 @@ export enum AuthCodeError {
   INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN",
 }
 
+export enum StorageCodeError {
+  MISSING_FILE_PART = "MISSING_FILE_PART",
+}
+
 export enum PostCodeError {
   POST_NOT_FOUND = "POST_NOT_FOUND",
+  UNAUTHORIZED = "UNAUTHORIZED",
+}
+
+export enum CommentCodeError {
+  COMMENT_NOT_FOUND = "COMMENT_NOT_FOUND",
   UNAUTHORIZED = "UNAUTHORIZED",
 }

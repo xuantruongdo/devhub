@@ -64,7 +64,7 @@ export default function LeftSidebar() {
   if (!ready) return null;
 
   return (
-    <aside className="hidden lg:flex w-72 border-r border-border bg-card flex-col sticky h-[calc(100vh-4rem)]">
+    <aside className="hidden lg:flex w-72 border-r border-border bg-card flex-col">
       <nav className="flex flex-col gap-2 p-6">
         {menuItems.map((item) => {
           const isActive =

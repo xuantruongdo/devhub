@@ -1,44 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Post } from "@/types/post";
-import postService from "@/services/post";
+import { useEffect } from "react";
 import { toastError } from "@/lib/toast";
+import postService from "@/services/post";
 import ComposePost from "../Post/ComposePost";
 import PostCard from "../Post/PostCard";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import {
+  setFeed,
+  addPost,
+  updatePost,
+  deletePost,
+} from "@/redux/reducers/feed";
 
 export default function Feed() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const dispatch = useAppDispatch();
+  const posts = useAppSelector((state) => state.feed);
 
   useEffect(() => {
     const fetchFeed = async () => {
       try {
         const { data } = await postService.getFeed();
-        setPosts(data);
+        dispatch(setFeed(data));
       } catch (error: any) {
         toastError(error);
       }
     };
 
     fetchFeed();
-  }, []);
-  console.log("===posts", posts);
-
-  const handleUpdatePost = (updated: Post) => {
-    setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  };
-
-  const handleDeletePost = (id: number) => {
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-  };
+  }, [dispatch]);
 
   return (
-    <div className="flex-1 border-r border-border bg-card overflow-y-auto flex flex-col">
-      <ComposePost
-        onSuccess={(newPost: Post) => setPosts((prev) => [newPost, ...prev])}
-      />
+    <div className="flex-1 min-h-0 border-r border-border bg-card flex flex-col">
+      <div className="shrink-0">
+        <ComposePost onSuccess={(newPost) => dispatch(addPost(newPost))} />
+      </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 overflow-y-auto">
         {posts.length === 0 ? (
           <div className="flex items-center justify-center h-24 text-muted-foreground">
             No posts yet.
@@ -48,8 +46,8 @@ export default function Feed() {
             <PostCard
               key={post.id}
               post={post}
-              onUpdate={handleUpdatePost}
-              onDelete={() => handleDeletePost(post.id)}
+              onUpdate={(updated) => dispatch(updatePost(updated))}
+              onDelete={() => dispatch(deletePost(post.id))}
             />
           ))
         )}

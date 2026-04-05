@@ -1,5 +1,7 @@
 import AWS from "aws-sdk";
+import { BadRequestError } from "routing-controllers";
 import { Service } from "typedi";
+import { StorageCodeError } from "../constants/code";
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -15,7 +17,7 @@ export class StorageService {
     expires = 60, // 60 giây
   ): Promise<string> {
     if (!fileName || !fileType) {
-      throw new Error("Missing fileName or fileType");
+      throw new BadRequestError(StorageCodeError.MISSING_FILE_PART);
     }
 
     const params: AWS.S3.PutObjectRequest = {
@@ -26,9 +28,9 @@ export class StorageService {
 
     try {
       return await s3.getSignedUrlPromise("putObject", params);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[S3_ERROR]", error);
-      throw new Error("Failed to generate presigned URL");
+      throw new BadRequestError(error.message);
     }
   }
 }

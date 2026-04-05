@@ -10,7 +10,11 @@ import {
 } from "routing-controllers";
 import { Service } from "typedi";
 import { PostService } from "../services/PostService";
-import { CreatePostDto, UpdatePostDto } from "../dtos/PostDto";
+import {
+  CreateCommentDto,
+  CreatePostDto,
+  UpdatePostDto,
+} from "../dtos/PostDto";
 import { UserProps } from "../types/auth";
 
 @Service()
@@ -37,8 +41,8 @@ export class PostController {
   }
 
   @Get("/:id")
-  async findOne(@Param("id") id: number) {
-    return this.postService.findOne(id);
+  async findOne(@Param("id") id: number, @CurrentUser() user: UserProps) {
+    return this.postService.findOne(id, user);
   }
 
   @Put("/:id")
@@ -58,5 +62,30 @@ export class PostController {
   @Post("/:id/like")
   async toggleLike(@Param("id") id: number, @CurrentUser() user: UserProps) {
     return this.postService.toggleLike(id, user);
+  }
+
+  @Post("/:commentId/comment/like")
+  async likeComment(
+    @Param("commentId") commentId: number,
+    @CurrentUser() user: UserProps,
+  ) {
+    return this.postService.toggleLikeComment(commentId, user);
+  }
+
+  @Post("/:id/comment")
+  async createComment(
+    @Param("id") id: number,
+    @Body({ validate: true }) body: CreateCommentDto,
+    @CurrentUser() user: UserProps,
+  ) {
+    return this.postService.createComment(id, body, user);
+  }
+
+  @Delete("/:commentId/comment")
+  async removeComment(
+    @Param("commentId") commentId: number,
+    @CurrentUser() user: UserProps,
+  ) {
+    return this.postService.removeComment(commentId, user);
   }
 }

@@ -1,16 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { X, ImagePlus } from "lucide-react";
+import { X, ImagePlus, Globe, Lock } from "lucide-react";
 import { CustomDialog } from "../ui/dialog";
 import { Textarea } from "../ui/textarea";
-import { Post, PostInput } from "@/types/post";
+import { Post, PostInput, VisibilityOption } from "@/types/post";
 import postService from "@/services/post";
 import { toastError } from "@/lib/toast";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { uploadStorage } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
-import { MAX_COUNT_FILE } from "@/constants";
+import { MAX_COUNT_FILE, PostVisibility } from "@/constants";
+import { CustomSelect } from "../ui/select";
 
 interface EditPostDialogProps {
   open: boolean;
@@ -27,10 +28,24 @@ export function EditPostDialog({
 }: EditPostDialogProps) {
   const [content, setContent] = useState(post.content);
   const [images, setImages] = useState<string[]>(post.images ?? []);
+  const [visibility, setVisibility] = useState(post.visibility);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, ready } = useTranslation();
+
+  const visibilityOptions: VisibilityOption[] = [
+    {
+      label: t("composePost.visibility.public"),
+      value: PostVisibility.PUBLIC,
+      icon: <Globe className="w-4 h-4" />,
+    },
+    {
+      label: t("composePost.visibility.private"),
+      value: PostVisibility.PRIVATE,
+      icon: <Lock className="w-4 h-4" />,
+    },
+  ];
 
   const totalImages = useMemo(
     () => images.length + previews.length,
@@ -67,6 +82,7 @@ export function EditPostDialog({
       const { data } = await postService.update<PostInput, Post>(post.id, {
         content,
         images: [...images, ...uploadedFiles],
+        visibility,
       });
 
       onSuccess(data);
@@ -93,6 +109,12 @@ export function EditPostDialog({
           placeholder={t("editPost.placeholder")}
           rows={4}
           className="resize-none"
+        />
+
+        <CustomSelect
+          options={visibilityOptions}
+          value={visibility}
+          onValueChange={(v) => setVisibility(v as PostVisibility)}
         />
 
         {(images.length > 0 || previews.length > 0) && (

@@ -8,6 +8,8 @@ import {
   CircleCheck,
   Edit,
   Trash2,
+  Globe,
+  Lock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Post } from "@/types/post";
@@ -29,6 +31,7 @@ import { useState } from "react";
 import { ImageLightbox } from "./ImageLightbox";
 import { EditPostDialog } from "./EditPostDialog";
 import { useTranslation } from "@/hooks/useTranslation";
+import { visibilityConfig } from "../Comment/DetailPostContent";
 
 interface PostCardProps {
   post: Post;
@@ -38,11 +41,12 @@ interface PostCardProps {
 
 export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
-  const { t, ready } = useTranslation();
+  const { t, locale, ready } = useTranslation();
   const {
     author,
     content,
     images,
+    visibility,
     createdAt,
     likeCount,
     commentCount,
@@ -84,7 +88,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   return (
     <article className="border-b border-border px-4 sm:px-6 py-4 hover:bg-muted/30 transition">
       <div className="flex gap-3 sm:gap-4">
-        <Link href={"#"}>
+        <Link href={`/${locale}/${author.username}`}>
           <Avatar size="lg">
             {author.avatar ? (
               <AvatarImage src={author.avatar} alt={author.fullName} />
@@ -100,7 +104,10 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <div className="flex items-center gap-1">
-                <Link href={"#"} className="font-bold text-foreground truncate">
+                <Link
+                  href={`/${locale}/${author.username}`}
+                  className="font-bold text-foreground truncate"
+                >
                   {author.fullName}
                 </Link>
                 {author.isVerified && (
@@ -111,9 +118,14 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                 {author.username}
               </p>
               <span className="text-muted-foreground hidden sm:block">·</span>
-              <p className="text-muted-foreground whitespace-nowrap text-sm">
-                {moment(createdAt).fromNow()}
-              </p>
+              <div className="flex items-center gap-1 text-muted-foreground text-sm whitespace-nowrap">
+                <span>{moment(createdAt).fromNow()}</span>
+                <span>·</span>
+
+                <span className="flex items-center gap-1">
+                  {visibilityConfig[visibility]?.icon}
+                </span>
+              </div>
             </div>
 
             {isAuthor && (
@@ -201,26 +213,26 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
           </div>
 
           <div className="flex justify-between mt-4 max-w-xs text-muted-foreground text-sm">
-            <button className="flex items-center gap-2 group flex-1 cursor-pointer">
+            <Link
+              href={`/posts/${post.id}`}
+              className="flex items-center group"
+              scroll={false}
+            >
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
-                <MessageCircle className="h-4 w-4 group-hover:text-primary" />
+                <MessageCircle className="h-4 w-4" />
               </div>
-              <span className="text-xs sm:text-sm group-hover:text-primary">
-                {commentCount}
-              </span>
-            </button>
+              <span className={`text-xs sm:text-sm`}>{commentCount}</span>
+            </Link>
 
-            <button className="flex items-center gap-2 group flex-1 cursor-pointer">
+            <button className="flex items-center group cursor-pointer">
               <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
-                <Share className="h-4 w-4 group-hover:text-primary" />
+                <Share className="h-4 w-4" />
               </div>
-              <span className="text-xs sm:text-sm group-hover:text-primary">
-                {shareCount}
-              </span>
+              <span className={`text-xs sm:text-sm`}>{shareCount}</span>
             </button>
 
             <button
-              className="flex items-center gap-2 group flex-1 cursor-pointer"
+              className="flex items-center group cursor-pointer"
               onClick={handleLike}
             >
               <div className="p-2 group-hover:bg-destructive/10 rounded-full transition">

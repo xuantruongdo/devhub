@@ -7,7 +7,6 @@ import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
 import { Request, Response } from "express";
 import { AuthCodeError } from "../constants/code";
-import { UserProps } from "../types/auth";
 
 @Service()
 export class UserService {

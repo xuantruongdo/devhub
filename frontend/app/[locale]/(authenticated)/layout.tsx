@@ -11,35 +11,38 @@ import { useRouter } from "next/navigation";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }
 
-const AuthenticatedLayout = ({ children }: AuthenticatedLayoutProps) => {
+const AuthenticatedLayout = ({ children, modal }: AuthenticatedLayoutProps) => {
   const [loading, setLoading] = useState(true);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const fetchInitData = async () => {
-    try {
-      const { data: user } = await authService.current();
-      dispatch(setCurrentUser(user));
-      setLoading(false);
-    } catch (error) {
-      toastError(error);
-      router.push("/login");
-    }
-  };
-
   useEffect(() => {
+    const fetchInitData = async () => {
+      try {
+        const { data: user } = await authService.current();
+        dispatch(setCurrentUser(user));
+        setLoading(false);
+      } catch (error) {
+        toastError(error);
+        router.push("/login");
+      }
+    };
+
     fetchInitData();
   }, [dispatch]);
 
   if (loading) return <LoadingPage />;
 
   return (
-    <>
+    <div className="h-screen flex flex-col">
       <Header />
-      {children}
-    </>
+      <div className="flex-1 overflow-hidden">{children}</div>
+
+      {modal}
+    </div>
   );
 };
 
