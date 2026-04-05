@@ -86,7 +86,11 @@
   },
   "composePost": {
     "placeholder": "Bạn đang nghĩ gì?",
-    "post": "Đăng"
+    "post": "Đăng",
+    "visibility": {
+      "public": "Công khai",
+      "private": "Riêng tư"
+    }
   },
   "leftSidebar": {
     "home": "Trang chủ",
@@ -112,5 +116,18 @@
     "addImages": "Thêm ảnh",
     "save": "Lưu",
     "cancel": "Hủy"
+  },
+  "comment": {
+    "placeholder": "Viết bình luận...",
+    "replyPlaceholder": "Viết phản hồi...",
+    "actions": {
+      "send": "Gửi",
+      "reply": "Trả lời",
+      "delete": "Xóa"
+    },
+    "labels": {
+      "viewMoreReplies": "Xem thêm {{count}} phản hồi",
+      "hideReplies": "Ẩn phản hồi"
+    }
   }
 }

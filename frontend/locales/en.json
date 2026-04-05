@@ -86,7 +86,11 @@
   },
   "composePost": {
     "placeholder": "What's on your mind?",
-    "post": "Post"
+    "post": "Post",
+    "visibility": {
+      "public": "Public",
+      "private": "Private"
+    }
   },
   "leftSidebar": {
     "home": "Home",
@@ -112,5 +116,18 @@
     "addImages": "Add images",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "comment": {
+    "placeholder": "Write a comment...",
+    "replyPlaceholder": "Write a reply...",
+    "actions": {
+      "send": "Send",
+      "reply": "Reply",
+      "delete": "Delete"
+    },
+    "labels": {
+      "viewMoreReplies": "View {{count}} more replies",
+      "hideReplies": "Hide replies"
+    }
   }
 }

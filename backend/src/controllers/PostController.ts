@@ -64,6 +64,14 @@ export class PostController {
     return this.postService.toggleLike(id, user);
   }
 
+  @Post("/:commentId/comment/like")
+  async likeComment(
+    @Param("commentId") commentId: number,
+    @CurrentUser() user: UserProps,
+  ) {
+    return this.postService.toggleLikeComment(commentId, user);
+  }
+
   @Post("/:id/comment")
   async createComment(
     @Param("id") id: number,

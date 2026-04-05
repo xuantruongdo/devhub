@@ -22,6 +22,10 @@ class PostService extends BaseService {
   async removeComment(commentId: number) {
     return await instance.delete(`/posts/${commentId}/comment`);
   }
+
+  async likeComment(commentId: number) {
+    return await instance.post(`/posts/${commentId}/comment/like`);
+  }
 }
 
 const postService = new PostService();

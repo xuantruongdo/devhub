@@ -12,18 +12,20 @@ interface DetailPostDialogProps {
 export function DetailPostDialog({ post }: DetailPostDialogProps) {
   const router = useRouter();
 
-  const handleClose = () => router.back();
+  const handleClose = () => {
+    router.back();
+  }
 
   return (
     <CustomDialog
-      title={"Post"}
+      title={""}
       onCancel={handleClose}
       onConfirm={() => {}}
       className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
       hideCancelButton={true}
       hideConfirmButton={true}
     >
-      <DetailPostContent post={post} />
+      <DetailPostContent post={post} onCloseDetailPost={handleClose} />
     </CustomDialog>
   );
 }

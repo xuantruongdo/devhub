@@ -1,20 +1,11 @@
 "use client";
 
-import { Dispatch, SetStateAction, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import moment from "moment";
-import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+import { Dispatch, SetStateAction } from "react";
 import { Comment } from "@/types/post";
 import { toastError } from "@/lib/toast";
-import { useAppSelector } from "@/redux/hooks";
-import Link from "next/link";
 import postService from "@/services/post";
+import { CommentItem } from "./CommentItem";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CommentListProps {
   postId: number;
@@ -29,52 +20,79 @@ export function CommentList({
   setComments,
   onCommentDeleted,
 }: CommentListProps) {
-  const currentUser = useAppSelector((state) => state.currentUser);
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyValue, setReplyValue] = useState("");
-  const [replying, setReplying] = useState(false);
+  const { ready } = useTranslation();
 
-  const toggleLike = async (commentId: number, parentId?: number) => {
+  const updateLikeRecursive = (
+    comment: Comment,
+    commentId: number,
+  ): Comment => {
+    if (comment.id === commentId) {
+      const newLiked = !comment.isLiked;
+      return {
+        ...comment,
+        isLiked: newLiked,
+        likeCount: newLiked
+          ? comment.likeCount + 1
+          : Math.max(0, comment.likeCount - 1),
+      };
+    }
+    return {
+      ...comment,
+      replies: comment.replies?.map((r) => updateLikeRecursive(r, commentId)),
+    };
+  };
+
+  const syncLikeRecursive = (
+    comment: Comment,
+    commentId: number,
+    liked: boolean,
+  ): Comment => {
+    if (comment.id === commentId) {
+      return { ...comment, isLiked: liked };
+    }
+    return {
+      ...comment,
+      replies: comment.replies?.map((r) =>
+        syncLikeRecursive(r, commentId, liked),
+      ),
+    };
+  };
+
+  const handleLike = async (commentId: number) => {
     try {
+      setComments((prev) => prev.map((c) => updateLikeRecursive(c, commentId)));
+      const { data } = await postService.likeComment(commentId);
+      setComments((prev) =>
+        prev.map((c) => syncLikeRecursive(c, commentId, data.liked)),
+      );
     } catch (err) {
       toastError(err);
     }
   };
 
-  const onReply = async (parentId: number) => {
-    if (!replyValue.trim()) return;
+  const handleReply = async (parentId: number, content: string) => {
     try {
-      setReplying(true);
-      const { data } = await postService.comment(postId, {
-        content: replyValue,
-        parentId,
-      });
-
-      setComments((prevComments) =>
-        prevComments.map((c) =>
+      const { data } = await postService.comment(postId, { content, parentId });
+      setComments((prev) =>
+        prev.map((c) =>
           c.id === data.parentId
-            ? { ...c, replies: [...(c.replies || []), data] }
+            ? { ...c, replies: [data, ...(c.replies || [])] }
             : c,
         ),
       );
-
-      setReplyValue("");
-      setReplyingTo(null);
     } catch (err) {
       toastError(err);
-    } finally {
-      setReplying(false);
     }
   };
 
-  const onDelete = async (commentId: number) => {
+  const handleDelete = async (commentId: number) => {
     try {
       await postService.removeComment(commentId);
 
       let deletedCount = 0;
 
-      const removeCommentRecursive = (commentsList: Comment[]): Comment[] => {
-        return commentsList
+      const removeCommentRecursive = (list: Comment[]): Comment[] =>
+        list
           .filter((c) => {
             if (c.id === commentId) {
               deletedCount += 1 + (c.replies?.length || 0);
@@ -86,7 +104,6 @@ export function CommentList({
             ...c,
             replies: c.replies ? removeCommentRecursive(c.replies) : [],
           }));
-      };
 
       setComments((prev) => removeCommentRecursive(prev));
 
@@ -98,141 +115,19 @@ export function CommentList({
     }
   };
 
-  if (!comments.length)
-    return <p className="text-center py-4">No comments yet</p>;
+  if (!ready) return null;
 
   return (
     <div className="space-y-4">
       {comments.map((c) => (
-        <div key={c.id} className="space-y-2">
-          <div className="flex gap-3 relative">
-            <Avatar size="sm">
-              <AvatarImage src={c.author.avatar} />
-              <AvatarFallback>{c.author.fullName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex justify-between items-start">
-                <div className="text-sm font-semibold">{c.author.fullName}</div>
-
-                {currentUser.id === c.author.id && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="p-1 rounded hover:bg-muted">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={() => onDelete(c.id)}
-                        className="text-red-500 focus:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                {moment(c.createdAt).fromNow()}
-              </div>
-              <p className="text-sm">{c.content}</p>
-
-              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                <button
-                  className={`flex items-center gap-1 ${c.isLiked ? "text-red-500" : ""}`}
-                  onClick={() => toggleLike(c.id)}
-                >
-                  <Heart className="h-3 w-3" />
-                  {c.likeCount}
-                </button>
-                <button
-                  className="flex items-center gap-1"
-                  onClick={() =>
-                    setReplyingTo(replyingTo === c.id ? null : c.id)
-                  }
-                >
-                  <MessageCircle className="h-3 w-3" />
-                  Reply
-                </button>
-              </div>
-
-              {replyingTo === c.id && (
-                <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="text"
-                    className="flex-1 bg-transparent border-b border-muted px-2 py-1 text-sm outline-none"
-                    placeholder="Write a reply..."
-                    value={replyValue}
-                    onChange={(e) => setReplyValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        onReply(c.id);
-                      }
-                    }}
-                  />
-                  <button
-                    className="text-sm text-primary font-semibold hover:text-primary/80 hover:bg-primary/10 rounded px-2 py-1 cursor-pointer transition"
-                    onClick={() => onReply(c.id)}
-                  >
-                    Send
-                  </button>
-                </div>
-              )}
-
-              <div className="pl-8 space-y-2 mt-4">
-                {c.replies?.map((r) => (
-                  <div key={r.id} className="flex gap-3 relative">
-                    <Link href={`#`}>
-                      <Avatar size="sm">
-                        <AvatarImage src={r.author.avatar} />
-                        <AvatarFallback>
-                          {r.author.fullName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div className="text-sm font-semibold">
-                          {r.author.fullName}
-                        </div>
-                        {currentUser.id === r.author.id && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="p-1 rounded hover:bg-muted">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => onDelete(r.id)}
-                                className="text-red-500 focus:text-red-500"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-
-                      <div className="text-xs text-muted-foreground">
-                        {moment(r.createdAt).fromNow()}
-                      </div>
-                      <p className="text-sm">{r.content}</p>
-
-                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                        <button
-                          className={`flex items-center gap-1 ${r.isLiked ? "text-red-500" : ""}`}
-                          onClick={() => toggleLike(r.id, c.id)}
-                        >
-                          <Heart className="h-3 w-3" />
-                          {r.likeCount}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CommentItem
+          key={c.id}
+          postId={postId}
+          comment={c}
+          onLike={handleLike}
+          onDelete={handleDelete}
+          onReply={handleReply}
+        />
       ))}
     </div>
   );

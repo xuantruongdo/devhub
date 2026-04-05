@@ -2,10 +2,12 @@ import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
 import { FindOptionsWhere } from "typeorm";
+import { Comment } from "../entities/Comment";
 
 @Service()
 export class PostRepo {
   private repo = AppDataSource.getRepository(Post);
+  private commentRepo = AppDataSource.getRepository(Comment);
 
   /**
    * Lấy feed cho người dùng hiện tại
@@ -96,55 +98,18 @@ export class PostRepo {
   }
 
   async findOne(id: number, currentUserId: number) {
-    const query = this.repo
+    // GET POST
+    const postQuery = this.repo
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
-      .leftJoinAndSelect("post.comments", "comment", "comment.parentId IS NULL")
-      .leftJoinAndSelect("comment.author", "commentAuthor")
-      .leftJoinAndSelect("comment.replies", "reply")
-      .leftJoinAndSelect("reply.author", "replyAuthor")
-      .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
+      .leftJoin("post.likes", "postLike", "postLike.userId = :currentUserId", {
         currentUserId,
       })
-      .select([
-        "post",
-        "author.id",
-        "author.username",
-        "author.fullName",
-        "author.email",
-        "author.avatar",
-        "author.isVerified",
-        // Top-level comments
-        "comment.id",
-        "comment.content",
-        "comment.createdAt",
-        "comment.authorId",
-        // Author của comment
-        "commentAuthor.id",
-        "commentAuthor.username",
-        "commentAuthor.fullName",
-        "commentAuthor.avatar",
-        "commentAuthor.isVerified",
-        // Replies
-        "reply.id",
-        "reply.content",
-        "reply.createdAt",
-        "reply.authorId",
-        // Author của reply
-        "replyAuthor.id",
-        "replyAuthor.username",
-        "replyAuthor.fullName",
-        "replyAuthor.avatar",
-        "replyAuthor.isVerified",
-      ])
       .addSelect(
-        `CASE 
-        WHEN like.id IS NOT NULL THEN 1
-        ELSE 0
-      END`,
-        "isLiked",
+        `CASE WHEN postLike.id IS NOT NULL THEN 1 ELSE 0 END`,
+        "post_isLiked",
       )
-      .andWhere(
+      .where(
         "(post.visibility = :publicVisibility OR post.authorId = :currentUserId)",
         {
           publicVisibility: "public",
@@ -153,16 +118,113 @@ export class PostRepo {
       )
       .andWhere("post.id = :id", { id });
 
-    const { raw, entities } = await query.getRawAndEntities();
-    const post = entities[0];
+    const { raw: postRaw, entities: postEntities } =
+      await postQuery.getRawAndEntities();
 
+    const post = postEntities[0];
     if (!post) return null;
 
-    const found = raw.find((r) => r.post_id === post.id);
+    const postRow = postRaw[0];
+
+    // GET ROOT COMMENTS
+    const comments = await this.commentRepo
+      .createQueryBuilder("comment")
+      .leftJoinAndSelect("comment.author", "author")
+      .leftJoin(
+        "comment.likes",
+        "commentLike",
+        "commentLike.userId = :currentUserId",
+        { currentUserId },
+      )
+      .addSelect(
+        `CASE WHEN commentLike.id IS NOT NULL THEN 1 ELSE 0 END`,
+        "isLiked",
+      )
+      .where("comment.postId = :postId", { postId: id })
+      .andWhere("comment.parentId IS NULL")
+
+      // SORT
+      .orderBy(
+        `CASE WHEN comment.authorId = :currentUserId THEN 0 ELSE 1 END`,
+        "ASC",
+      )
+      .addOrderBy("comment.likeCount", "DESC")
+      .addOrderBy("comment.createdAt", "ASC")
+
+      .getRawAndEntities();
+
+    const commentEntities = comments.entities;
+    const commentRaw = comments.raw;
+
+    // map isLiked
+    const commentMap = new Map<number, boolean>();
+    commentRaw.forEach((r) => {
+      commentMap.set(r.comment_id, !!r.isLiked);
+    });
+
+    // GET REPLIES
+    const replies = await this.commentRepo
+      .createQueryBuilder("reply")
+      .leftJoinAndSelect("reply.author", "author")
+      .leftJoin(
+        "reply.likes",
+        "replyLike",
+        "replyLike.userId = :currentUserId",
+        { currentUserId },
+      )
+      .addSelect(
+        `CASE WHEN replyLike.id IS NOT NULL THEN 1 ELSE 0 END`,
+        "isLiked",
+      )
+      .where("reply.postId = :postId", { postId: id })
+      .andWhere("reply.parentId IS NOT NULL")
+
+      // SORT
+      .orderBy(
+        `CASE WHEN reply.authorId = :currentUserId THEN 0 ELSE 1 END`,
+        "ASC",
+      )
+      .addOrderBy("reply.likeCount", "DESC")
+      .addOrderBy("reply.createdAt", "ASC")
+
+      .getRawAndEntities();
+
+    const replyEntities = replies.entities;
+    const replyRaw = replies.raw;
+
+    // map isLiked reply
+    const replyMap = new Map<number, boolean>();
+    replyRaw.forEach((r) => {
+      replyMap.set(r.reply_id, !!r.isLiked);
+    });
+
+    // GROUP REPLIES
+    const repliesByParent = new Map<number, any[]>();
+
+    replyEntities.forEach((r: any) => {
+      const parentId = r.parentId;
+      if (!repliesByParent.has(parentId)) {
+        repliesByParent.set(parentId, []);
+      }
+
+      repliesByParent.get(parentId)!.push({
+        ...r,
+        isLiked: replyMap.get(r.id) || false,
+      });
+    });
+
+    // MERGE COMMENTS + REPLIES
+    const finalComments = commentEntities.map((c: any) => ({
+      ...c,
+      isLiked: commentMap.get(c.id) || false,
+      replies: repliesByParent.get(c.id) || [],
+    }));
+
+    // RETURN
     return {
       ...post,
-      isLiked: !!found?.isLiked,
-      comments: post.comments || [],
+      isLiked: !!postRow?.post_isLiked,
+      comments: finalComments,
     };
   }
 

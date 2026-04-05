@@ -17,6 +17,7 @@ import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
 import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
+import { CommentLike } from "../entities/CommentLike";
 
 @Service()
 export class PostService {
@@ -218,6 +219,49 @@ export class PostService {
         await postRepo.decrement({ id: comment.postId }, "commentCount", 1);
 
         return { success: true };
+      });
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async toggleLikeComment(commentId: number, user: UserProps) {
+    try {
+      return await AppDataSource.transaction(async (manager) => {
+        const comment = await manager.findOne(Comment, {
+          where: { id: commentId },
+        });
+
+        if (!comment) {
+          throw new BadRequestError(CommentCodeError.COMMENT_NOT_FOUND);
+        }
+
+        const existing = await manager.findOne(CommentLike, {
+          where: {
+            commentId,
+            userId: user.id,
+          },
+        });
+
+        if (existing) {
+          await manager.delete(CommentLike, {
+            commentId,
+            userId: user.id,
+          });
+
+          await manager.decrement(Comment, { id: commentId }, "likeCount", 1);
+
+          return { liked: false };
+        }
+
+        await manager.insert(CommentLike, {
+          commentId,
+          userId: user.id,
+        });
+
+        await manager.increment(Comment, { id: commentId }, "likeCount", 1);
+
+        return { liked: true };
       });
     } catch (error: any) {
       throw new BadRequestError(error.message);

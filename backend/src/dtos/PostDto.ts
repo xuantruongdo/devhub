@@ -22,7 +22,7 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsEnum(PostVisibility, {
-    message: "Visibility must be one of public, friends, private",
+    message: "Visibility must be one of: public, private",
   })
   visibility?: PostVisibility;
 

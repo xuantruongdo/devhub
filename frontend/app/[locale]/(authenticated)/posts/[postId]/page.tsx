@@ -2,14 +2,19 @@
 
 import postService from "@/services/post";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toastError } from "@/lib/toast";
 import { Post } from "@/types/post";
 import { DetailPostContent } from "@/components/Comment/DetailPostContent";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DetailPostPage() {
   const { postId } = useParams();
   const [post, setPost] = useState<Post | null>(null);
+  const { locale } = useTranslation();
+  const router = useRouter();
+
+  const handleClose = () => router.push(`/${locale}`);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -29,7 +34,7 @@ export default function DetailPostPage() {
   return (
     <div className="flex justify-center px-4 py-6">
       <div className="w-full max-w-xl">
-        <DetailPostContent post={post} />
+        <DetailPostContent post={post} onCloseDetailPost={handleClose} />
       </div>
     </div>
   );

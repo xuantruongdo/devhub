@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Smile, Calendar, MapPin } from "lucide-react";
+import { Smile, Calendar, MapPin, Globe, Lock } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAppSelector } from "@/redux/hooks";
@@ -10,20 +10,37 @@ import { uploadStorage } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
-import { Post, PostInput } from "@/types/post";
+import { Post, PostInput, VisibilityOption } from "@/types/post";
 import ComposePostUpload, { ComposePostPreview } from "./ComposePostUpload";
+import { PostVisibility } from "@/constants";
+import { CustomSelect } from "../ui/select";
 
 interface ComposePostProps {
   onSuccess: (post: Post) => void;
 }
 
 export default function ComposePost({ onSuccess }: ComposePostProps) {
+  const user = useAppSelector((state) => state.currentUser);
+  const { t, ready } = useTranslation();
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [visibility, setVisibility] = useState<PostVisibility>(
+    PostVisibility.PUBLIC,
+  );
 
-  const user = useAppSelector((state) => state.currentUser);
-  const { t, ready } = useTranslation();
+  const visibilityOptions: VisibilityOption[] = [
+    {
+      label: t("composePost.visibility.public"),
+      value: PostVisibility.PUBLIC,
+      icon: <Globe className="w-4 h-4" />,
+    },
+    {
+      label: t("composePost.visibility.private"),
+      value: PostVisibility.PRIVATE,
+      icon: <Lock className="w-4 h-4" />,
+    },
+  ];
 
   const handlePost = async () => {
     if (!content.trim() && images.length === 0) return;
@@ -35,12 +52,14 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
       const { data } = await postService.create<PostInput, Post>({
         content,
         images: uploadedFiles,
+        visibility,
       });
 
       onSuccess(data);
 
       setContent("");
       setImages([]);
+      setVisibility(PostVisibility.PUBLIC);
     } catch (error) {
       toastError(error);
     } finally {
@@ -57,17 +76,14 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
           <div className="flex gap-3 items-center">
             <Avatar size="lg">
               {user.avatar ? (
-                <AvatarImage
-                  src={user.avatar}
-                  alt={user.fullName}
-                  className="w-auto h-auto object-cover"
-                />
+                <AvatarImage src={user.avatar} alt={user.fullName} />
               ) : (
                 <AvatarFallback>
                   {user.fullName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               )}
             </Avatar>
+
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -77,6 +93,13 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
               maxLength={500}
             />
           </div>
+
+          <CustomSelect
+            options={visibilityOptions}
+            value={visibility}
+            onValueChange={(v) => setVisibility(v as PostVisibility)}
+            className="w-fit"
+          />
 
           <ComposePostPreview images={images} setImages={setImages} />
 
@@ -102,14 +125,11 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
               onClick={handlePost}
               disabled={!content.trim() && images.length === 0}
               loading={loading}
-              className={`
-                px-6 py-4 rounded-full font-bold text-primary-foreground 
-                ${
-                  !content.trim() && images.length === 0
-                    ? "bg-primary opacity-50 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary/90 transition-colors duration-200"
-                }
-              `}
+              className={`px-6 py-4 rounded-full font-bold text-primary-foreground ${
+                !content.trim() && images.length === 0
+                  ? "bg-primary opacity-50 cursor-not-allowed"
+                  : "bg-primary hover:bg-primary/90"
+              }`}
             >
               {t("composePost.post")}
             </Button>
@@ -121,11 +141,7 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
         <div className="flex gap-4">
           <Avatar size="lg">
             {user.avatar ? (
-              <AvatarImage
-                src={user.avatar}
-                alt={user.fullName}
-                className="w-auto h-auto object-cover"
-              />
+              <AvatarImage src={user.avatar} alt={user.fullName} />
             ) : (
               <AvatarFallback>
                 {user.fullName.charAt(0).toUpperCase()}
@@ -142,6 +158,14 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
               rows={1}
               maxLength={500}
             />
+
+            <div className="mt-2">
+              <CustomSelect
+                options={visibilityOptions}
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as PostVisibility)}
+              />
+            </div>
 
             <ComposePostPreview images={images} setImages={setImages} />
 
@@ -167,14 +191,11 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
                 onClick={handlePost}
                 disabled={!content.trim() && images.length === 0}
                 loading={loading}
-                className={`
-                  px-8 py-5 rounded-full font-bold text-primary-foreground cursor-pointer 
-                  ${
-                    !content.trim() && images.length === 0
-                      ? "bg-primary opacity-50 cursor-not-allowed"
-                      : "bg-primary hover:bg-primary/90 transition-colors duration-200"
-                  }
-                `}
+                className={`px-8 py-5 rounded-full font-bold text-primary-foreground cursor-pointer ${
+                  !content.trim() && images.length === 0
+                    ? "bg-primary opacity-50 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary/90"
+                }`}
               >
                 {t("composePost.post")}
               </Button>
