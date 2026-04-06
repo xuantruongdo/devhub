@@ -13,6 +13,9 @@ import { Comment } from "@/types/post";
 import { useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import Image from "next/image";
+import { navigateFromModal } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface ReplyItemProps {
   reply: Comment;
@@ -22,11 +25,17 @@ interface ReplyItemProps {
 
 export function ReplyItem({ reply: r, onLike, onDelete }: ReplyItemProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
+  const router = useRouter();
   const { t, locale } = useTranslation();
 
   return (
     <div className="flex gap-3 relative">
-      <Link href={`/${locale}/${r.author.username}`}>
+      <Link
+        href={`/${locale}/${r.author.username}`}
+        onClick={() =>
+          navigateFromModal(router, `/${locale}/${r.author.username}`)
+        }
+      >
         <Avatar size="sm">
           <AvatarImage src={r.author.avatar} />
           <AvatarFallback>{r.author.fullName.charAt(0)}</AvatarFallback>
@@ -36,7 +45,23 @@ export function ReplyItem({ reply: r, onLike, onDelete }: ReplyItemProps) {
       <div className="flex-1">
         <div className="flex justify-between items-start">
           <Link href={`/${locale}/${r.author.username}`}>
-            <div className="text-sm font-semibold">{r.author.fullName}</div>
+            <div
+              className="flex items-center gap-2"
+              onClick={() =>
+                navigateFromModal(router, `/${locale}/${r.author.username}`)
+              }
+            >
+              <div className="text-sm font-semibold">{r.author.fullName}</div>
+              {r.author.isVerified && (
+                <Image
+                  src={"/verification-badge.svg"}
+                  alt="Verification Badge"
+                  width={20}
+                  height={20}
+                  className="object-cover"
+                />
+              )}
+            </div>
           </Link>
 
           {currentUser.id === r.author.id && (

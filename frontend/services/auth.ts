@@ -18,10 +18,6 @@ class AuthService {
   async logout() {
     return await instance.post(`/users/logout`);
   }
-
-  async findByUsername(username: string) {
-    return await instance.get(`/users/${username}`);
-  }
 }
 
 const authService = new AuthService();

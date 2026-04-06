@@ -1,12 +1,7 @@
 import instance from "@/lib/api";
-import { BaseService } from "./base";
 import { PresignBody } from "@/types/storage";
 
-class StorageService extends BaseService {
-  constructor() {
-    super("/storage");
-  }
-
+class StorageService {
   async getPresignUrl(data: PresignBody) {
     return await instance.post(`/storage/presign`, data);
   }

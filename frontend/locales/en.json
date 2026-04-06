@@ -108,7 +108,8 @@
     "share": "Shares",
     "like": "Likes",
     "cancelButton": "Cancel",
-    "deleteButton": "Delete"
+    "deleteButton": "Delete",
+    "noPosts": "No posts yet"
   },
   "editPost": {
     "title": "Edit post",
@@ -129,5 +130,24 @@
       "viewMoreReplies": "View {{count}} more replies",
       "hideReplies": "Hide replies"
     }
+  },
+  "profile": {
+    "followers": "Followers",
+    "following": "Following",
+    "editProfile": "Edit Profile",
+    "cancel": "Cancel",
+    "save": "Save",
+    "admin": "Admin",
+    "follow": "Follow",
+    "followingLabel": "Following",
+    "fullName": "Full Name",
+    "bio": "Bio",
+    "location": "Location",
+    "birthday": "Birthday",
+    "fullNamePlaceholder": "Enter your full name",
+    "bioPlaceholder": "Enter your bio",
+    "locationPlaceholder": "City, Country",
+    "profileUpdatedSuccess": "Profile updated successfully",
+    "avatarUpdatedSuccess": "Avatar changed successfully"
   }
 }

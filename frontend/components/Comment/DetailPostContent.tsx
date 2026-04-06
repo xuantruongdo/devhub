@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import {
-  CircleCheck,
   Edit,
   Globe,
   Heart,
@@ -33,6 +32,8 @@ import {
 import { ConfirmDeleteDialog } from "../ConfirmDeleteDialog";
 import { EditPostDialog } from "../Post/EditPostDialog";
 import { deletePost, updatePost } from "@/redux/reducers/feed";
+import { navigateFromModal } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 export const visibilityConfig = {
   public: {
@@ -73,6 +74,7 @@ export function DetailPostContent({
   const { isOpen, openModal, closeModal } = useModal();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const handleLike = async () => {
     try {
@@ -105,7 +107,12 @@ export function DetailPostContent({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/${locale}/${author.username}`}>
+          <Link
+            href={`/${locale}/${author.username}`}
+            onClick={() =>
+              navigateFromModal(router, `/${locale}/${author.username}`)
+            }
+          >
             <Avatar size="lg">
               {author.avatar ? (
                 <AvatarImage src={author.avatar} alt={author.fullName} />
@@ -118,13 +125,24 @@ export function DetailPostContent({
           </Link>
 
           <div className="flex flex-col">
-            <Link href={`/${locale}/${author.username}`}>
+            <Link
+              href={`/${locale}/${author.username}`}
+              onClick={() =>
+                navigateFromModal(router, `/${locale}/${author.username}`)
+              }
+            >
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-foreground">
                   {author.fullName}
                 </span>
                 {author.isVerified && (
-                  <CircleCheck className="h-4 w-4 text-blue-500" />
+                  <Image
+                    src={"/verification-badge.svg"}
+                    alt="Verification Badge"
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                  />
                 )}
               </div>
             </Link>

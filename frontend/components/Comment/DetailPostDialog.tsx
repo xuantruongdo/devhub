@@ -14,10 +14,11 @@ export function DetailPostDialog({ post }: DetailPostDialogProps) {
 
   const handleClose = () => {
     router.back();
-  }
+  };
 
   return (
     <CustomDialog
+      open={true}
       title={""}
       onCancel={handleClose}
       onConfirm={() => {}}

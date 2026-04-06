@@ -108,7 +108,8 @@
     "share": "Chia sẻ",
     "like": "Thích",
     "cancelButton": "Hủy",
-    "deleteButton": "Xóa"
+    "deleteButton": "Xóa",
+    "noPosts": "Chưa có bài viết nào"
   },
   "editPost": {
     "title": "Chỉnh sửa bài viết",
@@ -129,5 +130,24 @@
       "viewMoreReplies": "Xem thêm {{count}} phản hồi",
       "hideReplies": "Ẩn phản hồi"
     }
+  },
+  "profile": {
+    "followers": "Người theo dõi",
+    "following": "Đang theo dõi",
+    "editProfile": "Chỉnh sửa hồ sơ",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "admin": "Quản trị viên",
+    "follow": "Theo dõi",
+    "followingLabel": "Đang theo dõi",
+    "fullName": "Họ và tên",
+    "bio": "Tiểu sử",
+    "location": "Địa điểm",
+    "birthday": "Ngày sinh",
+    "fullNamePlaceholder": "Nhập họ và tên",
+    "bioPlaceholder": "Nhập tiểu sử",
+    "locationPlaceholder": "Thành phố, Quốc gia",
+    "profileUpdatedSuccess": "Cập nhật hồ sơ thành công",
+    "avatarUpdatedSuccess": "Cập nhật ảnh đại diện thành công"
   }
 }

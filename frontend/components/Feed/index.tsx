@@ -12,10 +12,12 @@ import {
   updatePost,
   deletePost,
 } from "@/redux/reducers/feed";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Feed() {
   const dispatch = useAppDispatch();
   const posts = useAppSelector((state) => state.feed);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchFeed = async () => {
@@ -39,7 +41,7 @@ export default function Feed() {
       <div className="flex-1 overflow-y-auto">
         {posts.length === 0 ? (
           <div className="flex items-center justify-center h-24 text-muted-foreground">
-            No posts yet.
+            {t("post.noPosts")}
           </div>
         ) : (
           posts.map((post) => (

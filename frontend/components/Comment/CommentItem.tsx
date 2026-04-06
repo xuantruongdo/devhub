@@ -15,6 +15,9 @@ import { useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { ReplyList } from "./ReplyList";
 import { useTranslation } from "@/hooks/useTranslation";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { navigateFromModal } from "@/lib/utils";
 
 interface CommentItemProps {
   postId: number;
@@ -31,6 +34,7 @@ export function CommentItem({
   onReply,
 }: CommentItemProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
+  const router = useRouter();
   const [replyContent, setReplyContent] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const replyInputRef = useRef<HTMLInputElement | null>(null);
@@ -54,7 +58,12 @@ export function CommentItem({
   return (
     <div className="space-y-2">
       <div className="flex gap-3 relative">
-        <Link href={`/${locale}/${c.author.username}`}>
+        <Link
+          href={`/${locale}/${c.author.username}`}
+          onClick={() =>
+            navigateFromModal(router, `/${locale}/${c.author.username}`)
+          }
+        >
           <Avatar size="sm">
             <AvatarImage src={c.author.avatar} />
             <AvatarFallback>{c.author.fullName.charAt(0)}</AvatarFallback>
@@ -63,8 +72,24 @@ export function CommentItem({
 
         <div className="flex-1">
           <div className="flex justify-between items-start">
-            <Link href={`/${locale}/${c.author.username}`}>
-              <div className="text-sm font-semibold">{c.author.fullName}</div>
+            <Link
+              href={`/${locale}/${c.author.username}`}
+              onClick={() =>
+                navigateFromModal(router, `/${locale}/${c.author.username}`)
+              }
+            >
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold">{c.author.fullName}</div>
+                {c.author.isVerified && (
+                  <Image
+                    src={"/verification-badge.svg"}
+                    alt="Verification Badge"
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                  />
+                )}
+              </div>
             </Link>
 
             {currentUser.id === c.author.id && (

@@ -33,5 +33,19 @@ export const loginSchema = z.object({
   password: z.string().min(6, "auth.login.errors.passwordMin"),
 });
 
+export const editProfileSchema = z.object({
+  fullName: z
+    .string()
+    .nonempty("Full name is required")
+    .max(50, "Full name must be at most 50 characters"),
+  bio: z.string().optional(),
+  website: z.string().url("Website must be a valid URL").optional(),
+  location: z.string().optional(),
+  birthday: z.string().optional(),
+  email: z.string().email().optional(),
+  username: z.string().optional(),
+});
+
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type LoginFormValues = z.infer<typeof loginSchema>;
+export type EditProfileForm = z.infer<typeof editProfileSchema>;

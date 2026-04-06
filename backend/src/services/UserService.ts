@@ -1,18 +1,27 @@
 import { Service } from "typedi";
 import { UserRepo } from "../repositories/UserRepo";
 import bcrypt from "bcrypt";
-import { LoginDto, RegisterDto } from "../dtos/UserDto";
+import {
+  LoginDto,
+  RegisterDto,
+  UpdateMediaDto,
+  UpdateUserDto,
+} from "../dtos/UserDto";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import { generateUsername } from "../libs/utils";
 import { JwtService } from "./JwtService";
 import { Request, Response } from "express";
-import { AuthCodeError } from "../constants/code";
+import { AuthCodeError, UserCodeError } from "../constants/code";
 import { UserProps } from "../types/auth";
+import { PostRepo } from "../repositories/PostRepo";
+import { AppDataSource } from "../config/data-source";
+import { User } from "../entities/User";
 
 @Service()
 export class UserService {
   constructor(
     private readonly userRepo: UserRepo,
+    private readonly postRepo: PostRepo,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -169,11 +178,179 @@ export class UserService {
     }
   }
 
+  async update(
+    id: number,
+    data: UpdateUserDto,
+    currentUser: UserProps,
+    res: Response,
+  ) {
+    try {
+      const user = await this.userRepo.findById(id);
+      if (!user) throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+      if (user.id !== currentUser.id)
+        throw new BadRequestError(UserCodeError.NO_PERMISSION_TO_UPDATE);
+
+      Object.assign(user, data);
+
+      const updatedUser = await this.userRepo.save(user);
+
+      const payload = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+        isVerified: updatedUser.isVerified,
+      };
+      const accessToken = this.jwtService.signAccessToken(payload);
+      const refreshToken = this.jwtService.signRefreshToken(payload);
+
+      updatedUser.refreshToken = refreshToken;
+      await this.userRepo.update(updatedUser.id, { refreshToken });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return { user: updatedUser, accessToken };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async updateMedia(
+    id: number,
+    data: UpdateMediaDto,
+    currentUser: UserProps,
+    res: Response,
+  ) {
+    try {
+      const user = await this.userRepo.findById(id);
+      if (!user) throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+
+      if (user.id !== currentUser.id)
+        throw new BadRequestError(UserCodeError.NO_PERMISSION_TO_UPDATE);
+
+      const updatedUser = await this.userRepo.save(Object.assign(user, data));
+
+      const payload = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+        isVerified: updatedUser.isVerified,
+      };
+      const accessToken = this.jwtService.signAccessToken(payload);
+      const refreshToken = this.jwtService.signRefreshToken(payload);
+
+      updatedUser.refreshToken = refreshToken;
+      await this.userRepo.update(updatedUser.id, { refreshToken });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return { user: updatedUser, accessToken };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
   async findByUsername(username: string, user: UserProps) {
     try {
       return this.userRepo.findByUsername(username, user.id);
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
+  }
+
+  async findPostsByUsername(username: string, user: UserProps) {
+    try {
+      return this.postRepo.findPostsByUsername(username, user.id);
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async toggleFollow(targetUserId: number, currentUserId: number) {
+    return await AppDataSource.transaction(async (manager) => {
+      if (currentUserId === targetUserId) {
+        throw new BadRequestError(UserCodeError.CANNOT_FOLLOW_YOURSELF);
+      }
+
+      const currentUser = await manager.findOne(User, {
+        where: { id: currentUserId },
+        relations: ["followings"],
+      });
+      const targetUser = await manager.findOne(User, {
+        where: { id: targetUserId },
+        relations: ["followers"],
+      });
+
+      if (!currentUser || !targetUser) {
+        throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+      }
+
+      const isFollowing = currentUser.followings.some(
+        (u) => u.id === targetUserId,
+      );
+
+      if (isFollowing) {
+        currentUser.followings = currentUser.followings.filter(
+          (u) => u.id !== targetUserId,
+        );
+        await manager.save(currentUser);
+
+        const updatedTarget = await manager.decrement(
+          User,
+          { id: targetUserId },
+          "followerCount",
+          1,
+        );
+        await manager.decrement(
+          User,
+          { id: currentUserId },
+          "followingCount",
+          1,
+        );
+
+        return {
+          following: false,
+          followerCount:
+            (updatedTarget.raw?.affectedRows ?? targetUser.followerCount) - 1,
+        };
+      } else {
+        currentUser.followings.push(targetUser);
+        await manager.save(currentUser);
+
+        const updatedTarget = await manager.increment(
+          User,
+          { id: targetUserId },
+          "followerCount",
+          1,
+        );
+        await manager.increment(
+          User,
+          { id: currentUserId },
+          "followingCount",
+          1,
+        );
+
+        return {
+          following: true,
+          followerCount:
+            (updatedTarget.raw?.affectedRows ?? targetUser.followerCount) + 1,
+        };
+      }
+    });
   }
 }

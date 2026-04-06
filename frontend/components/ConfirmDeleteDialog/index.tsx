@@ -21,10 +21,9 @@ export function ConfirmDeleteDialog({
   cancelText = "Cancel",
   confirmText = "Delete",
 }: ConfirmDeleteDialogProps) {
-  if (!open) return null;
-
   return (
     <CustomDialog
+      open={open}
       title={title}
       description={description}
       onCancel={onCancel}

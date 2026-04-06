@@ -9,11 +9,12 @@ export interface User {
   avatar: string;
   bio: string;
   website: string;
-  birthday: string;
+  birthday: Date;
   location: string;
 
   isActive: boolean;
   isVerified: boolean;
+  isFollowing: boolean;
 
   lastLogin: string;
 
@@ -25,4 +26,14 @@ export interface User {
   updatedAt: string;
 
   posts: Post[];
+}
+
+export interface UpdateMediaInput {
+  avatar?: string;
+  cover?: string;
+}
+
+export interface UpdateUserResponse {
+  user: User;
+  accessToken: string;
 }

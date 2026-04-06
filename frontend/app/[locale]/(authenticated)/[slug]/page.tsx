@@ -1,35 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { toastError } from "@/lib/toast";
-import { useTranslation } from "@/hooks/useTranslation";
 import Profile from "@/components/Profile";
-import authService from "@/services/auth";
+import userService from "@/services/user";
+import { User } from "@/types/user";
+import { useAppDispatch } from "@/redux/hooks";
+import { setUserPosts } from "@/redux/reducers/userPosts";
 
 export default function ProfilePage() {
   const { slug } = useParams();
-  const [user, setUser] = useState<any>(null);
+
+  const [user, setUser] = useState<User | null>(null);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!slug) return;
-    const fetchPost = async () => {
+
+    const fetchData = async () => {
       try {
-        const { data } = await authService.findByUsername(String(slug));
-        setUser(data);
+        const [userRes, postRes] = await Promise.all([
+          userService.findByUsername(String(slug)),
+          userService.findPostsByUsername(String(slug)),
+        ]);
+
+        setUser(userRes.data);
+        dispatch(setUserPosts(postRes.data));
       } catch (error: any) {
         toastError(error);
       }
     };
 
-    fetchPost();
+    fetchData();
   }, [slug]);
 
   if (!user) return null;
 
-  return (
-    <div className="">
-      <Profile user={user}/>
-    </div>
-  );
+  return <>{user && <Profile user={user} />}</>;
 }
