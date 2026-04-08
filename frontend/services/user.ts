@@ -1,6 +1,7 @@
 import instance from "@/lib/api";
 import { BaseService } from "./base";
 import { UpdateMediaInput } from "@/types/user";
+import { FollowType } from "@/constants";
 
 class UserService extends BaseService {
   constructor() {
@@ -21,6 +22,10 @@ class UserService extends BaseService {
 
   async updateMedia(id: number, data: UpdateMediaInput) {
     return await instance.put(`/users/${id}/media`, data);
+  }
+
+  async getListFollow(id: number, followType: FollowType) {
+    return await instance.get(`/users/${id}/follow/${followType}`);
   }
 }
 

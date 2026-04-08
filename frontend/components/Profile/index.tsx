@@ -9,11 +9,12 @@ import moment from "moment";
 import RightSidebarProfile from "./RightSidebarProfile";
 import Image from "next/image";
 import { useAppSelector } from "@/redux/hooks";
-import { UserRole } from "@/constants";
+import { FollowType, UserRole } from "@/constants";
 import UserPostFeed from "./UserPostFeed";
 import userService from "@/services/user";
 import { useModal } from "@/hooks/useModal";
 import EditProfileDialog from "./EditProfileDialog";
+import UserFollowDialog from "./UserFollowDialog";
 import { uploadStorage } from "@/lib/utils";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -23,6 +24,8 @@ interface ProfileProps {
 }
 
 export default function Profile({ user }: ProfileProps) {
+  const { t, ready } = useTranslation();
+
   const currentUser = useAppSelector((state) => state.currentUser);
   const userPosts = useAppSelector((state) => state.userPosts);
   const isMe = currentUser?.id === user.id;
@@ -31,8 +34,21 @@ export default function Profile({ user }: ProfileProps) {
   const [isFollowing, setIsFollowing] = useState(user.isFollowing);
   const [followerCount, setFollowerCount] = useState(user.followerCount);
 
+  const [followDialogTab, setFollowDialogTab] = useState<FollowType>(
+    FollowType.FOLLOWER,
+  );
+
   const { isOpen, openModal, closeModal } = useModal();
-  const { t, ready } = useTranslation();
+  const {
+    isOpen: isOpenFollow,
+    openModal: openModalFollow,
+    closeModal: closeModalFollow,
+  } = useModal();
+
+  const openFollowDialog = (tab: FollowType) => {
+    setFollowDialogTab(tab);
+    openModalFollow();
+  };
 
   const handleFollow = async () => {
     if (isMe) return;
@@ -198,13 +214,23 @@ export default function Profile({ user }: ProfileProps) {
           </div>
 
           <div className="flex gap-6 mt-4">
-            <button>
+            <button
+              onClick={() => openFollowDialog(FollowType.FOLLOWER)}
+              className="hover:underline underline-offset-2"
+            >
               <span className="font-bold">{followerCount}</span>
-              <span className="ml-2">{t("profile.followers")}</span>
+              <span className="ml-2 text-muted-foreground">
+                {t("profile.followers")}
+              </span>
             </button>
-            <button>
+            <button
+              onClick={() => openFollowDialog(FollowType.FOLLOWING)}
+              className="hover:underline underline-offset-2"
+            >
               <span className="font-bold">{user.followingCount}</span>
-              <span className="ml-2">{t("profile.following")}</span>
+              <span className="ml-2 text-muted-foreground">
+                {t("profile.following")}
+              </span>
             </button>
           </div>
 
@@ -221,6 +247,13 @@ export default function Profile({ user }: ProfileProps) {
         open={isOpen}
         onClose={closeModal}
         onUpdated={(updatedUser) => Object.assign(user, updatedUser)}
+      />
+
+      <UserFollowDialog
+        user={user}
+        open={isOpenFollow}
+        defaultTab={followDialogTab}
+        onClose={closeModalFollow}
       />
     </div>
   );

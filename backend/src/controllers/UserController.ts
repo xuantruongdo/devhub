@@ -69,12 +69,13 @@ export class UserController {
     return await this.userService.toggleFollow(targetUserId, user.id);
   }
 
-  @Get("/follow/:followType")
+  @Get("/:id/follow/:followType")
   async getListFollow(
+    @Param("id") id: number,
     @Param("followType") followType: FollowType,
     @CurrentUser() user: UserProps,
   ) {
-    // return await this.userService.getListFollow(followType);
+    return await this.userService.getListFollow(id, followType, user);
   }
 
   @Public()

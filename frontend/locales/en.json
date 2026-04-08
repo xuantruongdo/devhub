@@ -148,6 +148,8 @@
     "bioPlaceholder": "Enter your bio",
     "locationPlaceholder": "City, Country",
     "profileUpdatedSuccess": "Profile updated successfully",
-    "avatarUpdatedSuccess": "Avatar changed successfully"
+    "avatarUpdatedSuccess": "Avatar changed successfully",
+    "noFollowers": "No followers yet.",
+    "noFollowing": "Not following anyone yet."
   }
 }

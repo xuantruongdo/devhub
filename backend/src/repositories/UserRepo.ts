@@ -2,6 +2,7 @@ import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
 import { FindUserOptions, UserProps } from "../types/auth";
+import { FindOptionsWhere } from "typeorm";
 
 @Service()
 export class UserRepo {
@@ -50,6 +51,32 @@ export class UserRepo {
     return this.repo.findOne({
       where: { email },
     });
+  }
+
+  async findOne(
+    where: FindOptionsWhere<User>,
+    options?: {
+      relations?: string[];
+    },
+  ): Promise<User | null> {
+    const { relations } = options || {};
+
+    const user = await this.repo.findOne({
+      where,
+      relations,
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        avatar: true,
+        isVerified: true,
+        role: true,
+        followers: true,
+        followings: true,
+      },
+    });
+
+    return user;
   }
 
   async save(user: User): Promise<User> {

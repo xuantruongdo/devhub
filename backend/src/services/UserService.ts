@@ -16,6 +16,7 @@ import { UserProps } from "../types/auth";
 import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
+import { FollowType } from "../constants";
 
 @Service()
 export class UserService {
@@ -352,5 +353,43 @@ export class UserService {
         };
       }
     });
+  }
+
+  async getListFollow(
+    id: number,
+    followType: FollowType,
+    currentUser: UserProps,
+  ) {
+    try {
+      const user = await this.userRepo.findOne(
+        { id },
+        {
+          relations: [
+            "followers",
+            "followers.followers",
+            "followings",
+            "followings.followers",
+          ],
+        },
+      );
+
+      if (!user) {
+        throw new BadRequestError("User not found");
+      }
+
+      const followUsers =
+        followType === FollowType.FOLLOWER ? user.followers : user.followings;
+
+      return followUsers.map((u) => ({
+        id: u.id,
+        username: u.username,
+        fullName: u.fullName,
+        avatar: u.avatar,
+        isVerified: u.isVerified,
+        isFollowing: !!u.followers.find((f) => f.id === currentUser.id),
+      }));
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
   }
 }
