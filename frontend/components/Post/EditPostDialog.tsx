@@ -91,10 +91,11 @@ export function EditPostDialog({
     }
   };
 
-  if (!open || !ready) return null;
+  if (!ready) return null;
 
   return (
     <CustomDialog
+      open={open}
       title={t("editPost.title")}
       onCancel={onCancel}
       onConfirm={handleConfirm}

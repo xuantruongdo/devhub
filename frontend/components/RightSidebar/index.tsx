@@ -54,7 +54,7 @@ export default function RightSidebar() {
   };
 
   return (
-    <aside className="hidden xl:flex w-80 bg-card flex-col overflow-y-auto border-l border-border">
+    <aside className="hidden xl:flex w-80 bg-card flex-col border-l border-border overflow-hidden">
       <div className="p-4">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />

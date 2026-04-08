@@ -28,6 +28,7 @@ import { Input } from "../ui/input";
 import { useState, useRef, useEffect } from "react";
 import { CurrentUserResponse } from "@/types/auth";
 import Link from "next/link";
+import { Locale } from "@/types/i18n";
 
 const FAKE_USERS = [
   {
@@ -449,10 +450,12 @@ function UserDropdown({
   user,
   onLogout,
   t,
+  locale,
 }: {
   user: CurrentUserResponse;
   onLogout: () => void;
   t: (key: string) => string;
+  locale: Locale;
 }) {
   return (
     <DropdownMenu>
@@ -469,10 +472,12 @@ function UserDropdown({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56">
-        <div className="px-3 py-2 border-b">
-          <p className="text-sm font-semibold">{user.fullName}</p>
-          <p className="text-xs text-muted-foreground">@{user.username}</p>
-        </div>
+        <Link href={`/${locale}/${user.username}`}>
+          <div className="px-3 py-2 border-b">
+            <p className="text-sm font-semibold">{user.fullName}</p>
+            <p className="text-xs text-muted-foreground">@{user.username}</p>
+          </div>
+        </Link>
 
         <div className="sm:hidden">
           <DropdownMenuItem>
@@ -642,11 +647,11 @@ export default function Header() {
           <LanguageToggle />
           <ModeToggle />
 
-          <UserDropdown user={user} onLogout={onLogout} t={t} />
+          <UserDropdown user={user} onLogout={onLogout} t={t} locale={locale} />
         </div>
 
         <div className="sm:hidden">
-          <UserDropdown user={user} onLogout={onLogout} t={t} />
+          <UserDropdown user={user} onLogout={onLogout} t={t} locale={locale} />
         </div>
       </div>
     </header>

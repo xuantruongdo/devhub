@@ -1,7 +1,6 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
-import { FindOptionsWhere } from "typeorm";
 import { Comment } from "../entities/Comment";
 
 @Service()
@@ -33,6 +32,7 @@ export class PostRepo {
    * @returns Danh sách các post được sắp xếp theo feed
    */
   async findAllFeed(currentUserId: number, followingsIds: number[]) {
+    console.log("==followingsIds", followingsIds);
     const query = this.repo
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
@@ -69,15 +69,11 @@ export class PostRepo {
 
     if (followingsIds?.length) {
       query
-        .addSelect(
-          `CASE 
-          WHEN post.authorId IN (:...followingsIds) THEN 1
-          ELSE 0
-        END`,
-          "isFollowingPost",
+        .addOrderBy(
+          `CASE WHEN post.authorId IN (:...followingsIds) THEN 1 ELSE 0 END`,
+          "DESC",
         )
-        .setParameter("followingsIds", followingsIds)
-        .orderBy("isFollowingPost", "DESC");
+        .setParameter("followingsIds", followingsIds);
     }
 
     query
@@ -90,6 +86,62 @@ export class PostRepo {
 
     return entities.map((post) => {
       const found = raw.find((r) => r.post_id === post.id);
+      return {
+        ...post,
+        isLiked: !!found?.isLiked,
+      };
+    });
+  }
+
+  async findPostsByUsername(username: string, currentUserId: number) {
+    const query = this.repo
+      .createQueryBuilder("post")
+      .leftJoinAndSelect("post.author", "author")
+
+      // check isLiked
+      .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
+        currentUserId,
+      })
+
+      .select([
+        "post",
+        "author.id",
+        "author.username",
+        "author.fullName",
+        "author.email",
+        "author.avatar",
+        "author.isVerified",
+      ])
+
+      .addSelect(
+        `CASE 
+        WHEN like.id IS NOT NULL THEN 1
+        ELSE 0
+      END`,
+        "isLiked",
+      )
+
+      // lọc theo username
+      .where("author.username = :username", { username })
+
+      // visibility rule
+      .andWhere(
+        `(post.visibility = :publicVisibility 
+        OR author.id = :currentUserId)`,
+        {
+          publicVisibility: "public",
+          currentUserId,
+        },
+      )
+
+      // sort mới nhất
+      .orderBy("post.createdAt", "DESC");
+
+    const { entities, raw } = await query.getRawAndEntities();
+
+    return entities.map((post) => {
+      const found = raw.find((r) => r.post_id === post.id);
+
       return {
         ...post,
         isLiked: !!found?.isLiked,
@@ -274,21 +326,5 @@ export class PostRepo {
 
   async remove(post: Post) {
     return this.repo.remove(post);
-  }
-
-  async increment(
-    conditions: FindOptionsWhere<Post>,
-    field: keyof Post,
-    value: number,
-  ) {
-    return this.repo.increment(conditions, field as string, value);
-  }
-
-  async decrement(
-    conditions: FindOptionsWhere<Post>,
-    field: keyof Post,
-    value: number,
-  ) {
-    return this.repo.decrement(conditions, field as string, value);
   }
 }

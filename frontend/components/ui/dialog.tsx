@@ -155,6 +155,7 @@ function DialogDescription({
 }
 
 interface CustomDialogProps {
+  open: boolean;
   title: string;
   description?: string;
   onCancel: () => void;
@@ -170,6 +171,7 @@ interface CustomDialogProps {
 }
 
 function CustomDialog({
+  open,
   title,
   description,
   onCancel,
@@ -198,7 +200,7 @@ function CustomDialog({
   const showFooter = !hideCancelButton || !hideConfirmButton;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open={open} onOpenChange={(openState) => !openState && onCancel()}>
       <DialogContent showCloseButton={false} className={className}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

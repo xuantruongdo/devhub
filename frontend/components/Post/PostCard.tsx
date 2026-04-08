@@ -5,11 +5,8 @@ import {
   MessageCircle,
   Share,
   MoreHorizontal,
-  CircleCheck,
   Edit,
   Trash2,
-  Globe,
-  Lock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Post } from "@/types/post";
@@ -86,7 +83,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   if (!ready) return null;
 
   return (
-    <article className="border-b border-border px-4 sm:px-6 py-4 hover:bg-muted/30 transition">
+    <article className="border-b border-border p-4 hover:bg-muted/30 transition">
       <div className="flex gap-3 sm:gap-4">
         <Link href={`/${locale}/${author.username}`}>
           <Avatar size="lg">
@@ -111,7 +108,13 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                   {author.fullName}
                 </Link>
                 {author.isVerified && (
-                  <CircleCheck className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <Image
+                    src={"/verification-badge.svg"}
+                    alt="Verification Badge"
+                    width={20}
+                    height={20}
+                    className="object-cover"
+                  />
                 )}
               </div>
               <p className="text-muted-foreground truncate hidden sm:block">

@@ -47,3 +47,10 @@ export async function uploadStorage(files: File[]) {
 
   return success;
 }
+
+export const navigateFromModal = (router: any, url: string) => {
+  router.back();
+  setTimeout(() => {
+    router.push(url);
+  }, 50);
+};

@@ -25,7 +25,14 @@ function resolveIcon(
   return AUTO_ICON[name] ?? AUTO_ICON[type ?? ""] ?? undefined;
 }
 
-type InputType = "text" | "email" | "password" | "number" | "tel" | "url";
+type InputType =
+  | "text"
+  | "email"
+  | "password"
+  | "number"
+  | "tel"
+  | "url"
+  | "date";
 
 interface CustomFieldProps<T extends FieldValues> {
   name: Path<T>;

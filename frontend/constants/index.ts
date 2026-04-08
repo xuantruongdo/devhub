@@ -21,3 +21,13 @@ export enum PostVisibility {
 }
 
 export const MAX_COUNT_FILE = 5;
+
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
+}
+
+export enum FollowType {
+  FOLLOWING = "followings",
+  FOLLOWER = "followers",
+}

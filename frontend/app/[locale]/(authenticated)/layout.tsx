@@ -37,10 +37,9 @@ const AuthenticatedLayout = ({ children, modal }: AuthenticatedLayoutProps) => {
   if (loading) return <LoadingPage />;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 overflow-hidden">{children}</div>
-
       {modal}
     </div>
   );
