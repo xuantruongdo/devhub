@@ -17,7 +17,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 export default function Feed() {
   const dispatch = useAppDispatch();
   const posts = useAppSelector((state) => state.feed);
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
 
   useEffect(() => {
     const fetchFeed = async () => {
@@ -31,6 +31,8 @@ export default function Feed() {
 
     fetchFeed();
   }, [dispatch]);
+
+  if (!ready) return null;
 
   return (
     <div className="flex-1 min-h-0 border-r border-border bg-card flex flex-col">

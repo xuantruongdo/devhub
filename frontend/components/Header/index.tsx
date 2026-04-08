@@ -564,8 +564,6 @@ export default function Header() {
     }
   };
 
-  if (!ready) return null;
-
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
       <div className="flex h-16 items-center justify-between px-3 sm:px-6 gap-2">

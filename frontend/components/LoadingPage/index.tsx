@@ -1,17 +1,10 @@
 "use client";
 
+import { useTranslation } from "@/hooks/useTranslation";
 import { Loader2 } from "lucide-react";
 
-interface LoadingPageProps {
-  loading?: boolean;
-  children?: React.ReactNode;
-}
-
-export default function LoadingPage({
-  loading = true,
-  children,
-}: LoadingPageProps) {
-  if (!loading) return <>{children}</>;
+export default function LoadingPage() {
+  const { t, ready } = useTranslation();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -22,12 +15,14 @@ export default function LoadingPage({
 
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 
-        <div className="text-center">
-          <p className="text-sm text-foreground">Loading...</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Connecting developers...
-          </p>
-        </div>
+        {ready && (
+          <div className="text-center">
+            <p className="text-sm text-foreground">{t("loading.title")}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("loading.description")}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

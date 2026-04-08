@@ -151,5 +151,9 @@
     "avatarUpdatedSuccess": "Avatar changed successfully",
     "noFollowers": "No followers yet.",
     "noFollowing": "Not following anyone yet."
+  },
+  "loading": {
+    "title": "Loading...",
+    "description": "Connecting developers..."
   }
 }

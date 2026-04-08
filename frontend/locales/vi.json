@@ -151,5 +151,9 @@
     "avatarUpdatedSuccess": "Cập nhật ảnh đại diện thành công",
     "noFollowers": "Chưa có người theo dõi.",
     "noFollowing": "Chưa theo dõi ai."
+  },
+  "loading": {
+    "title": "Đang tải...",
+    "description": "Đang kết nối các lập trình viên..."
   }
 }
