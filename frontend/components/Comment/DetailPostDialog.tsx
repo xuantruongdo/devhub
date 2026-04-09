@@ -25,6 +25,7 @@ export function DetailPostDialog({ post }: DetailPostDialogProps) {
       className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
       hideCancelButton={true}
       hideConfirmButton={true}
+      contentClassName="overflow-y-hidden"
     >
       <DetailPostContent post={post} onCloseDetailPost={handleClose} />
     </CustomDialog>

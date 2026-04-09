@@ -56,6 +56,7 @@ const FollowUserList: FC<FollowUserListProps> = ({
       hideCancelButton
       hideConfirmButton
       className="sm:max-w-2xl overflow-y-auto"
+      contentClassName="overflow-y-hidden"
     >
 
         <div className="flex flex-col divide-y divide-border">

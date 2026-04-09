@@ -3,13 +3,15 @@
 import { useState, forwardRef, useImperativeHandle, useRef } from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Send } from "lucide-react";
+import { Send, Smile } from "lucide-react";
 import { Button } from "../ui/button";
 import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
 import { Comment } from "@/types/post";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import { EmojiPickerDropdown } from "../EmojiPickerDropdown";
+import { useModal } from "@/hooks/useModal";
 
 interface CommentInputProps {
   postId: number;
@@ -25,6 +27,11 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
     const currentUser = useAppSelector((state) => state.currentUser);
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
+    const {
+      isOpen: isOpenEmoji,
+      closeModal: closeModalEmoji,
+      toggleModal: toggleModalEmoji,
+    } = useModal();
     const { t, locale, ready } = useTranslation();
 
     const inputRef = useRef<HTMLInputElement>(null);
@@ -50,47 +57,72 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
       }
     };
 
+    const onEmojiClick = (emojiData: any) => {
+      setContent((prev) => prev + emojiData.emoji);
+    };
+
     if (!ready) return null;
 
     return (
-      <div className="flex gap-3 items-center">
-        <Link href={`/${locale}/${currentUser.username}`}>
-          <Avatar size="lg">
-            {currentUser?.avatar ? (
-              <AvatarImage src={currentUser.avatar} />
-            ) : (
-              <AvatarFallback>
-                {currentUser?.fullName?.charAt(0) ?? "?"}
-              </AvatarFallback>
-            )}
-          </Avatar>
-        </Link>
+      <div className="flex flex-col gap-1">
+        <div className="flex gap-3 items-center">
+          <Link href={`/${locale}/${currentUser.username}`}>
+            <Avatar size="lg">
+              {currentUser?.avatar ? (
+                <AvatarImage src={currentUser.avatar} />
+              ) : (
+                <AvatarFallback>
+                  {currentUser?.fullName?.charAt(0) ?? "?"}
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </Link>
 
-        <div className="flex-1 flex items-center gap-2 bg-muted rounded-full px-4 py-2">
-          <input
-            ref={inputRef}
-            type="text"
-            className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
-            placeholder={t("comment.placeholder")}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                onComment();
-              }
-            }}
-          />
-          <Button
-            onClick={onComment}
-            disabled={!content.trim()}
-            className="cursor-pointer"
-            loading={loading}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <div className="flex-1 flex items-center gap-2 bg-muted rounded-full px-4 py-2 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
+              placeholder={t("comment.placeholder")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onComment();
+                }
+              }}
+            />
+
+            <button
+              type="button"
+              className="p-1 text-gray-500 hover:text-gray-700"
+              onClick={toggleModalEmoji}
+            >
+              <Smile className="h-5 w-5" />
+            </button>
+
+            <Button
+              onClick={onComment}
+              disabled={!content.trim()}
+              className="cursor-pointer"
+              loading={loading}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+
+            {isOpenEmoji && (
+              <EmojiPickerDropdown
+                onEmojiClick={onEmojiClick}
+                onClose={closeModalEmoji}
+                className="absolute top-[50px] right-0 z-50"
+              />
+            )}
+          </div>
         </div>
       </div>
     );
   },
 );
+
+CommentInput.displayName = "CommentInput";
