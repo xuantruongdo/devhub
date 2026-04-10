@@ -82,7 +82,20 @@
   "header": {
     "searchPlaceholder": "Search posts, people...",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "notification": {
+      "title": "Notifications",
+      "markAll": "Mark all as read",
+      "viewAll": "View all notifications →",
+      "new": "You have a new notification",
+      "likePost": "liked your post",
+      "comment": "commented on your post",
+      "likeComment": "liked your comment",
+      "follow": "followed you",
+      "loading": "Loading...",
+      "noMore": "No more notifications",
+      "viewMore": "View more"
+    }
   },
   "composePost": {
     "placeholder": "What's on your mind?",

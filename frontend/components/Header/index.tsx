@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Bell,
-  LogOut,
-  MessageCircle,
-  Search,
-  Settings,
-  X,
-  CheckCheck,
-} from "lucide-react";
+import { Bell, LogOut, MessageCircle, Search, Settings, X } from "lucide-react";
 import { ModeToggle } from "../ModeToggle";
 import { LanguageToggle } from "../LanguageToggle";
 import { useAppSelector } from "@/redux/hooks";
@@ -29,6 +21,7 @@ import { useState, useRef, useEffect } from "react";
 import { CurrentUserResponse } from "@/types/auth";
 import Link from "next/link";
 import { Locale } from "@/types/i18n";
+import { NotificationPanel } from "../Notification/NotificationPanel";
 
 const FAKE_USERS = [
   {
@@ -83,54 +76,6 @@ const FAKE_POSTS = [
     id: 3,
     title: "Giới thiệu Next.js 15 App Router",
     tags: ["nextjs", "frontend"],
-  },
-];
-
-const FAKE_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "like",
-    read: false,
-    time: "2 phút trước",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=An",
-    message: "Nguyễn Văn An đã thích bài viết của bạn",
-    sub: "Cách tối ưu React re-renders...",
-  },
-  {
-    id: 2,
-    type: "comment",
-    read: false,
-    time: "15 phút trước",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bich",
-    message: "Trần Thị Bích đã bình luận về bài viết của bạn",
-    sub: '"Bài viết rất hay, cảm ơn bạn!"',
-  },
-  {
-    id: 3,
-    type: "follow",
-    read: false,
-    time: "1 giờ trước",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Cuong",
-    message: "Lê Minh Cường đã bắt đầu theo dõi bạn",
-    sub: "",
-  },
-  {
-    id: 4,
-    type: "mention",
-    read: true,
-    time: "3 giờ trước",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dung",
-    message: "Phạm Hồng Dung đã đề cập đến bạn trong bình luận",
-    sub: '"@you xem thử cách này nhé!"',
-  },
-  {
-    id: 5,
-    type: "like",
-    read: true,
-    time: "Hôm qua",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Em",
-    message: "Hoàng Đức Em và 12 người khác đã thích bài viết",
-    sub: "Docker Compose cho môi trường...",
   },
 ];
 
@@ -270,100 +215,6 @@ function SearchDropdown({ query }: { query: string }) {
   );
 }
 
-function NotificationPanel({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [notifications, setNotifications] = useState(FAKE_NOTIFICATIONS);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const markAllRead = () =>
-    setNotifications((n) => n.map((x) => ({ ...x, read: true })));
-  const markRead = (id: number) =>
-    setNotifications((n) =>
-      n.map((x) => (x.id === id ? { ...x, read: true } : x)),
-    );
-
-  if (!open) return null;
-
-  return (
-    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-sm">Thông báo</h3>
-          {unreadCount > 0 && (
-            <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
-              {unreadCount}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllRead}
-              className="text-xs text-primary hover:underline flex items-center gap-1"
-            >
-              <CheckCheck className="w-3 h-3" />
-              Đọc tất cả
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-muted rounded-full ml-2"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-      </div>
-
-      <div className="max-h-[400px] overflow-y-auto">
-        {notifications.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => markRead(n.id)}
-            className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/60 transition-colors text-left border-b border-border/50 last:border-0 ${
-              !n.read ? "bg-primary/5" : ""
-            }`}
-          >
-            <div className="relative flex-shrink-0">
-              <img
-                src={n.avatar}
-                alt=""
-                className="w-10 h-10 rounded-full bg-muted"
-              />
-              {!n.read && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-card" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className={`text-sm leading-snug ${!n.read ? "font-medium" : "text-muted-foreground"}`}
-              >
-                {n.message}
-              </p>
-              {n.sub && (
-                <p className="text-xs text-muted-foreground mt-0.5 truncate italic">
-                  {n.sub}
-                </p>
-              )}
-              <p className="text-xs text-primary mt-1">{n.time}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 py-2 border-t border-border">
-        <button className="text-xs text-primary hover:underline w-full text-center">
-          Xem tất cả thông báo →
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function MessagesPanel({
   open,
   onClose,
@@ -451,12 +302,16 @@ function UserDropdown({
   onLogout,
   t,
   locale,
+  unreadNotifs,
 }: {
   user: CurrentUserResponse;
   onLogout: () => void;
   t: (key: string) => string;
   locale: Locale;
+  unreadNotifs: number;
 }) {
+  const router = useRouter();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -480,9 +335,26 @@ function UserDropdown({
         </Link>
 
         <div className="sm:hidden">
-          <DropdownMenuItem>
-            <Bell className="mr-2 h-4 w-4" />
-            Notifications
+          <DropdownMenuItem
+            onClick={() => router.push(`/${locale}/notification`)}
+            className="flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Bell className="h-4 w-4" />
+                {unreadNotifs > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </div>
+
+              <span>{t("header.notification.title")}</span>
+            </div>
+
+            {unreadNotifs > 0 && (
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+                {unreadNotifs}
+              </span>
+            )}
           </DropdownMenuItem>
 
           <DropdownMenuItem>
@@ -524,8 +396,9 @@ function UserDropdown({
 
 export default function Header() {
   const user = useAppSelector((state) => state.currentUser);
+  const notifications = useAppSelector((state) => state.notifications);
   const router = useRouter();
-  const { t, locale, ready } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -535,7 +408,7 @@ export default function Header() {
   const notifRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
 
-  const unreadNotifs = FAKE_NOTIFICATIONS.filter((n) => !n.read).length;
+  const unreadNotifs = notifications.filter((n) => !n.isRead).length;
   const unreadMsgs = FAKE_MESSAGES.reduce((sum, m) => sum + m.unread, 0);
 
   useEffect(() => {
@@ -645,11 +518,23 @@ export default function Header() {
           <LanguageToggle />
           <ModeToggle />
 
-          <UserDropdown user={user} onLogout={onLogout} t={t} locale={locale} />
+          <UserDropdown
+            user={user}
+            onLogout={onLogout}
+            t={t}
+            locale={locale}
+            unreadNotifs={unreadNotifs}
+          />
         </div>
 
         <div className="sm:hidden">
-          <UserDropdown user={user} onLogout={onLogout} t={t} locale={locale} />
+          <UserDropdown
+            user={user}
+            onLogout={onLogout}
+            t={t}
+            locale={locale}
+            unreadNotifs={unreadNotifs}
+          />
         </div>
       </div>
     </header>

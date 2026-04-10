@@ -18,12 +18,15 @@ import { Post } from "../entities/Post";
 import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
 import { CommentLike } from "../entities/CommentLike";
+import { NotificationService } from "./Notification";
+import { NotificationType } from "../entities/Notification";
 
 @Service()
 export class PostService {
   constructor(
     private readonly postRepo: PostRepo,
     private readonly userRepo: UserRepo,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async findOne(id: number, user: UserProps) {
@@ -136,6 +139,13 @@ export class PostService {
 
         await manager.increment(Post, { id: postId }, "likeCount", 1);
 
+        await this.notificationService.create({
+          recipientId: post.authorId,
+          senderId: user.id,
+          type: NotificationType.LIKE_POST,
+          postId: post.id,
+        });
+
         return { liked: true };
       });
     } catch (error: any) {
@@ -157,6 +167,18 @@ export class PostService {
         });
 
         await manager.increment(Post, { id }, "commentCount", 1);
+
+        const post = await manager.findOne(Post, { where: { id } });
+
+        if (post) {
+          await this.notificationService.create({
+            recipientId: post.authorId,
+            senderId: user.id,
+            type: NotificationType.COMMENT,
+            postId: id,
+            commentId: comment.id,
+          });
+        }
 
         const normalizeComment = await manager
           .createQueryBuilder(Comment, "comment")
@@ -260,6 +282,14 @@ export class PostService {
         });
 
         await manager.increment(Comment, { id: commentId }, "likeCount", 1);
+
+        await this.notificationService.create({
+          recipientId: comment.authorId,
+          senderId: user.id,
+          type: NotificationType.LIKE_COMMENT,
+          postId: comment.postId,
+          commentId: comment.id,
+        });
 
         return { liked: true };
       });
