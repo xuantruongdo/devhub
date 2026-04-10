@@ -18,13 +18,16 @@ import UserFollowDialog from "./UserFollowDialog";
 import { uploadStorage } from "@/lib/utils";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useRouter } from "next/navigation";
+import chatService from "@/services/chat";
 
 interface ProfileProps {
   user: User;
 }
 
 export default function Profile({ user }: ProfileProps) {
-  const { t, ready } = useTranslation();
+  const { t, locale, ready } = useTranslation();
+  const router = useRouter();
 
   const currentUser = useAppSelector((state) => state.currentUser);
   const userPosts = useAppSelector((state) => state.userPosts);
@@ -64,6 +67,21 @@ export default function Profile({ user }: ProfileProps) {
     } catch (error: any) {
       setIsFollowing((prev) => !prev);
       toastError(error);
+    }
+  };
+
+  const handleMessage = async () => {
+    if (isMe) return;
+
+    try {
+      const { data } = await chatService.accessConversation({
+        userId: user.id,
+      });
+
+      router.push(`/${locale}/messages/${data.id}`);
+    } catch (error: any) {
+      toastError(error);
+    } finally {
     }
   };
 
@@ -139,18 +157,19 @@ export default function Profile({ user }: ProfileProps) {
             </div>
 
             {!isMe && (
-              <Button
-                onClick={handleFollow}
-                className={`transition-all duration-200 ${
-                  isFollowing
-                    ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90"
-                }`}
-              >
-                {isFollowing
-                  ? t("profile.followingLabel")
-                  : t("profile.follow")}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleMessage}>
+                  Message
+                </Button>
+                <Button
+                  variant={isFollowing ? "outline" : "default"}
+                  onClick={handleFollow}
+                >
+                  {isFollowing
+                    ? t("profile.followingLabel")
+                    : t("profile.follow")}
+                </Button>
+              </div>
             )}
           </div>
 

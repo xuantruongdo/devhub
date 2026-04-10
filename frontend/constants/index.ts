@@ -1,4 +1,5 @@
 export const LIMIT = 10;
+export const MESSAGE_LIMIT = 20;
 
 export enum LocaleType {
   EN = "en",
@@ -37,4 +38,10 @@ export enum NotificationType {
   LIKE_COMMENT = "like_comment",
   COMMENT = "comment",
   FOLLOW = "follow",
+}
+
+export enum MessageType {
+  TEXT = "text",
+  IMAGE = "image",
+  FILE = "file",
 }

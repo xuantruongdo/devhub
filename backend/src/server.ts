@@ -14,6 +14,7 @@ import cookieParser from "cookie-parser";
 import { PostController } from "./controllers/PostController";
 import { StorageController } from "./controllers/StorageController";
 import { NotificationController } from "./controllers/NotificationController";
+import { ChatController } from "./controllers/ChatController";
 
 useContainer(Container);
 
@@ -37,6 +38,7 @@ AppDataSource.initialize()
         PostController,
         StorageController,
         NotificationController,
+        ChatController,
       ],
       middlewares: [ErrorHandler, AuthMiddleware],
       authorizationChecker: authorizationChecker,
