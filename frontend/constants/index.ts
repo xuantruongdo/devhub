@@ -31,3 +31,10 @@ export enum FollowType {
   FOLLOWING = "followings",
   FOLLOWER = "followers",
 }
+
+export enum NotificationType {
+  LIKE_POST = "like_post",
+  LIKE_COMMENT = "like_comment",
+  COMMENT = "comment",
+  FOLLOW = "follow",
+}

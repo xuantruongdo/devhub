@@ -82,7 +82,20 @@
   "header": {
     "searchPlaceholder": "Tìm kiếm bài viết, người dùng...",
     "settings": "Cài đặt",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "notification": {
+      "title": "Thông báo",
+      "markAll": "Đọc tất cả",
+      "viewAll": "Xem tất cả thông báo →",
+      "new": "Bạn có thông báo mới",
+      "likePost": "đã thích bài viết của bạn",
+      "comment": "đã bình luận bài viết của bạn",
+      "likeComment": "đã thích bình luận của bạn",
+      "follow": "đã theo dõi bạn",
+      "loading": "Đang tải...",
+      "noMore": "Không còn thông báo",
+      "viewMore": "Xem thêm"
+    }
   },
   "composePost": {
     "placeholder": "Bạn đang nghĩ gì?",

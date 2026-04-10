@@ -13,6 +13,7 @@ import {
 import cookieParser from "cookie-parser";
 import { PostController } from "./controllers/PostController";
 import { StorageController } from "./controllers/StorageController";
+import { NotificationController } from "./controllers/NotificationController";
 
 useContainer(Container);
 
@@ -31,7 +32,12 @@ AppDataSource.initialize()
     });
 
     useExpressServer(app, {
-      controllers: [UserController, PostController, StorageController],
+      controllers: [
+        UserController,
+        PostController,
+        StorageController,
+        NotificationController,
+      ],
       middlewares: [ErrorHandler, AuthMiddleware],
       authorizationChecker: authorizationChecker,
       currentUserChecker: async (action: Action) => {

@@ -32,7 +32,6 @@ export class PostRepo {
    * @returns Danh sách các post được sắp xếp theo feed
    */
   async findAllFeed(currentUserId: number, followingsIds: number[]) {
-    console.log("==followingsIds", followingsIds);
     const query = this.repo
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")

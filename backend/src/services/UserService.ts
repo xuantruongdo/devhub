@@ -17,6 +17,8 @@ import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
 import { FollowType } from "../constants";
+import { NotificationService } from "./Notification";
+import { NotificationType } from "../entities/Notification";
 
 @Service()
 export class UserService {
@@ -24,6 +26,7 @@ export class UserService {
     private readonly userRepo: UserRepo,
     private readonly postRepo: PostRepo,
     private readonly jwtService: JwtService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async register(data: RegisterDto) {
@@ -306,6 +309,7 @@ export class UserService {
       );
 
       if (isFollowing) {
+        // UNFOLLOW
         currentUser.followings = currentUser.followings.filter(
           (u) => u.id !== targetUserId,
         );
@@ -330,6 +334,7 @@ export class UserService {
             (updatedTarget.raw?.affectedRows ?? targetUser.followerCount) - 1,
         };
       } else {
+        // FOLLOW
         currentUser.followings.push(targetUser);
         await manager.save(currentUser);
 
@@ -345,6 +350,12 @@ export class UserService {
           "followingCount",
           1,
         );
+
+        await this.notificationService.create({
+          recipientId: targetUserId,
+          senderId: currentUserId,
+          type: NotificationType.FOLLOW,
+        });
 
         return {
           following: true,
