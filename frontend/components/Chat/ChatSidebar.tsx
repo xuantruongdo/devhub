@@ -1,7 +1,7 @@
 "use client";
 
 import { toastError } from "@/lib/toast";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import chatService from "@/services/chat";
 import { Conversation } from "@/types/chat";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,8 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { ConversationSkeleton } from "./ConversationSkeleton";
 import { MessageType } from "@/constants";
 import moment from "moment";
-import { isMe } from "@/lib/utils";
+import { getOtherUser, getUnread, isMe } from "@/lib/utils";
+import { setSelectedConversation } from "@/redux/reducers/conversation";
 
 export default function ChatSidebar({ activeId }: { activeId: number | null }) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -28,13 +30,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
 
         const { data } = await chatService.getMyConversations();
 
-        const uniqueConversations = Array.from(
-          new Map(
-            data.map((p: any) => [p.conversation.id, p.conversation]),
-          ).values(),
-        );
-
-        setConversations(uniqueConversations);
+        setConversations(data.map((c) => c.conversation));
       } catch (error: any) {
         toastError(error);
       } finally {
@@ -45,20 +41,20 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
     fetchConversations();
   }, []);
 
-  const getUnread = (c: Conversation) => {
-    const me = c.participants?.find((p) => isMe(p.userId, currentUser.id));
+  useEffect(() => {
+    if (!activeId || conversations.length === 0) return;
 
-    return me?.unreadCount ?? 0;
-  };
+    const selected = conversations.find((c) => c.id === activeId);
 
-  const getOtherUser = (c: Conversation) => {
-    return c.participants.find((p) => !isMe(p.userId, currentUser.id))?.user;
-  };
+    if (selected) {
+      dispatch(setSelectedConversation(selected));
+    }
+  }, [activeId, conversations, dispatch]);
 
-  const handleOpenConversation = (conversationId: number) => {
+  const handleOpenConversation = (conversation: Conversation) => {
     setConversations((prev) =>
       prev.map((c) => {
-        if (c.id !== conversationId) return c;
+        if (c.id !== conversation.id) return c;
 
         return {
           ...c,
@@ -75,7 +71,9 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
       }),
     );
 
-    router.push(`/${locale}/messages/${conversationId}`);
+    dispatch(setSelectedConversation(conversation));
+
+    router.push(`/${locale}/messages/${conversation.id}`);
     window.scrollTo({ top: 0 });
   };
 
@@ -97,8 +95,8 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
         )}
         {conversations.length > 0
           ? conversations.map((c) => {
-              const otherUser = getOtherUser(c);
-              const unread = getUnread(c);
+              const otherUser = getOtherUser(c, currentUser.id);
+              const unread = getUnread([c], currentUser.id);
 
               const displayName = c.isGroup
                 ? c.title || t("chat.sidebar.unknown")
@@ -111,7 +109,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
               return (
                 <button
                   key={c.id}
-                  onClick={() => handleOpenConversation(c.id)}
+                  onClick={() => handleOpenConversation(c)}
                   className={`
                   w-full flex items-center gap-3 px-4 py-3 text-left
                   hover:bg-gray-100 dark:hover:bg-white/10

@@ -3,7 +3,7 @@
 import { Bell, LogOut, MessageCircle, Search, Settings, X } from "lucide-react";
 import { ModeToggle } from "../ModeToggle";
 import { LanguageToggle } from "../LanguageToggle";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +17,19 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Input } from "../ui/input";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { CurrentUserResponse } from "@/types/auth";
 import Link from "next/link";
 import { Locale } from "@/types/i18n";
 import { NotificationPanel } from "../Notification/NotificationPanel";
+import notificationService from "@/services/notification";
+import { LIMIT } from "@/constants";
+import { setNotifications } from "@/redux/reducers/notifications";
+import { Notification } from "@/types/notification";
+import { Conversation } from "@/types/chat";
+import chatService from "@/services/chat";
+import { MessagesPanel } from "../Message/MessagesPanel";
+import { getUnread, isMe } from "@/lib/utils";
 
 const FAKE_USERS = [
   {
@@ -76,57 +84,6 @@ const FAKE_POSTS = [
     id: 3,
     title: "Giới thiệu Next.js 15 App Router",
     tags: ["nextjs", "frontend"],
-  },
-];
-
-const FAKE_MESSAGES = [
-  {
-    id: 1,
-    user: {
-      fullName: "Nguyễn Văn An",
-      username: "nguyenvanan",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=An",
-    },
-    lastMessage: "Bạn có thể review PR của mình không?",
-    time: "2p",
-    unread: 3,
-    online: true,
-  },
-  {
-    id: 2,
-    user: {
-      fullName: "Trần Thị Bích",
-      username: "tranthibich",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bich",
-    },
-    lastMessage: "Cảm ơn bạn đã giúp mình hôm qua!",
-    time: "45p",
-    unread: 0,
-    online: true,
-  },
-  {
-    id: 3,
-    user: {
-      fullName: "Lê Minh Cường",
-      username: "leminhcuong",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Cuong",
-    },
-    lastMessage: "Deploy xong rồi bạn ơi 🎉",
-    time: "2h",
-    unread: 1,
-    online: false,
-  },
-  {
-    id: 4,
-    user: {
-      fullName: "Phạm Hồng Dung",
-      username: "phamhongdung",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dung",
-    },
-    lastMessage: "Mình gửi design mới qua nhé",
-    time: "1n",
-    unread: 0,
-    online: false,
   },
 ];
 
@@ -215,100 +172,20 @@ function SearchDropdown({ query }: { query: string }) {
   );
 }
 
-function MessagesPanel({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const totalUnread = FAKE_MESSAGES.reduce((sum, m) => sum + m.unread, 0);
-
-  if (!open) return null;
-
-  return (
-    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-sm">Tin nhắn</h3>
-          {totalUnread > 0 && (
-            <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
-              {totalUnread}
-            </span>
-          )}
-        </div>
-        <button onClick={onClose} className="p-1 hover:bg-muted rounded-full">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-
-      <div className="max-h-[400px] overflow-y-auto">
-        {FAKE_MESSAGES.map((m) => (
-          <button
-            key={m.id}
-            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/60 transition-colors text-left border-b border-border/50 last:border-0 ${
-              m.unread > 0 ? "bg-primary/5" : ""
-            }`}
-          >
-            <div className="relative flex-shrink-0">
-              <img
-                src={m.user.avatar}
-                alt={m.user.fullName}
-                className="w-11 h-11 rounded-full bg-muted"
-              />
-              {m.online && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <p
-                  className={`text-sm ${m.unread > 0 ? "font-semibold" : "font-medium"}`}
-                >
-                  {m.user.fullName}
-                </p>
-                <span className="text-xs text-muted-foreground flex-shrink-0">
-                  {m.time}
-                </span>
-              </div>
-              <div className="flex items-center justify-between mt-0.5">
-                <p
-                  className={`text-xs truncate ${m.unread > 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}
-                >
-                  {m.lastMessage}
-                </p>
-                {m.unread > 0 && (
-                  <span className="ml-2 flex-shrink-0 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold">
-                    {m.unread}
-                  </span>
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 py-2 border-t border-border">
-        <button className="text-xs text-primary hover:underline w-full text-center">
-          Mở hộp thư đầy đủ →
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function UserDropdown({
   user,
   onLogout,
   t,
   locale,
   unreadNotifs,
+  unreadMsgs,
 }: {
   user: CurrentUserResponse;
   onLogout: () => void;
   t: (key: string) => string;
   locale: Locale;
   unreadNotifs: number;
+  unreadMsgs: number;
 }) {
   const router = useRouter();
 
@@ -336,7 +213,7 @@ function UserDropdown({
 
         <div className="sm:hidden">
           <DropdownMenuItem
-            onClick={() => router.push(`/${locale}/notification`)}
+            onClick={() => router.push(`/${locale}/notifications`)}
             className="flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
@@ -357,9 +234,26 @@ function UserDropdown({
             )}
           </DropdownMenuItem>
 
-          <DropdownMenuItem>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            Messages
+          <DropdownMenuItem
+            onClick={() => router.push(`/${locale}/messages`)}
+            className="flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <MessageCircle className="h-4 w-4" />
+                {unreadMsgs > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </div>
+
+              <span>{t("header.message.title")}</span>
+            </div>
+
+            {unreadMsgs > 0 && (
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+                {unreadMsgs}
+              </span>
+            )}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -395,21 +289,143 @@ function UserDropdown({
 }
 
 export default function Header() {
-  const user = useAppSelector((state) => state.currentUser);
-  const notifications = useAppSelector((state) => state.notifications);
+  const currentUser = useAppSelector((state) => state.currentUser);
+  const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, locale } = useTranslation();
 
+  // Notification
+  const notifications = useAppSelector((state) => state.notifications);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifHasMore, setNotifHasMore] = useState(true);
+
+  // Message
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+
+  // Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
+
+  // Ref
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
 
-  const unreadNotifs = notifications.filter((n) => !n.isRead).length;
-  const unreadMsgs = FAKE_MESSAGES.reduce((sum, m) => sum + m.unread, 0);
+  const fetchNotifications = async () => {
+    try {
+      setNotifLoading(true);
+
+      const { data } = await notificationService.findAll<Notification[]>({
+        limit: LIMIT,
+      });
+
+      dispatch(setNotifications(data));
+      setNotifHasMore(data.length === LIMIT);
+    } catch (error) {
+      toastError(error);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const loadMoreNotifications = async () => {
+    if (notifLoading || !notifHasMore) return;
+
+    try {
+      setNotifLoading(true);
+
+      const lastId = notifications[notifications.length - 1]?.id;
+
+      const { data } = await notificationService.findAll<Notification[]>({
+        limit: LIMIT,
+        cursor: lastId,
+      });
+
+      if (data.length === 0) {
+        setNotifHasMore(false);
+        return;
+      }
+
+      dispatch(setNotifications([...notifications, ...data]));
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllRead();
+
+      dispatch(
+        setNotifications(notifications.map((n) => ({ ...n, isRead: true }))),
+      );
+    } catch (e) {
+      toastError(e);
+    }
+  };
+
+  const handleMarkRead = async (id: number) => {
+    try {
+      await notificationService.markAsRead(id);
+
+      dispatch(
+        setNotifications(
+          notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+        ),
+      );
+    } catch (e) {
+      toastError(e);
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      setMsgLoading(true);
+
+      const { data } = await chatService.getMyConversations();
+
+      setConversations(data.map((c) => c.conversation));
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setMsgLoading(false);
+    }
+  };
+
+  const handleOpenConversation = (conversation: Conversation) => {
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== conversation.id) return c;
+
+        return {
+          ...c,
+          participants: c.participants.map((p) => {
+            if (isMe(p.userId, currentUser.id)) {
+              return {
+                ...p,
+                unreadCount: 0,
+              };
+            }
+            return p;
+          }),
+        };
+      }),
+    );
+    setMsgOpen(false);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([fetchNotifications(), fetchConversations()]);
+    };
+
+    init();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -436,6 +452,14 @@ export default function Header() {
       toastError(error);
     }
   };
+
+  const unreadNotifs = useMemo(() => {
+    return notifications.filter((n) => !n.isRead).length;
+  }, [notifications]);
+
+  const unreadMsgs = useMemo(() => {
+    return getUnread(conversations, currentUser.id);
+  }, [conversations]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
@@ -491,9 +515,17 @@ export default function Header() {
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>
+
             <NotificationPanel
               open={notifOpen}
               onClose={() => setNotifOpen(false)}
+              notifications={notifications}
+              unreadCount={unreadNotifs}
+              loading={notifLoading}
+              hasMore={notifHasMore}
+              onLoadMore={loadMoreNotifications}
+              onMarkAllRead={handleMarkAllRead}
+              onMarkRead={handleMarkRead}
             />
           </div>
 
@@ -506,34 +538,42 @@ export default function Header() {
               }}
             >
               <MessageCircle className="h-5 w-5" />
+
               {unreadMsgs > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
-                  {unreadMsgs}
-                </span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </button>
-            <MessagesPanel open={msgOpen} onClose={() => setMsgOpen(false)} />
+            <MessagesPanel
+              open={msgOpen}
+              onClose={() => setMsgOpen(false)}
+              conversations={conversations}
+              unreadCount={unreadMsgs}
+              loading={msgLoading}
+              onOpenConversation={handleOpenConversation}
+            />{" "}
           </div>
 
           <LanguageToggle />
           <ModeToggle />
 
           <UserDropdown
-            user={user}
+            user={currentUser}
             onLogout={onLogout}
             t={t}
             locale={locale}
             unreadNotifs={unreadNotifs}
+            unreadMsgs={unreadMsgs}
           />
         </div>
 
         <div className="sm:hidden">
           <UserDropdown
-            user={user}
+            user={currentUser}
             onLogout={onLogout}
             t={t}
             locale={locale}
             unreadNotifs={unreadNotifs}
+            unreadMsgs={unreadMsgs}
           />
         </div>
       </div>

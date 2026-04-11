@@ -11,6 +11,7 @@ import {
 import ComposePost from "../Post/ComposePost";
 import { User } from "@/types/user";
 import { useTranslation } from "@/hooks/useTranslation";
+import { isMe } from "@/lib/utils";
 
 interface UserPostFeedProps {
   user: User;
@@ -25,7 +26,7 @@ export default function UserPostFeed({ user, userPosts }: UserPostFeedProps) {
   return (
     <div className="max-w-4xl mx-auto w-full">
       <div className="shrink-0">
-        {user.id === currentUser.id && (
+        {isMe(user.id, currentUser.id) && (
           <ComposePost
             onSuccess={(newPost) => dispatch(addUserPost(newPost))}
           />

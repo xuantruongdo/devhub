@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
 import chatService from "@/services/chat";
 import { useAppSelector } from "@/redux/hooks";
@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSkeleton } from "./MessageSkeleton";
-import { isNearBottom, scrollToBottom } from "@/lib/utils";
+import { getOtherUser, isMe, isNearBottom, scrollToBottom } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
 
@@ -22,6 +22,8 @@ export default function ChatWindow({
   conversationId: number;
 }) {
   const currentUser = useAppSelector((state) => state.currentUser);
+  const selectedConversation = useAppSelector((state) => state.conversation);
+
   const router = useRouter();
   const { t, locale, ready } = useTranslation();
 
@@ -56,13 +58,13 @@ export default function ChatWindow({
     const prevScrollHeight = el?.scrollHeight || 0;
 
     try {
-      const res = await chatService.getMessages(conversationId, {
+      const { data } = await chatService.getMessages(conversationId, {
         limit: MESSAGE_LIMIT,
         cursor,
         anchor: anchorRef.current ?? undefined,
       });
 
-      let newMessages: Message[] = res.data;
+      let newMessages: Message[] = data;
 
       newMessages = newMessages.reverse();
 
@@ -170,15 +172,28 @@ export default function ChatWindow({
     }
   };
 
+  const conversationName = useMemo(() => {
+    const otherUser = getOtherUser(selectedConversation, currentUser.id);
+
+    const displayName = selectedConversation.isGroup
+      ? selectedConversation?.title || t("chat.sidebar.unknown")
+      : otherUser?.fullName;
+
+    return displayName;
+  }, [conversationId, selectedConversation]);
+
   if (!ready) return null;
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
-      <div className="md:hidden flex items-center gap-2 p-3 border-b shrink-0">
-        <button onClick={() => router.push(`/${locale}/messages`)}>
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <span className="font-medium">{t("chat.window.title")}</span>
+      <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
+        <div className="flex items-center gap-2">
+          <button onClick={() => router.push(`/${locale}/messages`)}>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-medium">{t("chat.window.title")}</span>
+        </div>
+        <span className="font-medium">{conversationName}</span>
       </div>
 
       <div
@@ -187,7 +202,7 @@ export default function ChatWindow({
         className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
       >
         {messages.map((m) => {
-          const isMine = m.senderId === currentUser.id;
+          const isMine = isMe(m.senderId, currentUser.id);
 
           return (
             <div key={m.id} className="space-y-1">
@@ -224,7 +239,7 @@ export default function ChatWindow({
 
               <div
                 className={`text-[11px] text-gray-400 ${
-                  isMine ? "text-right pr-1" : ""
+                  isMine ? "text-right pr-1" : "pl-2"
                 }`}
               >
                 {!isMine && m.sender?.fullName && (

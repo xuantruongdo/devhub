@@ -27,7 +27,7 @@ export interface Participant {
 export interface Conversation {
   id: number;
   isGroup: boolean;
-  title?: string;
+  title: string;
   participants: Participant[];
   messages: Message[];
   lastMessage: Message;

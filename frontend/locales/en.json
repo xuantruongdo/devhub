@@ -95,6 +95,9 @@
       "loading": "Loading...",
       "noMore": "No more notifications",
       "viewMore": "View more"
+    },
+    "message": {
+      "title": "Messages"
     }
   },
   "composePost": {
@@ -175,7 +178,8 @@
       "noMessages": "No messages yet",
       "unknown": "Unknown",
       "you": "You",
-      "file": "File"
+      "file": "File",
+      "viewAll": "View all"
     },
     "window": {
       "title": "Chat",

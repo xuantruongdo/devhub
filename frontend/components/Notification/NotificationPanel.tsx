@@ -1,81 +1,35 @@
 "use client";
 
-import { toastError } from "@/lib/toast";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { setNotifications } from "@/redux/reducers/notifications";
-import notificationService from "@/services/notification";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import NotificationItem from "./NotificationItem";
 import { useTranslation } from "@/hooks/useTranslation";
 import { X } from "lucide-react";
 import { Notification } from "@/types/notification";
-import { LIMIT } from "@/constants";
+import Link from "next/link";
 
 export function NotificationPanel({
   open,
   onClose,
+  notifications,
+  unreadCount,
+  loading,
+  hasMore,
+  onLoadMore,
+  onMarkAllRead,
+  onMarkRead,
 }: {
   open: boolean;
   onClose: () => void;
+  notifications: Notification[];
+  unreadCount: number;
+  loading: boolean;
+  hasMore: boolean;
+  onLoadMore: () => void;
+  onMarkAllRead: () => void;
+  onMarkRead: (id: number) => void;
 }) {
-  const { t } = useTranslation();
-
-  const dispatch = useAppDispatch();
-  const notifications = useAppSelector((state) => state.notifications);
-
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-
+  const { t, locale } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-
-        const { data } = await notificationService.findAll<Notification[]>({
-          limit: LIMIT,
-        });
-
-        dispatch(setNotifications(data));
-        setHasMore(data.length === LIMIT);
-      } catch (error: any) {
-        toastError(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (open) fetchNotifications();
-  }, [dispatch, open]);
-
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-
-    try {
-      setLoading(true);
-
-      const lastId = notifications[notifications.length - 1]?.id;
-
-      const { data } = await notificationService.findAll<Notification[]>({
-        limit: LIMIT,
-        cursor: lastId,
-      });
-
-      if (data.length === 0) {
-        setHasMore(false);
-        return;
-      }
-
-      dispatch(setNotifications([...notifications, ...data]));
-    } catch (e) {
-      toastError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -84,38 +38,7 @@ export function NotificationPanel({
     const isNearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
 
     if (isNearBottom) {
-      loadMore();
-    }
-  };
-
-  const markAllRead = async () => {
-    try {
-      await notificationService.markAllRead();
-
-      dispatch(
-        setNotifications(
-          notifications.map((n) => ({
-            ...n,
-            isRead: true,
-          })),
-        ),
-      );
-    } catch (e) {
-      toastError(e);
-    }
-  };
-
-  const markRead = async (id: number) => {
-    try {
-      await notificationService.markAsRead(id);
-
-      dispatch(
-        setNotifications(
-          notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-        ),
-      );
-    } catch (e) {
-      toastError(e);
+      onLoadMore();
     }
   };
 
@@ -129,7 +52,7 @@ export function NotificationPanel({
             {t("header.notification.title")}
           </h3>
           {unreadCount > 0 && (
-            <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
+            <span className="text-xs bg-primary text-primary-foreground rounded-full px-2.5 py-1">
               {unreadCount}
             </span>
           )}
@@ -138,7 +61,7 @@ export function NotificationPanel({
         <div className="flex items-center gap-1">
           {unreadCount > 0 && (
             <button
-              onClick={markAllRead}
+              onClick={onMarkAllRead}
               className="text-xs text-primary hover:underline"
             >
               {t("header.notification.markAll")}
@@ -159,7 +82,7 @@ export function NotificationPanel({
           <NotificationItem
             key={n.id}
             notification={n}
-            onClick={() => markRead(n.id)}
+            onClick={() => onMarkRead(n.id)}
           />
         ))}
 
@@ -177,9 +100,13 @@ export function NotificationPanel({
       </div>
 
       <div className="px-4 py-2 border-t border-border">
-        <button className="text-xs text-primary hover:underline w-full text-center">
+        <Link
+          href={`/${locale}/notifications`}
+          onClick={onClose}
+          className="flex w-full justify-center text-xs text-primary hover:underline"
+        >
           {t("header.notification.viewAll")}
-        </button>
+        </Link>
       </div>
     </div>
   );

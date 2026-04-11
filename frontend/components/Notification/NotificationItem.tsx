@@ -8,7 +8,7 @@ import { NotificationType } from "@/constants";
 
 interface NotificationItemProps {
   notification: Notification;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
 export default function NotificationItem({
@@ -57,7 +57,10 @@ export default function NotificationItem({
 
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        if (n.isRead) return;
+        onClick();
+      }}
       className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-muted/60 transition-colors text-left border-b border-border/50 last:border-0 ${
         !n.isRead ? "bg-primary/5" : ""
       }`}

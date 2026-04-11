@@ -14,7 +14,7 @@ import { useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
-import { navigateFromModal } from "@/lib/utils";
+import { isMe, navigateFromModal } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface ReplyItemProps {
@@ -64,7 +64,7 @@ export function ReplyItem({ reply: r, onLike, onDelete }: ReplyItemProps) {
             </div>
           </Link>
 
-          {currentUser.id === r.author.id && (
+          {isMe(r.author.id, currentUser.id) && (
             <DropdownMenu>
               <DropdownMenuTrigger className="p-1 rounded hover:bg-muted">
                 <MoreHorizontal className="h-4 w-4" />

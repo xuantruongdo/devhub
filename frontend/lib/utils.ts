@@ -1,5 +1,5 @@
 import storageService from "@/services/storage";
-import { Message } from "@/types/chat";
+import { Conversation, Message } from "@/types/chat";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -73,4 +73,19 @@ export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
 
 export const isMe = (userId: number, currentUserId: number) => {
   return userId === currentUserId;
+};
+
+export const getOtherUser = (c: Conversation, currentUserId: number) => {
+  return c.participants.find((p) => !isMe(p.userId, currentUserId))?.user;
+};
+
+export const getUnread = (
+  conversations: Conversation[],
+  currentUserId: number,
+) => {
+  return conversations.reduce((sum, c) => {
+    const me = c.participants?.find((p) => isMe(p.userId, currentUserId));
+
+    return sum + (me?.unreadCount ?? 0);
+  }, 0);
 };

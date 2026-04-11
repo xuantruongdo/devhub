@@ -95,6 +95,9 @@
       "loading": "Đang tải...",
       "noMore": "Không còn thông báo",
       "viewMore": "Xem thêm"
+    },
+    "message": {
+      "title": "Tin nhắn"
     }
   },
   "composePost": {
@@ -175,7 +178,8 @@
       "noMessages": "Chưa có tin nhắn",
       "unknown": "Không xác định",
       "you": "Bạn",
-      "file": "File"
+      "file": "File",
+      "viewAll": "Xem tất cả"
     },
     "window": {
       "title": "Chat",

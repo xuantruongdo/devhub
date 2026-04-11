@@ -17,7 +17,7 @@ import { ReplyList } from "./ReplyList";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { navigateFromModal } from "@/lib/utils";
+import { isMe, navigateFromModal } from "@/lib/utils";
 
 interface CommentItemProps {
   postId: number;
@@ -92,7 +92,7 @@ export function CommentItem({
               </div>
             </Link>
 
-            {currentUser.id === c.author.id && (
+            {isMe(c.author.id, currentUser.id) && (
               <DropdownMenu>
                 <DropdownMenuTrigger className="p-1 rounded hover:bg-muted">
                   <MoreHorizontal className="h-4 w-4" />

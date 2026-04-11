@@ -5,6 +5,7 @@ import { currentUser } from "./reducers/currentUser";
 import { feed } from "./reducers/feed";
 import { userPosts } from "./reducers/userPosts";
 import { notifications } from "./reducers/notifications";
+import { conversation } from "./reducers/conversation";
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
@@ -14,6 +15,7 @@ const rootReducer = combineSlices(
   feed,
   userPosts,
   notifications,
+  conversation,
 );
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;
