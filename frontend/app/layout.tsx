@@ -36,8 +36,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body>
+      <body cz-shortcut-listen="true">
         <Suspense>
           <StoreProvider>
             <ThemeProvider
