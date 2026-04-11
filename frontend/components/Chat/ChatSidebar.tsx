@@ -9,6 +9,9 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ConversationSkeleton } from "./ConversationSkeleton";
+import { MessageType } from "@/constants";
+import moment from "moment";
+import { isMe } from "@/lib/utils";
 
 export default function ChatSidebar({ activeId }: { activeId: number | null }) {
   const router = useRouter();
@@ -42,24 +45,38 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
     fetchConversations();
   }, []);
 
-  // Sẽ fix sau
   const getUnread = (c: Conversation) => {
-    const me = c.participants?.find((p) => p.userId === currentUser.id);
+    const me = c.participants?.find((p) => isMe(p.userId, currentUser.id));
 
-    const lastRead = me?.lastReadMessageId ?? 0;
-
-    return (
-      c.messages?.reduce((count, m) => {
-        if (m.id > lastRead && m.senderId !== currentUser.id) {
-          return count + 1;
-        }
-        return count;
-      }, 0) ?? 0
-    );
+    return me?.unreadCount ?? 0;
   };
 
   const getOtherUser = (c: Conversation) => {
-    return c.participants.find((p) => p.userId !== currentUser.id)?.user;
+    return c.participants.find((p) => !isMe(p.userId, currentUser.id))?.user;
+  };
+
+  const handleOpenConversation = (conversationId: number) => {
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== conversationId) return c;
+
+        return {
+          ...c,
+          participants: c.participants.map((p) => {
+            if (isMe(p.userId, currentUser.id)) {
+              return {
+                ...p,
+                unreadCount: 0,
+              };
+            }
+            return p;
+          }),
+        };
+      }),
+    );
+
+    router.push(`/${locale}/messages/${conversationId}`);
+    window.scrollTo({ top: 0 });
   };
 
   if (!ready) return null;
@@ -94,10 +111,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
               return (
                 <button
                   key={c.id}
-                  onClick={() => {
-                    router.push(`/${locale}/messages/${c.id}`);
-                    window.scrollTo({ top: 0 });
-                  }}
+                  onClick={() => handleOpenConversation(c.id)}
                   className={`
                   w-full flex items-center gap-3 px-4 py-3 text-left
                   hover:bg-gray-100 dark:hover:bg-white/10
@@ -125,7 +139,26 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
                     </div>
 
                     <p className="text-sm text-gray-500 truncate">
-                      {t("chat.sidebar.noMessages")}
+                      {c.lastMessage ? (
+                        <>
+                          {isMe(c.lastMessage.senderId, currentUser.id) && (
+                            <>{t("chat.sidebar.you")}: </>
+                          )}
+
+                          <span className="truncate inline-block max-w-[100px] align-bottom">
+                            {c.lastMessage.type === MessageType.TEXT
+                              ? c.lastMessage.content
+                              : t("chat.sidebar.file")}
+                          </span>
+
+                          {" · "}
+                          <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                            {moment(c.lastMessage.createdAt).fromNow()}
+                          </span>
+                        </>
+                      ) : (
+                        t("chat.sidebar.noMessages")
+                      )}
                     </p>
                   </div>
                 </button>

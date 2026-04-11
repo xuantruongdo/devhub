@@ -5,6 +5,8 @@ import {
   UpdateDateColumn,
   OneToMany,
   Column,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import { ConversationParticipant } from "./ConversationParticipant";
 import { Message } from "./Message";
@@ -18,7 +20,17 @@ export class Conversation {
   isGroup!: boolean;
 
   @Column({ nullable: true })
-  title?: string
+  title?: string;
+
+  @Column({ nullable: true })
+  lastMessageId?: number;
+
+  @ManyToOne(() => Message, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "lastMessageId" })
+  lastMessage?: Message;
 
   @OneToMany(() => ConversationParticipant, (p) => p.conversation)
   participants!: ConversationParticipant[];

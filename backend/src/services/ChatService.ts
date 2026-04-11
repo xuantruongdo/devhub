@@ -5,6 +5,9 @@ import { ConversationRepo } from "../repositories/ConversationRepo";
 import { ParticipantRepo } from "../repositories/ParticipantRepo";
 import { Message } from "../entities/Message";
 import { Conversation } from "../entities/Conversation";
+import { UserProps } from "../types/auth";
+import { ForbiddenError } from "routing-controllers";
+import { ChatCodeError } from "../constants/code";
 
 @Service()
 export class ChatService {
@@ -60,6 +63,16 @@ export class ChatService {
   }) {
     const { conversationId, senderId, content } = params;
 
+    const participant = await this.participantRepo.findOne({
+      where: {
+        conversationId,
+        userId: senderId,
+      },
+    });
+
+    if (!participant)
+      throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);
+
     return await AppDataSource.transaction(async () => {
       const message = await this.messageRepo.create({
         conversationId,
@@ -67,7 +80,9 @@ export class ChatService {
         content,
       });
 
+      // Update conversation (lastMessage + updatedAt)
       await this.conversationRepo.update(conversationId, {
+        lastMessageId: message.id,
         updatedAt: new Date(),
       });
 
@@ -80,13 +95,24 @@ export class ChatService {
 
   async getMessages(
     conversationId: number,
+    user: UserProps,
     options?: {
       limit?: number;
       cursor?: number;
       anchor?: number;
     },
   ) {
-    return this.messageRepo.getMessages(conversationId, options);
+    const participant = await this.participantRepo.findOne({
+      where: {
+        conversationId,
+        userId: user.id,
+      },
+    });
+
+    if (!participant)
+      throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);
+
+    return this.messageRepo.getMessages(conversationId, user, options);
   }
 
   async markAsRead(conversationId: number, userId: number) {
@@ -101,7 +127,8 @@ export class ChatService {
       userId,
     );
 
-    if (!participant) return true;
+    if (!participant)
+      throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);
 
     await this.participantRepo.update(participant.id, {
       lastReadMessageId: lastMessage.id,

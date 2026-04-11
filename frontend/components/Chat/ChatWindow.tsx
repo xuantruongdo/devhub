@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSkeleton } from "./MessageSkeleton";
 import { isNearBottom, scrollToBottom } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { toastError } from "@/lib/toast";
 
 export default function ChatWindow({
   conversationId,
@@ -86,6 +87,9 @@ export default function ChatWindow({
           el.scrollTop = newScrollHeight - prevScrollHeight;
         }
       });
+    } catch (error: any) {
+      toastError(t(`chat.response.${error}`));
+      router.push(`/${locale}/messages`);
     } finally {
       setLoading(false);
       fetchingRef.current = false;

@@ -173,12 +173,17 @@
     "sidebar": {
       "messages": "Tin nhắn",
       "noMessages": "Chưa có tin nhắn",
-      "unknown": "Không xác định"
+      "unknown": "Không xác định",
+      "you": "Bạn",
+      "file": "File"
     },
     "window": {
       "title": "Chat",
       "typeMessage": "Nhập tin nhắn...",
       "newMessages": "Tin nhắn mới"
+    },
+    "response": {
+      "CANNOT_ACCESS_CONVERSATION": "Bạn không có quyền truy cập cuộc trò chuyện này"
     }
   }
 }

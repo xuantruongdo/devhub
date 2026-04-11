@@ -30,6 +30,7 @@ export interface Conversation {
   title?: string;
   participants: Participant[];
   messages: Message[];
+  lastMessage: Message;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -2,10 +2,15 @@ import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Message } from "../entities/Message";
 import { MESSAGE_LIMIT } from "../constants";
+import { UserProps } from "../types/auth";
+import { ConversationParticipant } from "../entities/ConversationParticipant";
 
 @Service()
 export class MessageRepo {
   private repo = AppDataSource.getRepository(Message);
+  private participantRepo = AppDataSource.getRepository(
+    ConversationParticipant,
+  );
 
   async create(data: Partial<Message>) {
     const msg = this.repo.create(data);
@@ -14,6 +19,7 @@ export class MessageRepo {
 
   async getMessages(
     conversationId: number,
+    user: UserProps,
     options?: {
       limit?: number;
       cursor?: number;
@@ -41,12 +47,29 @@ export class MessageRepo {
       qb.andWhere("m.id < :cursor", { cursor: options.cursor });
     }
 
-    // ✅ FIX QUAN TRỌNG
     if (options?.anchor) {
       qb.andWhere("m.id <= :anchor", { anchor: options.anchor });
     }
 
-    return qb.getMany();
+    const messages = await qb.getMany();
+
+    // MARK AS READ
+    if (messages.length > 0) {
+      const latestMessageId = messages[0].id;
+
+      await this.participantRepo.update(
+        {
+          conversationId,
+          userId: user.id,
+        },
+        {
+          lastReadMessageId: latestMessageId,
+          unreadCount: 0,
+        },
+      );
+    }
+
+    return messages;
   }
 
   async findById(id: number) {

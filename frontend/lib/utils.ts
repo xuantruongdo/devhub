@@ -70,3 +70,7 @@ export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
     behavior: smooth ? "smooth" : "auto",
   });
 };
+
+export const isMe = (userId: number, currentUserId: number) => {
+  return userId === currentUserId;
+};

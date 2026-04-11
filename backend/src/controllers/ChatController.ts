@@ -41,11 +41,12 @@ export class ChatController {
   @Get("/messages/:conversationId")
   async getMessages(
     @Param("conversationId") conversationId: number,
+    @CurrentUser() user: UserProps,
     @QueryParam("limit") limit?: number,
     @QueryParam("cursor") cursor?: number,
     @QueryParam("anchor") anchor?: number,
   ) {
-    return this.chatService.getMessages(conversationId, {
+    return this.chatService.getMessages(conversationId, user, {
       limit,
       cursor,
       anchor,

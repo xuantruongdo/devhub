@@ -11,35 +11,36 @@ export class ParticipantRepo {
     return this.repo.save(p);
   }
 
-  async findByUser(userId: number) {
-    return (
-      this.repo
-        .createQueryBuilder("cp")
-
-        .leftJoinAndSelect("cp.conversation", "c")
-        .leftJoinAndSelect("c.participants", "p")
-
-        .leftJoin("p.user", "u")
-
-        .addSelect([
-          "u.id",
-          "u.username",
-          "u.email",
-          "u.fullName",
-          "u.avatar",
-          "u.isVerified",
-        ])
-
-        .where("cp.userId = :userId", { userId })
-        .orderBy("c.updatedAt", "DESC")
-        .getMany()
-    );
+  async findOne(options: { where: Partial<ConversationParticipant> }) {
+    return this.repo.findOne(options);
   }
 
-  async findOne(conversationId: number, userId: number) {
-    return this.repo.findOne({
-      where: { conversationId, userId },
-    });
+  async findByUser(userId: number) {
+    return this.repo
+      .createQueryBuilder("cp")
+
+      .leftJoinAndSelect("cp.conversation", "c")
+
+      .leftJoinAndSelect("c.participants", "p")
+
+      .leftJoin("p.user", "u")
+      .addSelect([
+        "u.id",
+        "u.username",
+        "u.email",
+        "u.fullName",
+        "u.avatar",
+        "u.isVerified",
+      ])
+
+      .leftJoinAndSelect("c.lastMessage", "lm")
+
+      .leftJoin("lm.sender", "lm_sender")
+      .addSelect(["lm_sender.id", "lm_sender.username", "lm_sender.avatar"])
+
+      .where("cp.userId = :userId", { userId })
+      .orderBy("c.updatedAt", "DESC")
+      .getMany();
   }
 
   async update(id: number, data: Partial<ConversationParticipant>) {

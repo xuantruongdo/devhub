@@ -173,12 +173,17 @@
     "sidebar": {
       "messages": "Messages",
       "noMessages": "No messages yet",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "you": "You",
+      "file": "File"
     },
     "window": {
       "title": "Chat",
       "typeMessage": "Type a message...",
       "newMessages": "New messages"
+    },
+    "response": {
+      "CANNOT_ACCESS_CONVERSATION": "You do not have permission to access this conversation"
     }
   }
 }
