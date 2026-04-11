@@ -15,6 +15,7 @@ class ChatService {
     params?: {
       limit?: number;
       cursor?: number;
+      anchor?: number;
     },
   ) {
     return await instance.get(`/chat/messages/${conversationId}`, {

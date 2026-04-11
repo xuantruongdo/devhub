@@ -168,5 +168,17 @@
   "loading": {
     "title": "Loading...",
     "description": "Connecting developers..."
+  },
+  "chat": {
+    "sidebar": {
+      "messages": "Messages",
+      "noMessages": "No messages yet",
+      "unknown": "Unknown"
+    },
+    "window": {
+      "title": "Chat",
+      "typeMessage": "Type a message...",
+      "newMessages": "New messages"
+    }
   }
 }

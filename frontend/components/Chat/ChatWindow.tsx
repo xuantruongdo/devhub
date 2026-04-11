@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import chatService from "@/services/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { Message } from "@/types/chat";
 import { MESSAGE_LIMIT } from "@/constants";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
+import moment from "moment";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { MessageSkeleton } from "./MessageSkeleton";
+import { isNearBottom, scrollToBottom } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ChatWindow({
   conversationId,
@@ -13,26 +21,34 @@ export default function ChatWindow({
   conversationId: number;
 }) {
   const currentUser = useAppSelector((state) => state.currentUser);
+  const router = useRouter();
+  const { t, locale, ready } = useTranslation();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [showNew, setShowNew] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const isInitialLoad = useRef(true);
+  const anchorRef = useRef<number | null>(null);
+  const fetchingRef = useRef(false);
+  const didInitialScroll = useRef(false);
 
-  // reset when change conversation
   useEffect(() => {
     setMessages([]);
     setHasMore(true);
-    isInitialLoad.current = true;
+    anchorRef.current = null;
+    didInitialScroll.current = false;
+    setShowNew(false);
+
     fetchMessages();
   }, [conversationId]);
 
   const fetchMessages = async (cursor?: number) => {
-    if (loading) return;
+    if (loading || fetchingRef.current) return;
 
+    fetchingRef.current = true;
     setLoading(true);
 
     const el = containerRef.current;
@@ -42,153 +58,218 @@ export default function ChatWindow({
       const res = await chatService.getMessages(conversationId, {
         limit: MESSAGE_LIMIT,
         cursor,
+        anchor: anchorRef.current ?? undefined,
       });
 
-      const newMessages = res.data;
+      let newMessages: Message[] = res.data;
+
+      newMessages = newMessages.reverse();
+
+      if (!anchorRef.current && newMessages.length > 0) {
+        anchorRef.current = newMessages[newMessages.length - 1].id;
+      }
 
       if (newMessages.length < MESSAGE_LIMIT) {
         setHasMore(false);
       }
 
       setMessages((prev) => {
-        const map = new Map<number, Message>();
-
-        [...newMessages, ...prev].forEach((m) => {
-          map.set(m.id, m);
-        });
-
-        return Array.from(map.values()).sort(
-          (a, b) => +new Date(a.createdAt) - +new Date(b.createdAt),
-        );
+        const merged = cursor ? [...newMessages, ...prev] : newMessages;
+        return merged;
       });
 
-      // requestAnimationFrame(() => {
-      //   if (!el) return;
+      requestAnimationFrame(() => {
+        if (!el) return;
 
-      //   // ✅ FIRST LOAD → scroll bottom
-      //   if (isInitialLoad.current) {
-      //     el.scrollTop = el.scrollHeight;
-      //     isInitialLoad.current = false;
-      //     return;
-      //   }
-
-      //   // ✅ LOAD MORE → giữ vị trí scroll
-      //   const newScrollHeight = el.scrollHeight;
-      //   el.scrollTop = newScrollHeight - prevScrollHeight;
-      // });
+        if (cursor) {
+          const newScrollHeight = el.scrollHeight;
+          el.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+      });
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   };
 
+  useEffect(() => {
+    if (!messages.length) return;
+    if (didInitialScroll.current) return;
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    el.scrollTop = el.scrollHeight;
+
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+
+    didInitialScroll.current = true;
+  }, [messages]);
+
   const handleScroll = () => {
     const el = containerRef.current;
-    if (!el || loading || !hasMore) return;
+    if (!el || loading || !hasMore || fetchingRef.current) return;
 
-    // gần top → load message cũ
-    if (el.scrollTop < 100) {
+    if (el.scrollTop <= 50) {
       const oldest = messages[0];
-      if (oldest) {
-        fetchMessages(oldest.id);
-      }
+      if (oldest) fetchMessages(oldest.id);
+    }
+
+    if (isNearBottom(containerRef.current)) {
+      setShowNew(false);
     }
   };
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const tempId = Date.now();
-
-    const temp: any = {
-      id: tempId,
+    const temp: Partial<Message> = {
+      id: Date.now(),
       conversationId,
       senderId: currentUser.id,
       content: input,
-      createdAt: new Date() as any,
+      createdAt: new Date(),
     };
 
-    // optimistic update
-    setMessages((prev) => [...prev, temp]);
+    setMessages((prev) => [...prev, temp as Message]);
     setInput("");
 
-    // auto scroll bottom khi gửi
-    // requestAnimationFrame(() => {
-    //   containerRef.current?.scrollTo({
-    //     top: containerRef.current.scrollHeight,
-    //     behavior: "smooth",
-    //   });
-    // });
+    requestAnimationFrame(() => {
+      if (isNearBottom(containerRef.current)) {
+        scrollToBottom(containerRef.current, true);
+      }
+    });
 
     try {
-      const res = await chatService.sendMessage({
+      const { data } = await chatService.sendMessage({
         conversationId,
-        content: temp.content,
+        content: temp.content || "",
       });
 
-      const saved = res.data;
+      setMessages((prev) => prev.map((m) => (m.id === temp.id ? data : m)));
 
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? saved : m)));
-    } catch (err) {
-      // rollback nếu lỗi
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      if (anchorRef.current && data.id > anchorRef.current) {
+        anchorRef.current = data.id;
+      }
+
+      requestAnimationFrame(() => {
+        if (isNearBottom(containerRef.current)) {
+          scrollToBottom(containerRef.current, true);
+        } else {
+          setShowNew(true);
+        }
+      });
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== temp.id));
     }
   };
 
+  if (!ready) return null;
+
   return (
-    <div className="flex flex-col h-full">
-      {/* messages */}
+    <div className="flex flex-col h-full min-h-0 relative">
+      <div className="md:hidden flex items-center gap-2 p-3 border-b shrink-0">
+        <button onClick={() => router.push(`/${locale}/messages`)}>
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <span className="font-medium">{t("chat.window.title")}</span>
+      </div>
+
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-2"
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
       >
         {messages.map((m) => {
           const isMine = m.senderId === currentUser.id;
 
           return (
-            <div
-              key={m.id}
-              className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-            >
+            <div key={m.id} className="space-y-1">
               <div
-                className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                  isMine ? "bg-blue-500 text-white" : "bg-white border"
+                className={`flex items-end gap-2 ${
+                  isMine ? "justify-end" : "justify-start"
                 }`}
               >
-                {m.content}
+                {!isMine && (
+                  <Avatar size="lg" className="cursor-pointer">
+                    {m.sender?.avatar ? (
+                      <AvatarImage
+                        src={m.sender?.avatar}
+                        alt={m.sender.fullName}
+                      />
+                    ) : (
+                      <AvatarFallback>
+                        {m.sender.fullName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                )}
 
-                {!isMine && m.sender && (
-                  <div className="text-[10px] text-gray-500 mt-1">
+                <div
+                  className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                    isMine
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-black border"
+                  }`}
+                >
+                  {m.content}
+                </div>
+              </div>
+
+              <div
+                className={`text-[11px] text-gray-400 ${
+                  isMine ? "text-right pr-1" : ""
+                }`}
+              >
+                {!isMine && m.sender?.fullName && (
+                  <div className="text-gray-500 text-[10px]">
                     {m.sender.fullName}
                   </div>
                 )}
+
+                {moment(m.createdAt).format("HH:mm")}
               </div>
             </div>
           );
         })}
 
         {loading && (
-          <div className="text-xs text-gray-400 text-center">Loading...</div>
+          <>
+            <MessageSkeleton />
+            <MessageSkeleton isMine />
+            <MessageSkeleton />
+          </>
         )}
       </div>
 
-      {/* input */}
-      <div className="p-3 border-t flex gap-2">
-        <input
+      {showNew && (
+        <button
+          onClick={() => {
+            scrollToBottom(containerRef.current, true);
+            setShowNew(false);
+          }}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+        >
+          {t("chat.window.newMessages")}
+        </button>
+      )}
+
+      <div className="p-3 border-t flex gap-2 shrink-0">
+        <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 border px-3 py-2 rounded-full"
+          placeholder={t("chat.window.typeMessage")}
+          className="flex-1 rounded-full"
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSend();
           }}
         />
 
-        <button
-          onClick={handleSend}
-          className="p-2 bg-blue-500 text-white rounded-full"
-        >
+        <Button onClick={handleSend} size="icon">
           <Send className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

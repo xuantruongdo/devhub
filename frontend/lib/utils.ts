@@ -1,4 +1,5 @@
 import storageService from "@/services/storage";
+import { Message } from "@/types/chat";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -53,4 +54,19 @@ export const navigateFromModal = (router: any, url: string) => {
   setTimeout(() => {
     router.push(url);
   }, 50);
+};
+
+export const isNearBottom = (el: HTMLDivElement | null, threshold = 100) => {
+  if (!el) return false;
+
+  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+};
+
+export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
+  if (!el) return;
+
+  el.scrollTo({
+    top: el.scrollHeight,
+    behavior: smooth ? "smooth" : "auto",
+  });
 };

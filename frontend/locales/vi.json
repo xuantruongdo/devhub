@@ -168,5 +168,17 @@
   "loading": {
     "title": "Đang tải...",
     "description": "Đang kết nối các lập trình viên..."
+  },
+  "chat": {
+    "sidebar": {
+      "messages": "Tin nhắn",
+      "noMessages": "Chưa có tin nhắn",
+      "unknown": "Không xác định"
+    },
+    "window": {
+      "title": "Chat",
+      "typeMessage": "Nhập tin nhắn...",
+      "newMessages": "Tin nhắn mới"
+    }
   }
 }

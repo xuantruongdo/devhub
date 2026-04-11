@@ -17,8 +17,11 @@ export class MessageRepo {
     options?: {
       limit?: number;
       cursor?: number;
+      anchor?: number;
     },
   ) {
+    const limit = options?.limit || MESSAGE_LIMIT;
+
     const qb = this.repo
       .createQueryBuilder("m")
       .leftJoin("m.sender", "sender")
@@ -32,10 +35,15 @@ export class MessageRepo {
       ])
       .where("m.conversationId = :conversationId", { conversationId })
       .orderBy("m.id", "DESC")
-      .take(options?.limit || MESSAGE_LIMIT);
+      .take(limit);
 
     if (options?.cursor) {
       qb.andWhere("m.id < :cursor", { cursor: options.cursor });
+    }
+
+    // ✅ FIX QUAN TRỌNG
+    if (options?.anchor) {
+      qb.andWhere("m.id <= :anchor", { anchor: options.anchor });
     }
 
     return qb.getMany();

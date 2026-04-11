@@ -43,10 +43,12 @@ export class ChatController {
     @Param("conversationId") conversationId: number,
     @QueryParam("limit") limit?: number,
     @QueryParam("cursor") cursor?: number,
+    @QueryParam("anchor") anchor?: number,
   ) {
     return this.chatService.getMessages(conversationId, {
       limit,
       cursor,
+      anchor,
     });
   }
 

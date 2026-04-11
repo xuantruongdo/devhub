@@ -83,6 +83,7 @@ export class ChatService {
     options?: {
       limit?: number;
       cursor?: number;
+      anchor?: number;
     },
   ) {
     return this.messageRepo.getMessages(conversationId, options);
