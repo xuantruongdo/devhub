@@ -33,7 +33,7 @@ export class ChatController {
   ) {
     return this.chatService.sendMessage({
       conversationId: body.conversationId,
-      senderId: user.id,
+      sender: user,
       content: body.content,
     });
   }

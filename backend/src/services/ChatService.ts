@@ -8,6 +8,7 @@ import { Conversation } from "../entities/Conversation";
 import { UserProps } from "../types/auth";
 import { ForbiddenError } from "routing-controllers";
 import { ChatCodeError } from "../constants/code";
+import { emitNewMessage } from "../libs/io";
 
 @Service()
 export class ChatService {
@@ -58,39 +59,42 @@ export class ChatService {
 
   async sendMessage(params: {
     conversationId: number;
-    senderId: number;
+    sender: UserProps;
     content: string;
   }) {
-    const { conversationId, senderId, content } = params;
+    const { conversationId, sender, content } = params;
+    const senderId = sender.id;
 
     const participant = await this.participantRepo.findOne({
-      where: {
-        conversationId,
-        userId: senderId,
-      },
+      where: { conversationId, userId: senderId },
     });
 
     if (!participant)
       throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);
 
-    return await AppDataSource.transaction(async () => {
-      const message = await this.messageRepo.create({
+    const message = await AppDataSource.transaction(async () => {
+      const msg = await this.messageRepo.create({
         conversationId,
         senderId,
         content,
       });
 
-      // Update conversation (lastMessage + updatedAt)
       await this.conversationRepo.update(conversationId, {
-        lastMessageId: message.id,
+        lastMessageId: msg.id,
         updatedAt: new Date(),
       });
 
-      // Tăng unread cho người khác
       await this.participantRepo.incrementUnread(conversationId, senderId);
 
-      return message;
+      return msg;
     });
+
+    emitNewMessage(conversationId, {
+      ...message,
+      sender,
+    });
+
+    return message;
   }
 
   async getMessages(

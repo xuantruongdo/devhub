@@ -15,6 +15,7 @@ import { MessageSkeleton } from "./MessageSkeleton";
 import { getOtherUser, isMe, isNearBottom, scrollToBottom } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
+import { getSocket } from "@/lib/socket";
 
 export default function ChatWindow({
   conversationId,
@@ -143,9 +144,7 @@ export default function ChatWindow({
     setInput("");
 
     requestAnimationFrame(() => {
-      if (isNearBottom(containerRef.current)) {
-        scrollToBottom(containerRef.current, true);
-      }
+      scrollToBottom(containerRef.current, true);
     });
 
     try {
@@ -161,11 +160,7 @@ export default function ChatWindow({
       }
 
       requestAnimationFrame(() => {
-        if (isNearBottom(containerRef.current)) {
-          scrollToBottom(containerRef.current, true);
-        } else {
-          setShowNew(true);
-        }
+        scrollToBottom(containerRef.current, true);
       });
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== temp.id));
@@ -181,6 +176,50 @@ export default function ChatWindow({
 
     return displayName;
   }, [conversationId, selectedConversation]);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    // 1. join conversation room
+    socket.emit("conversation:join", conversationId);
+
+    // 2. handle new message
+    const handleNewMessage = (message: Message) => {
+      if (message.conversationId !== conversationId) return;
+
+      if (isMe(message.senderId, currentUser.id)) return;
+
+      setMessages((prev) => {
+        const exists = prev.find((m) => m.id === message.id);
+        if (exists) return prev;
+
+        return [...prev, message];
+      });
+
+      requestAnimationFrame(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const isBottom = isNearBottom(el);
+
+        if (isBottom) {
+          scrollToBottom(el, true);
+        } else {
+          setShowNew(true);
+        }
+      });
+    };
+
+    socket.on("message:new", handleNewMessage);
+
+    // cleanup
+    return () => {
+      socket.off("message:new", handleNewMessage);
+
+      // optional: leave room (không bắt buộc nhưng tốt)
+      // socket.emit("conversation:leave", conversationId);
+    };
+  }, [conversationId]);
 
   if (!ready) return null;
 

@@ -15,6 +15,8 @@ import { PostController } from "./controllers/PostController";
 import { StorageController } from "./controllers/StorageController";
 import { NotificationController } from "./controllers/NotificationController";
 import { ChatController } from "./controllers/ChatController";
+import { initSocket } from "./config/socket";
+import http from "http";
 
 useContainer(Container);
 
@@ -60,7 +62,12 @@ AppDataSource.initialize()
       defaultErrorHandler: false,
     });
 
-    app.listen(PORT, () => {
+    const httpServer = http.createServer(app);
+
+    initSocket(httpServer);
+
+    // IMPORTANT: listen on httpServer, NOT app
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   })

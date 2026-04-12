@@ -8,6 +8,7 @@ import { setCurrentUser } from "@/redux/reducers/currentUser";
 import LoadingPage from "@/components/LoadingPage";
 import Header from "@/components/Header";
 import { useRouter } from "next/navigation";
+import { getSocket } from "@/lib/socket";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,12 @@ const AuthenticatedLayout = ({ children, modal }: AuthenticatedLayoutProps) => {
       try {
         const { data: user } = await authService.current();
         dispatch(setCurrentUser(user));
+        const socket = getSocket();
+
+        if (!socket.connected) {
+          socket.connect();
+        }
+
         setLoading(false);
       } catch (error) {
         toastError(error);
