@@ -19,7 +19,8 @@ import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
 import { CommentLike } from "../entities/CommentLike";
 import { NotificationService } from "./Notification";
-import { NotificationType } from "../entities/Notification";
+import { Notification, NotificationType } from "../entities/Notification";
+import { emitNewNotification } from "../libs/io";
 
 @Service()
 export class PostService {
@@ -108,7 +109,10 @@ export class PostService {
 
   async toggleLike(postId: number, user: UserProps) {
     try {
-      return await AppDataSource.transaction(async (manager) => {
+      let notification = null;
+      let recipientId: number | null = null;
+
+      const result = await AppDataSource.transaction(async (manager) => {
         const post = await manager.findOne(Post, {
           where: { id: postId },
         });
@@ -139,86 +143,112 @@ export class PostService {
 
         await manager.increment(Post, { id: postId }, "likeCount", 1);
 
-        await this.notificationService.create({
+        notification = await this.notificationService.create({
           recipientId: post.authorId,
           senderId: user.id,
           type: NotificationType.LIKE_POST,
           postId: post.id,
         });
 
+        recipientId = post.authorId;
+
         return { liked: true };
       });
+
+      if (notification && recipientId) {
+        emitNewNotification(recipientId, {
+          ...(notification as Notification),
+          sender: user,
+        });
+      }
+
+      return result;
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
   }
 
-  async createComment(id: number, data: CreateCommentDto, user: UserProps) {
+  async comment(id: number, data: CreateCommentDto, user: UserProps) {
     try {
       const { content, parentId } = data;
 
-      return await AppDataSource.transaction(async (manager) => {
-        const comment = await manager.save(Comment, {
-          content,
-          postId: id,
-          parentId: parentId,
-          authorId: user.id,
-          likeCount: 0,
-        });
+      let notification = null;
+      let recipientId: number | null = null;
 
-        await manager.increment(Post, { id }, "commentCount", 1);
-
-        const post = await manager.findOne(Post, { where: { id } });
-
-        if (post) {
-          await this.notificationService.create({
-            recipientId: post.authorId,
-            senderId: user.id,
-            type: NotificationType.COMMENT,
+      const normalizeComment = await AppDataSource.transaction(
+        async (manager) => {
+          const comment = await manager.save(Comment, {
+            content,
             postId: id,
-            commentId: comment.id,
+            parentId,
+            authorId: user.id,
+            likeCount: 0,
           });
-        }
 
-        const normalizeComment = await manager
-          .createQueryBuilder(Comment, "comment")
-          .leftJoinAndSelect("comment.author", "author")
-          .leftJoinAndSelect("comment.replies", "replies")
-          .leftJoinAndSelect("replies.author", "replyAuthor")
-          .select([
-            "comment.id",
-            "comment.content",
-            "comment.postId",
-            "comment.parentId",
-            "comment.likeCount",
-            "comment.createdAt",
-            "author.id",
-            "author.username",
-            "author.fullName",
-            "author.avatar",
-            "author.isVerified",
-            "replies.id",
-            "replies.content",
-            "replies.postId",
-            "replies.parentId",
-            "replies.likeCount",
-            "replies.createdAt",
-            "replyAuthor.id",
-            "replyAuthor.username",
-            "replyAuthor.fullName",
-            "replyAuthor.avatar",
-            "replyAuthor.isVerified",
-          ])
-          .where("comment.id = :id", { id: comment.id })
-          .getOne();
+          await manager.increment(Post, { id }, "commentCount", 1);
 
-        return normalizeComment;
-      });
+          const post = await manager.findOne(Post, { where: { id } });
+
+          if (post && post.authorId !== user.id) {
+            notification = await this.notificationService.create({
+              recipientId: post.authorId,
+              senderId: user.id,
+              type: NotificationType.COMMENT,
+              postId: id,
+              commentId: comment.id,
+            });
+
+            recipientId = post.authorId;
+          }
+
+          const result = await manager
+            .createQueryBuilder(Comment, "comment")
+            .leftJoinAndSelect("comment.author", "author")
+            .leftJoinAndSelect("comment.replies", "replies")
+            .leftJoinAndSelect("replies.author", "replyAuthor")
+            .select([
+              "comment.id",
+              "comment.content",
+              "comment.postId",
+              "comment.parentId",
+              "comment.likeCount",
+              "comment.createdAt",
+              "author.id",
+              "author.username",
+              "author.fullName",
+              "author.avatar",
+              "author.isVerified",
+              "replies.id",
+              "replies.content",
+              "replies.postId",
+              "replies.parentId",
+              "replies.likeCount",
+              "replies.createdAt",
+              "replyAuthor.id",
+              "replyAuthor.username",
+              "replyAuthor.fullName",
+              "replyAuthor.avatar",
+              "replyAuthor.isVerified",
+            ])
+            .where("comment.id = :id", { id: comment.id })
+            .getOne();
+
+          return result;
+        },
+      );
+
+      if (notification && recipientId) {
+        emitNewNotification(recipientId, {
+          ...(notification as Notification),
+          sender: user,
+        });
+      }
+
+      return normalizeComment;
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
   }
-
   async removeComment(commentId: number, user: UserProps) {
     try {
       return await AppDataSource.transaction(async (manager) => {
@@ -249,7 +279,10 @@ export class PostService {
 
   async toggleLikeComment(commentId: number, user: UserProps) {
     try {
-      return await AppDataSource.transaction(async (manager) => {
+      let notification = null;
+      let recipientId: number | null = null;
+
+      const result = await AppDataSource.transaction(async (manager) => {
         const comment = await manager.findOne(Comment, {
           where: { id: commentId },
         });
@@ -283,16 +316,29 @@ export class PostService {
 
         await manager.increment(Comment, { id: commentId }, "likeCount", 1);
 
-        await this.notificationService.create({
-          recipientId: comment.authorId,
-          senderId: user.id,
-          type: NotificationType.LIKE_COMMENT,
-          postId: comment.postId,
-          commentId: comment.id,
-        });
+        if (comment.authorId !== user.id) {
+          notification = await this.notificationService.create({
+            recipientId: comment.authorId,
+            senderId: user.id,
+            type: NotificationType.LIKE_COMMENT,
+            postId: comment.postId,
+            commentId: comment.id,
+          });
+
+          recipientId = comment.authorId;
+        }
 
         return { liked: true };
       });
+
+      if (notification && recipientId) {
+        emitNewNotification(recipientId, {
+          ...(notification as Notification),
+          sender: user,
+        });
+      }
+
+      return result;
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

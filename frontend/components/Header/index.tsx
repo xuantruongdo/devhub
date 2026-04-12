@@ -30,6 +30,7 @@ import { Conversation } from "@/types/chat";
 import chatService from "@/services/chat";
 import { MessagesPanel } from "../Message/MessagesPanel";
 import { getUnread, isMe } from "@/lib/utils";
+import { getSocket } from "@/lib/socket";
 
 const FAKE_USERS = [
   {
@@ -442,6 +443,22 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    socket.emit("user:join", currentUser.id);
+
+    const handleNewNotification = (notif: Notification) => {
+      dispatch(setNotifications([notif, ...notifications]));
+    };
+
+    socket.on("notification:new", handleNewNotification);
+
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+    };
+  }, [notifications]);
 
   const onLogout = async () => {
     try {

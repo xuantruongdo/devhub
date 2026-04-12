@@ -180,10 +180,10 @@ export default function ChatWindow({
   useEffect(() => {
     const socket = getSocket();
 
-    // 1. join conversation room
+    // Join conversation room
     socket.emit("conversation:join", conversationId);
 
-    // 2. handle new message
+    // Handle new message
     const handleNewMessage = (message: Message) => {
       if (message.conversationId !== conversationId) return;
 

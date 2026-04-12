@@ -18,7 +18,8 @@ import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
 import { FollowType } from "../constants";
 import { NotificationService } from "./Notification";
-import { NotificationType } from "../entities/Notification";
+import { Notification, NotificationType } from "../entities/Notification";
+import { emitNewNotification } from "../libs/io";
 
 @Service()
 export class UserService {
@@ -285,8 +286,12 @@ export class UserService {
     }
   }
 
-  async toggleFollow(targetUserId: number, currentUserId: number) {
-    return await AppDataSource.transaction(async (manager) => {
+  async toggleFollow(targetUserId: number, user: UserProps) {
+    let notification = null;
+    let recipientId: number | null = null;
+
+    const result = await AppDataSource.transaction(async (manager) => {
+      const currentUserId = user.id;
       if (currentUserId === targetUserId) {
         throw new BadRequestError(UserCodeError.CANNOT_FOLLOW_YOURSELF);
       }
@@ -315,12 +320,7 @@ export class UserService {
         );
         await manager.save(currentUser);
 
-        const updatedTarget = await manager.decrement(
-          User,
-          { id: targetUserId },
-          "followerCount",
-          1,
-        );
+        await manager.decrement(User, { id: targetUserId }, "followerCount", 1);
         await manager.decrement(
           User,
           { id: currentUserId },
@@ -330,40 +330,40 @@ export class UserService {
 
         return {
           following: false,
-          followerCount:
-            (updatedTarget.raw?.affectedRows ?? targetUser.followerCount) - 1,
+          followerCount: targetUser.followerCount - 1,
         };
-      } else {
-        // FOLLOW
-        currentUser.followings.push(targetUser);
-        await manager.save(currentUser);
+      }
 
-        const updatedTarget = await manager.increment(
-          User,
-          { id: targetUserId },
-          "followerCount",
-          1,
-        );
-        await manager.increment(
-          User,
-          { id: currentUserId },
-          "followingCount",
-          1,
-        );
+      currentUser.followings.push(targetUser);
+      await manager.save(currentUser);
 
-        await this.notificationService.create({
+      await manager.increment(User, { id: targetUserId }, "followerCount", 1);
+      await manager.increment(User, { id: currentUserId }, "followingCount", 1);
+
+      if (currentUserId !== targetUserId) {
+        notification = await this.notificationService.create({
           recipientId: targetUserId,
           senderId: currentUserId,
           type: NotificationType.FOLLOW,
         });
 
-        return {
-          following: true,
-          followerCount:
-            (updatedTarget.raw?.affectedRows ?? targetUser.followerCount) + 1,
-        };
+        recipientId = targetUserId;
       }
+
+      return {
+        following: true,
+        followerCount: targetUser.followerCount + 1,
+      };
     });
+
+    if (notification && recipientId) {
+      emitNewNotification(recipientId, {
+        ...(notification as Notification),
+        sender: user,
+      });
+    }
+
+    return result;
   }
 
   async getListFollow(

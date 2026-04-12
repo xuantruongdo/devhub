@@ -78,7 +78,7 @@ export class PostController {
     @Body({ validate: true }) body: CreateCommentDto,
     @CurrentUser() user: UserProps,
   ) {
-    return this.postService.createComment(id, body, user);
+    return this.postService.comment(id, body, user);
   }
 
   @Delete("/:commentId/comment")
