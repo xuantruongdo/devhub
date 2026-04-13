@@ -154,6 +154,7 @@
     "cancel": "Hủy",
     "save": "Lưu",
     "admin": "Quản trị viên",
+    "message": "Nhắn tin",
     "follow": "Theo dõi",
     "followingLabel": "Đang theo dõi",
     "fullName": "Họ và tên",
@@ -185,6 +186,26 @@
       "title": "Chat",
       "typeMessage": "Nhập tin nhắn...",
       "newMessages": "Tin nhắn mới"
+    },
+    "call": {
+      "calling": {
+        "title": "Đang gọi...",
+        "waiting": "Đang chờ người nhận trả lời..."
+      },
+      "receiving": {
+        "title": "Cuộc gọi đến",
+        "description": "Cuộc gọi video đến"
+      },
+      "connected": {
+        "title": "Đang trong cuộc gọi",
+        "status": "Đã kết nối",
+        "connecting": "Đang kết nối video..."
+      },
+      "ended": {
+        "rejected": "Cuộc gọi bị từ chối",
+        "timeout": "Không có phản hồi",
+        "ended": "Cuộc gọi đã kết thúc"
+      }
     },
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "Bạn không có quyền truy cập cuộc trò chuyện này"

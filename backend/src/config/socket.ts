@@ -46,6 +46,26 @@ export const initSocket = (server: http.Server) => {
     socket.on("disconnect", () => {
       console.log("🔴 User disconnected:", socket.id);
     });
+
+    socket.on("call:offer", ({ targetUserId, ...data }) => {
+      io.to(`user:${targetUserId}`).emit("call:offer", data);
+    });
+
+    socket.on("call:answer", ({ targetUserId, ...data }) => {
+      io.to(`user:${targetUserId}`).emit("call:answer", data);
+    });
+
+    socket.on("call:ice-candidate", ({ targetUserId, ...data }) => {
+      io.to(`user:${targetUserId}`).emit("call:ice-candidate", data);
+    });
+
+    socket.on("call:reject", ({ targetUserId }) => {
+      io.to(`user:${targetUserId}`).emit("call:reject");
+    });
+
+    socket.on("call:end", ({ targetUserId }) => {
+      io.to(`user:${targetUserId}`).emit("call:end");
+    });
   });
 
   return io;

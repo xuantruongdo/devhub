@@ -31,7 +31,6 @@ import chatService from "@/services/chat";
 import { MessagesPanel } from "../Message/MessagesPanel";
 import { getUnread, isMe } from "@/lib/utils";
 import { getSocket } from "@/lib/socket";
-import { useSocket } from "@/hooks/useSocket";
 
 const FAKE_USERS = [
   {
@@ -295,7 +294,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, locale } = useTranslation();
-  const socket = useSocket(currentUser.id);
+  const socket = getSocket();
 
   // Notification
   const notifications = useAppSelector((state) => state.notifications);

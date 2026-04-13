@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Video } from "lucide-react";
 import chatService from "@/services/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { Message } from "@/types/chat";
@@ -15,7 +15,9 @@ import { MessageSkeleton } from "./MessageSkeleton";
 import { getOtherUser, isMe, scrollToBottom } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
-import { useSocket } from "@/hooks/useSocket";
+import { getSocket } from "@/lib/socket";
+import Link from "next/link";
+import { useCallContext } from "@/contexts/CallContext";
 
 export default function ChatWindow({
   conversationId,
@@ -27,7 +29,7 @@ export default function ChatWindow({
 
   const router = useRouter();
   const { t, locale, ready } = useTranslation();
-  const socket = useSocket(currentUser.id);
+  const socket = getSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -40,6 +42,8 @@ export default function ChatWindow({
   const fetchingRef = useRef(false);
   const didInitialScroll = useRef(false);
   const incomingMessageRef = useRef(false);
+
+  const { startCall } = useCallContext();
 
   useEffect(() => {
     setMessages([]);
@@ -180,13 +184,24 @@ export default function ChatWindow({
     }
   };
 
-  const conversationName = useMemo(() => {
-    const otherUser = getOtherUser(selectedConversation, currentUser.id);
+  const otherUser = useMemo(() => {
+    if (selectedConversation?.isGroup) return null;
 
-    return selectedConversation.isGroup
-      ? selectedConversation?.title || t("chat.sidebar.unknown")
-      : otherUser?.fullName;
-  }, [conversationId, selectedConversation]);
+    return getOtherUser(selectedConversation, currentUser.id);
+  }, [selectedConversation, currentUser.id]);
+
+  const conversationName = useMemo(() => {
+    if (selectedConversation?.isGroup) {
+      return selectedConversation?.title || t("chat.sidebar.unknown");
+    }
+
+    return otherUser?.fullName;
+  }, [
+    selectedConversation?.isGroup,
+    selectedConversation?.title,
+    otherUser,
+    t,
+  ]);
 
   useEffect(() => {
     socket.emit("conversation:join", conversationId);
@@ -218,14 +233,53 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
-      <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
+      <div className="flex items-center justify-between p-3 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={() => router.push(`/${locale}/messages`)}>
+          <button
+            onClick={() => router.push(`/${locale}/messages`)}
+            className="md:hidden"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="font-medium">{t("chat.window.title")}</span>
+
+          {!selectedConversation?.isGroup && otherUser && (
+            <Link href={`/${locale}/${otherUser.username}`}>
+              <Avatar size="lg" className="hidden md:block">
+                {otherUser.avatar ? (
+                  <AvatarImage
+                    src={otherUser.avatar}
+                    alt={otherUser.fullName}
+                  />
+                ) : (
+                  <AvatarFallback>
+                    {otherUser.fullName?.charAt(0)?.toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            </Link>
+          )}
+
+          <div className="flex flex-col">
+            <span className="font-medium">{conversationName}</span>
+
+            {!selectedConversation?.isGroup && (
+              <span className="text-xs text-gray-400 hidden md:block">
+                Online
+              </span>
+            )}
+          </div>
         </div>
-        <span className="font-medium">{conversationName}</span>
+
+        <div className="flex items-center gap-2">
+          {otherUser && (
+            <button
+              onClick={() => startCall(otherUser.id, currentUser.fullName)}
+              className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+            >
+              <Video className="w-5 h-5 " />
+            </button>
+          )}
+        </div>
       </div>
 
       <div

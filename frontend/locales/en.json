@@ -154,6 +154,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "admin": "Admin",
+    "message": "Message",
     "follow": "Follow",
     "followingLabel": "Following",
     "fullName": "Full Name",
@@ -185,6 +186,26 @@
       "title": "Chat",
       "typeMessage": "Type a message...",
       "newMessages": "New messages"
+    },
+    "call": {
+      "calling": {
+        "title": "Calling...",
+        "waiting": "Waiting for answer..."
+      },
+      "receiving": {
+        "title": "Incoming call",
+        "description": "Video call incoming"
+      },
+      "connected": {
+        "title": "In call",
+        "status": "Connected",
+        "connecting": "Connecting video..."
+      },
+      "ended": {
+        "rejected": "Call rejected",
+        "timeout": "No answer",
+        "ended": "Call ended"
+      }
     },
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "You do not have permission to access this conversation"

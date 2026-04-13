@@ -159,7 +159,7 @@ export default function Profile({ user }: ProfileProps) {
             {!isMe && (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleMessage}>
-                  Message
+                  {t("profile.message")}
                 </Button>
                 <Button
                   variant={isFollowing ? "outline" : "default"}
