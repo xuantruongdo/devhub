@@ -7,7 +7,7 @@ import { Conversation } from "@/types/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getOtherUser, getUnread, isMe } from "@/lib/utils";
-import { MessageType } from "@/constants";
+import { CallEndReason, MessageType } from "@/constants";
 
 type Props = {
   conversation: Conversation;
@@ -29,6 +29,28 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
   const fallbackText = displayName?.charAt(0)?.toUpperCase() || "?";
 
   const unread = getUnread([conversation], currentUser.id);
+
+  const renderLastMessage = (msg: any) => {
+    switch (msg?.type) {
+      case MessageType.TEXT:
+        return msg.content;
+
+      case MessageType.CALL:
+        return msg.callStatus === CallEndReason.REJECTED ||
+          msg.callStatus === CallEndReason.TIMEOUT
+          ? t("chat.sidebar.missed_call")
+          : t("chat.sidebar.call");
+
+      case MessageType.FILE:
+        return t("chat.sidebar.file");
+
+      case MessageType.IMAGE:
+        return t("chat.sidebar.image");
+
+      default:
+        return t("chat.sidebar.message");
+    }
+  };
 
   return (
     <Link
@@ -65,9 +87,7 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
               )}
 
               <span className="truncate inline-block max-w-[100px] align-bottom">
-                {conversation.lastMessage.type === MessageType.TEXT
-                  ? conversation.lastMessage.content
-                  : t("chat.sidebar.file")}
+                {renderLastMessage(conversation.lastMessage)}
               </span>
 
               {" · "}

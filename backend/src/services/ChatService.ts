@@ -3,7 +3,7 @@ import { AppDataSource } from "../config/data-source";
 import { MessageRepo } from "../repositories/MessageRepo";
 import { ConversationRepo } from "../repositories/ConversationRepo";
 import { ParticipantRepo } from "../repositories/ParticipantRepo";
-import { Message } from "../entities/Message";
+import { CallStatus, MessageType } from "../entities/Message";
 import { Conversation } from "../entities/Conversation";
 import { UserProps } from "../types/auth";
 import { ForbiddenError } from "routing-controllers";
@@ -60,9 +60,13 @@ export class ChatService {
   async sendMessage(params: {
     conversationId: number;
     sender: UserProps;
-    content: string;
+    content?: string;
+    type?: MessageType;
+    callDuration?: number;
+    callStatus?: CallStatus;
   }) {
-    const { conversationId, sender, content } = params;
+    const { conversationId, sender, content, type, callDuration, callStatus } =
+      params;
     const senderId = sender.id;
 
     const participant = await this.participantRepo.findOne({
@@ -77,6 +81,9 @@ export class ChatService {
         conversationId,
         senderId,
         content,
+        type,
+        callDuration,
+        callStatus,
       });
 
       await this.conversationRepo.update(conversationId, {

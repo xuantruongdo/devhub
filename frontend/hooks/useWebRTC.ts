@@ -13,6 +13,11 @@ interface UseWebRTCOptions {
   socket: Socket;
   currentUserId: number;
   conversationId: number;
+  onSaveCallMessage?: (data: {
+    conversationId: number;
+    callDuration: number;
+    callStatus: CallEndReason;
+  }) => void;
 }
 
 // Cấu hình STUN server giúp 2 peer tìm được địa chỉ public của nhau (NAT traversal)
@@ -27,6 +32,7 @@ export function useWebRTC({
   socket,
   currentUserId,
   conversationId,
+  onSaveCallMessage,
 }: UseWebRTCOptions) {
   // Trạng thái hiện tại của cuộc gọi: IDLE / CALLING / RECEIVING / CONNECTED / ENDED
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.IDLE);
@@ -80,6 +86,15 @@ export function useWebRTC({
   // Dùng để endCall từ overlay mà không cần prop drilling
   const otherUserIdRef = useRef<number | null>(null);
 
+  // Thời điểm cuộc gọi bắt đầu kết nối (khi CONNECTED)
+  const callStartTimeRef = useRef<number | null>(null);
+
+  // Hàm tính duration (giây) kể từ lúc connected
+  const getCallDuration = () => {
+    if (!callStartTimeRef.current) return 0;
+    return Math.floor((Date.now() - callStartTimeRef.current) / 1000);
+  };
+
   // Dọn dẹp toàn bộ state và resource sau khi cuộc gọi kết thúc
   const cleanup = useCallback(
     (reason?: CallEndReason) => {
@@ -107,6 +122,7 @@ export function useWebRTC({
       otherUserIdRef.current = null;
       pendingCandidates.current = [];
       pendingOfferRef.current = null;
+      callStartTimeRef.current = null;
 
       // Hủy timeout chờ bắt máy nếu còn đang chạy
       if (callTimeoutRef.current) {
@@ -129,19 +145,38 @@ export function useWebRTC({
   // Kết thúc cuộc gọi từ phía mình: thông báo đối phương rồi cleanup
   const endCall = useCallback(
     (targetUserId: number) => {
+      const duration = getCallDuration();
+
       socket.emit("call:end", { conversationId, targetUserId });
+
+      // Lưu call message — chỉ người gọi endCall chủ động mới lưu
+      // Tránh cả 2 phía đều lưu → duplicate
+      onSaveCallMessage?.({
+        conversationId,
+        callDuration: duration,
+        callStatus: CallEndReason.ENDED,
+      });
+
       cleanup(CallEndReason.ENDED);
     },
-    [socket, conversationId, cleanup],
+    [socket, conversationId, cleanup, onSaveCallMessage],
   );
 
   // Từ chối cuộc gọi đến: thông báo đối phương rồi cleanup
   const rejectCall = useCallback(
     (targetUserId: number) => {
       socket.emit("call:reject", { conversationId, targetUserId });
+
+      // Người reject lưu message
+      onSaveCallMessage?.({
+        conversationId,
+        callDuration: 0,
+        callStatus: CallEndReason.REJECTED,
+      });
+
       cleanup(CallEndReason.REJECTED);
     },
-    [socket, conversationId, cleanup],
+    [socket, conversationId, cleanup, onSaveCallMessage],
   );
 
   // Tạo RTCPeerConnection mới và gắn các handler cần thiết
@@ -166,6 +201,7 @@ export function useWebRTC({
         if (stream) {
           setRemoteStream(stream);
           setCallStatus(CallStatus.CONNECTED);
+          callStartTimeRef.current = Date.now();
         }
       };
 
@@ -231,6 +267,12 @@ export function useWebRTC({
         // Tự hủy cuộc gọi nếu đối phương không bắt máy sau CALL_TIMEOUT ms
         callTimeoutRef.current = setTimeout(() => {
           socket.emit("call:end", { conversationId, targetUserId });
+          onSaveCallMessage?.({
+            conversationId,
+            callDuration: 0,
+            callStatus: CallEndReason.TIMEOUT,
+          });
+
           cleanup(CallEndReason.TIMEOUT);
         }, CALL_TIMEOUT);
       } catch (err) {
@@ -242,10 +284,11 @@ export function useWebRTC({
       socket,
       currentUserId,
       conversationId,
+      callStatus,
       getLocalMedia,
       createPeerConnection,
       cleanup,
-      callStatus,
+      onSaveCallMessage,
     ],
   );
 

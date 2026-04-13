@@ -83,3 +83,12 @@ export const getUnread = (
     return sum + (me?.unreadCount ?? 0);
   }, 0);
 };
+
+export function formatCallDuration(seconds?: number) {
+  if (!seconds && seconds !== 0) return "00:00";
+
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}

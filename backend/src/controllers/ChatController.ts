@@ -35,6 +35,9 @@ export class ChatController {
       conversationId: body.conversationId,
       sender: user,
       content: body.content,
+      type: body.type,
+      callDuration: body.callDuration,
+      callStatus: body.callStatus,
     });
   }
 

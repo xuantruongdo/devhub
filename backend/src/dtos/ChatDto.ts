@@ -1,4 +1,5 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { CallStatus, MessageType } from "../entities/Message";
 
 export class CreateConversationDto {
   @IsNumber()
@@ -9,6 +10,19 @@ export class SendMessageDto {
   @IsNumber()
   conversationId!: number;
 
-  @IsString({ message: "Content must be a string" })
-  content!: string;
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @IsOptional()
+  @IsEnum(MessageType)
+  type?: MessageType;
+
+  @IsOptional()
+  @IsNumber()
+  callDuration?: number;
+
+  @IsOptional()
+  @IsEnum(CallStatus)
+  callStatus?: CallStatus;
 }

@@ -44,6 +44,7 @@ export enum MessageType {
   TEXT = "text",
   IMAGE = "image",
   FILE = "file",
+  CALL = "call",
 }
 
 export enum CallStatus {

@@ -5,6 +5,8 @@ import { getSocket } from "@/lib/socket";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { CallContext } from "@/contexts/CallContext";
 import IncomingCallOverlay from "../IncomingCallOverlay";
+import chatService from "@/services/chat";
+import { MessageType } from "@/constants";
 
 export default function CallProvider({
   children,
@@ -19,6 +21,18 @@ export default function CallProvider({
     socket,
     currentUserId: currentUser.id,
     conversationId: selectedConversation?.id ?? 0,
+    onSaveCallMessage: async ({ conversationId, callDuration, callStatus }) => {
+      try {
+        await chatService.sendMessage({
+          conversationId,
+          type: MessageType.CALL,
+          callDuration,
+          callStatus,
+        });
+      } catch (err) {
+        console.error("Failed to save call message:", err);
+      }
+    },
   });
 
   return (

@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Video } from "lucide-react";
+import { ArrowLeft, Phone, PhoneOff, Send, Video } from "lucide-react";
 import chatService from "@/services/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { Message } from "@/types/chat";
-import { MESSAGE_LIMIT } from "@/constants";
+import { CallEndReason, MESSAGE_LIMIT, MessageType } from "@/constants";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSkeleton } from "./MessageSkeleton";
-import { getOtherUser, isMe, scrollToBottom } from "@/lib/utils";
+import {
+  formatCallDuration,
+  getOtherUser,
+  isMe,
+  scrollToBottom,
+} from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
 import { getSocket } from "@/lib/socket";
@@ -229,6 +234,59 @@ export default function ChatWindow({
     };
   }, [conversationId]);
 
+  const renderMessageContent = (m: Message, isMine: boolean) => {
+    switch (m.type) {
+      case MessageType.CALL:
+        const isMissed =
+          m.callStatus === CallEndReason.REJECTED ||
+          m.callStatus === CallEndReason.TIMEOUT;
+
+        return (
+          <div
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-sm border ${
+              isMine
+                ? "bg-blue-50 border-blue-200 text-blue-700"
+                : "bg-gray-50 border-gray-200 text-gray-700"
+            }`}
+          >
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                isMissed ? "bg-red-100" : "bg-green-100"
+              }`}
+            >
+              {isMissed ? (
+                <PhoneOff className="w-4 h-4 text-red-500" />
+              ) : (
+                <Phone className="w-4 h-4 text-green-600" />
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium leading-tight">{m.content}</span>
+
+              {m.callDuration > 0 && (
+                <span className="text-[11px] opacity-60 mt-0.5">
+                  {formatCallDuration(m.callDuration)}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+
+      case MessageType.TEXT:
+      default:
+        return (
+          <div
+            className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+              isMine ? "bg-blue-500 text-white" : "bg-white text-black border"
+            }`}
+          >
+            {m.content}
+          </div>
+        );
+    }
+  };
+
   if (!ready) return null;
 
   return (
@@ -301,7 +359,7 @@ export default function ChatWindow({
                   <Avatar size="lg" className="cursor-pointer">
                     {m.sender?.avatar ? (
                       <AvatarImage
-                        src={m.sender?.avatar}
+                        src={m.sender.avatar}
                         alt={m.sender.fullName}
                       />
                     ) : (
@@ -311,16 +369,7 @@ export default function ChatWindow({
                     )}
                   </Avatar>
                 )}
-
-                <div
-                  className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                    isMine
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-black border"
-                  }`}
-                >
-                  {m.content}
-                </div>
+                {renderMessageContent(m, isMine)}
               </div>
 
               <div
