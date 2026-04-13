@@ -8,10 +8,10 @@ import { User } from "@/types/user";
 import userService from "@/services/user";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
-import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import { Loader2 } from "lucide-react";
 import { FollowType } from "@/constants";
+import Link from "next/link";
 
 interface UserFollowDialogProps {
   user: User;
@@ -23,23 +23,21 @@ interface UserFollowDialogProps {
 function FollowUserItem({
   item,
   isMe,
-  onNavigate,
   onToggleFollow,
   following,
 }: {
   item: User;
   isMe: boolean;
-  onNavigate: (username: string) => void;
   onToggleFollow: (user: User) => void;
   following: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   return (
     <div className="flex items-center justify-between gap-3 px-2 py-2.5 hover:bg-muted/40 transition-colors rounded-lg">
-      <button
+      <Link 
+      href={`/${locale}/${item.username}`}
         className="flex items-center gap-3 flex-1 min-w-0 text-left"
-        onClick={() => onNavigate(item.username)}
       >
         <Avatar className="w-10 h-10">
           <AvatarImage
@@ -56,7 +54,7 @@ function FollowUserItem({
             @{item.username}
           </p>
         </div>
-      </button>
+      </Link>
 
       {!isMe && (
         <Button
@@ -76,12 +74,10 @@ function FollowList({
   userId,
   type,
   currentUserId,
-  onNavigate,
 }: {
   userId: number;
   type: FollowType;
   currentUserId?: number;
-  onNavigate: (username: string) => void;
 }) {
   const [followUsers, setFollowUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -151,7 +147,6 @@ function FollowList({
           item={u}
           isMe={u.id === currentUserId}
           following={followingMap[u.id] ?? false}
-          onNavigate={onNavigate}
           onToggleFollow={handleToggleFollow}
         />
       ))}
@@ -165,8 +160,7 @@ export default function UserFollowDialog({
   defaultTab = FollowType.FOLLOWER,
   onClose,
 }: UserFollowDialogProps) {
-  const { t, locale } = useTranslation();
-  const router = useRouter();
+  const { t } = useTranslation();
   const currentUser = useAppSelector((state) => state.currentUser);
   const [activeTab, setActiveTab] = useState<FollowType>(defaultTab);
 
@@ -214,7 +208,6 @@ export default function UserFollowDialog({
             userId={user.id}
             type={FollowType.FOLLOWER}
             currentUserId={currentUser?.id}
-            onNavigate={() => router.push(`/${locale}/${user.username}`)}
           />
         )}
         {activeTab === FollowType.FOLLOWING && (
@@ -222,7 +215,6 @@ export default function UserFollowDialog({
             userId={user.id}
             type={FollowType.FOLLOWING}
             currentUserId={currentUser?.id}
-            onNavigate={() => router.push(`/${locale}/${user.username}`)}
           />
         )}
       </div>

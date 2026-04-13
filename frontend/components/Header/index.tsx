@@ -25,12 +25,13 @@ import { NotificationPanel } from "../Notification/NotificationPanel";
 import notificationService from "@/services/notification";
 import { LIMIT } from "@/constants";
 import { setNotifications } from "@/redux/reducers/notifications";
-import { Notification } from "@/types/notification";
+import { Notification as NotificationProps } from "@/types/notification";
 import { Conversation } from "@/types/chat";
 import chatService from "@/services/chat";
 import { MessagesPanel } from "../Message/MessagesPanel";
 import { getUnread, isMe } from "@/lib/utils";
 import { getSocket } from "@/lib/socket";
+import { useSocket } from "@/hooks/useSocket";
 
 const FAKE_USERS = [
   {
@@ -294,6 +295,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const socket = useSocket(currentUser.id);
 
   // Notification
   const notifications = useAppSelector((state) => state.notifications);
@@ -319,7 +321,7 @@ export default function Header() {
     try {
       setNotifLoading(true);
 
-      const { data } = await notificationService.findAll<Notification[]>({
+      const { data } = await notificationService.findAll<NotificationProps[]>({
         limit: LIMIT,
       });
 
@@ -340,7 +342,7 @@ export default function Header() {
 
       const lastId = notifications[notifications.length - 1]?.id;
 
-      const { data } = await notificationService.findAll<Notification[]>({
+      const { data } = await notificationService.findAll<NotificationProps[]>({
         limit: LIMIT,
         cursor: lastId,
       });
@@ -445,11 +447,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    const socket = getSocket();
-
-    socket.emit("user:join", currentUser.id);
-
-    const handleNewNotification = (notif: Notification) => {
+    const handleNewNotification = (notif: NotificationProps) => {
       dispatch(setNotifications([notif, ...notifications]));
     };
 
@@ -458,7 +456,36 @@ export default function Header() {
     return () => {
       socket.off("notification:new", handleNewNotification);
     };
-  }, [notifications]);
+  }, [notifications, socket]);
+
+  useEffect(() => {
+    const handleConversationUpdate = (conv: Conversation) => {
+      setConversations((prev) => {
+        const filtered = prev.filter((c) => c.id !== conv.id);
+        return [conv, ...filtered];
+      });
+
+      const title = `New message from ${conv.lastMessage.sender.fullName}`;
+      const body = conv.isGroup
+        ? `${conv.lastMessage.content} - ${conv.lastMessage.sender.fullName}`
+        : conv.lastMessage.content;
+
+      if (document.hidden || !document.hasFocus()) {
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body,
+            icon: "/vercel.svg",
+          });
+        }
+      }
+    };
+
+    socket.on("conversation:update", handleConversationUpdate);
+
+    return () => {
+      socket.off("conversation:update", handleConversationUpdate);
+    };
+  }, [socket]);
 
   const onLogout = async () => {
     try {

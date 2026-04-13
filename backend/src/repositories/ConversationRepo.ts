@@ -1,6 +1,7 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Conversation } from "../entities/Conversation";
+import { FindOneOptions } from "typeorm";
 
 @Service()
 export class ConversationRepo {
@@ -16,6 +17,10 @@ export class ConversationRepo {
       where: { id },
       relations: ["participants", "participants.user"],
     });
+  }
+
+  async findOne(options: FindOneOptions<Conversation>) {
+    return this.repo.findOne(options);
   }
 
   async update(id: number, data: Partial<Conversation>) {

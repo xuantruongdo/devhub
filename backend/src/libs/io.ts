@@ -1,4 +1,5 @@
 import { getIO } from "../config/socket";
+import { Conversation } from "../entities/Conversation";
 import { Notification } from "../entities/Notification";
 import { MessageWithSender, NotificationWithSender } from "../types/socket";
 
@@ -17,6 +18,20 @@ export const emitNewMessage = (
   io.to(`conversation:${conversationId}`).emit(SocketEvents.MESSAGE_NEW, {
     ...message,
     conversationId,
+  });
+};
+
+export const emitConversationUpdate = (
+  userIds: number[],
+  conversation: Conversation,
+) => {
+  const io = getIO();
+
+  userIds.forEach((userId) => {
+    io.to(`user:${userId}`).emit(
+      SocketEvents.CONVERSATION_UPDATE,
+      conversation,
+    );
   });
 };
 

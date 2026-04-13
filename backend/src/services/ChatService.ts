@@ -8,7 +8,7 @@ import { Conversation } from "../entities/Conversation";
 import { UserProps } from "../types/auth";
 import { ForbiddenError } from "routing-controllers";
 import { ChatCodeError } from "../constants/code";
-import { emitNewMessage } from "../libs/io";
+import { emitConversationUpdate, emitNewMessage } from "../libs/io";
 
 @Service()
 export class ChatService {
@@ -93,6 +93,51 @@ export class ChatService {
       ...message,
       sender,
     });
+
+    const updatedConversation = await this.conversationRepo.findOne({
+      where: { id: conversationId },
+      relations: [
+        "participants",
+        "participants.user",
+        "lastMessage",
+        "lastMessage.sender",
+      ],
+      select: {
+        id: true,
+        isGroup: true,
+        participants: {
+          id: true,
+          userId: true,
+          unreadCount: true,
+          user: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            username: true,
+          },
+        },
+        lastMessage: {
+          id: true,
+          content: true,
+          type: true,
+          fileUrl: true,
+          senderId: true,
+          sender: {
+            id: true,
+            fullName: true,
+            avatar: true,
+            username: true,
+          },
+          createdAt: true,
+        },
+      },
+    });
+
+    if (updatedConversation) {
+      const userIds = updatedConversation.participants.map((p) => p.userId);
+
+      emitConversationUpdate(userIds, updatedConversation);
+    }
 
     return message;
   }

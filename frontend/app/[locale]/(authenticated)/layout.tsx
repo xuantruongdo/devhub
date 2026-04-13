@@ -41,6 +41,12 @@ const AuthenticatedLayout = ({ children, modal }: AuthenticatedLayoutProps) => {
     fetchInitData();
   }, [dispatch]);
 
+  useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   if (loading) return <LoadingPage />;
 
   return (

@@ -56,12 +56,6 @@ export const navigateFromModal = (router: any, url: string) => {
   }, 50);
 };
 
-export const isNearBottom = (el: HTMLDivElement | null, threshold = 100) => {
-  if (!el) return false;
-
-  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
-};
-
 export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
   if (!el) return;
 

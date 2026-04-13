@@ -6,6 +6,7 @@ import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
 import { CommentItem } from "./CommentItem";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useSearchParams } from "next/navigation";
 
 interface CommentListProps {
   postId: number;
@@ -21,6 +22,8 @@ export function CommentList({
   onCommentDeleted,
 }: CommentListProps) {
   const { ready } = useTranslation();
+  const searchParams = useSearchParams();
+  const activeCommentId = Number(searchParams.get("commentId"));
 
   const updateLikeRecursive = (
     comment: Comment,
@@ -124,6 +127,7 @@ export function CommentList({
           key={c.id}
           postId={postId}
           comment={c}
+          activeCommentId={activeCommentId}
           onLike={handleLike}
           onDelete={handleDelete}
           onReply={handleReply}

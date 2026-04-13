@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Notification } from "@/types/notification";
 import { useTranslation } from "@/hooks/useTranslation";
 import { NotificationType } from "@/constants";
+import Link from "next/link";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -15,7 +16,7 @@ export default function NotificationItem({
   notification: n,
   onClick,
 }: NotificationItemProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const name = n.sender.fullName;
 
@@ -23,40 +24,46 @@ export default function NotificationItem({
     switch (n.type) {
       case NotificationType.LIKE_POST:
         return {
+          href: `/${locale}/posts/${n.postId}`,
           icon: <Heart className="w-4 h-4 text-red-500" />,
           message: `${name} ` + t("header.notification.likePost"),
         };
 
       case NotificationType.COMMENT:
         return {
+          href: `/${locale}/posts/${n.postId}?commentId=${n.commentId}`,
           icon: <MessageCircle className="w-4 h-4 text-blue-500" />,
           message: `${name} ` + t("header.notification.comment"),
         };
 
       case NotificationType.LIKE_COMMENT:
         return {
+          href: `/${locale}/posts/${n.postId}?commentId=${n.commentId}`,
           icon: <Heart className="w-4 h-4 text-pink-500" />,
           message: `${name} ` + t("header.notification.likeComment"),
         };
 
       case NotificationType.FOLLOW:
         return {
+          href: `/${locale}/${n.sender.username}`,
           icon: <UserPlus className="w-4 h-4 text-green-500" />,
           message: `${name} ` + t("header.notification.follow"),
         };
 
       default:
         return {
+          href: "",
           icon: null,
           message: t("header.notification.new"),
         };
     }
   };
 
-  const { icon, message } = getContent();
+  const { icon, message, href } = getContent();
 
   return (
-    <button
+    <Link
+      href={href}
       onClick={() => {
         if (n.isRead) return;
         onClick();
@@ -100,6 +107,6 @@ export default function NotificationItem({
           {moment(n.createdAt).fromNow()}
         </p>
       </div>
-    </button>
+    </Link>
   );
 }

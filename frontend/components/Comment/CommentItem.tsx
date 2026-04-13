@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import moment from "moment";
 import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
@@ -22,6 +22,7 @@ import { isMe, navigateFromModal } from "@/lib/utils";
 interface CommentItemProps {
   postId: number;
   comment: Comment;
+  activeCommentId?: number;
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
   onReply: (parentId: number, content: string) => Promise<void>;
@@ -29,6 +30,7 @@ interface CommentItemProps {
 
 export function CommentItem({
   comment: c,
+  activeCommentId,
   onLike,
   onDelete,
   onReply,
@@ -38,6 +40,7 @@ export function CommentItem({
   const [replyContent, setReplyContent] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const replyInputRef = useRef<HTMLInputElement | null>(null);
+  const commentRef = useRef<HTMLDivElement | null>(null);
   const { t, locale } = useTranslation();
 
   const handleReplyToggle = () => {
@@ -55,9 +58,27 @@ export function CommentItem({
     setIsReplying(false);
   };
 
+  const isActive =
+    c.id === activeCommentId ||
+    c.replies?.some((r) => r.id === activeCommentId);
+
+  useEffect(() => {
+    if (c.id === activeCommentId && commentRef.current) {
+      commentRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [activeCommentId, c.id]);
+
   return (
     <div className="space-y-2">
-      <div className="flex gap-3 relative">
+      <div
+        ref={commentRef}
+        className={`flex gap-3 relative rounded-lg p-2 transition ${
+          c.id === activeCommentId ? "border" : ""
+        }`}
+      >
         <Link
           href={`/${locale}/${c.author.username}`}
           onClick={() =>
@@ -178,7 +199,12 @@ export function CommentItem({
             </div>
           )}
 
-          <ReplyList replies={c.replies} onLike={onLike} onDelete={onDelete} />
+          <ReplyList
+            replies={c.replies}
+            activeCommentId={activeCommentId}
+            onLike={onLike}
+            onDelete={onDelete}
+          />
         </div>
       </div>
     </div>

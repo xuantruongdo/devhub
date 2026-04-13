@@ -16,20 +16,40 @@ import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
 import { isMe, navigateFromModal } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 interface ReplyItemProps {
   reply: Comment;
+  activeCommentId?: number;
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
 }
 
-export function ReplyItem({ reply: r, onLike, onDelete }: ReplyItemProps) {
+export function ReplyItem({
+  reply: r,
+  activeCommentId,
+  onLike,
+  onDelete,
+}: ReplyItemProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
   const router = useRouter();
+  const replyRef = useRef<HTMLDivElement | null>(null);
   const { t, locale } = useTranslation();
 
+  useEffect(() => {
+    if (r.id === activeCommentId && replyRef.current) {
+      replyRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [activeCommentId, r.id]);
+
   return (
-    <div className="flex gap-3 relative">
+    <div
+      ref={replyRef}
+      className={`rounded-lg p-2 ${r.id === activeCommentId ? "border" : ""}`}
+    >
       <Link
         href={`/${locale}/${r.author.username}`}
         onClick={() =>

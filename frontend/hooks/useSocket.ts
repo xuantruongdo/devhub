@@ -2,19 +2,20 @@
 
 import { useEffect } from "react";
 import { getSocket } from "@/lib/socket";
+import type { Socket } from "socket.io-client";
 
-export const useSocket = (userId?: number) => {
+export const useSocket = (userId: number): Socket => {
+  const socket = getSocket();
+
   useEffect(() => {
-    if (!userId) return;
+    if (!socket || !userId) return;
 
-    const socket = getSocket();
-
-    socket.connect();
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     socket.emit("user:join", userId);
+  }, [socket, userId]);
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [userId]);
+  return socket;
 };

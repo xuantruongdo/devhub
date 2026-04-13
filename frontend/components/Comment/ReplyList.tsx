@@ -7,11 +7,17 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 interface ReplyListProps {
   replies: Comment[];
+  activeCommentId?: number;
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
 }
 
-export function ReplyList({ replies, onLike, onDelete }: ReplyListProps) {
+export function ReplyList({
+  replies,
+  activeCommentId,
+  onLike,
+  onDelete,
+}: ReplyListProps) {
   const [showAll, setShowAll] = useState(false);
   const { t } = useTranslation();
 
@@ -21,7 +27,13 @@ export function ReplyList({ replies, onLike, onDelete }: ReplyListProps) {
   return (
     <div className="pl-8 space-y-2 mt-4">
       {visibleReplies.map((r) => (
-        <ReplyItem key={r.id} reply={r} onLike={onLike} onDelete={onDelete} />
+        <ReplyItem
+          key={r.id}
+          reply={r}
+          activeCommentId={activeCommentId}
+          onLike={onLike}
+          onDelete={onDelete}
+        />
       ))}
 
       {replies.length > 2 && !showAll && (

@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSkeleton } from "./MessageSkeleton";
-import { getOtherUser, isMe, isNearBottom, scrollToBottom } from "@/lib/utils";
+import { getOtherUser, isMe, scrollToBottom } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
-import { getSocket } from "@/lib/socket";
+import { useSocket } from "@/hooks/useSocket";
 
 export default function ChatWindow({
   conversationId,
@@ -27,6 +27,7 @@ export default function ChatWindow({
 
   const router = useRouter();
   const { t, locale, ready } = useTranslation();
+  const socket = useSocket(currentUser.id);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -38,12 +39,14 @@ export default function ChatWindow({
   const anchorRef = useRef<number | null>(null);
   const fetchingRef = useRef(false);
   const didInitialScroll = useRef(false);
+  const incomingMessageRef = useRef(false);
 
   useEffect(() => {
     setMessages([]);
     setHasMore(true);
     anchorRef.current = null;
     didInitialScroll.current = false;
+    incomingMessageRef.current = false;
     setShowNew(false);
 
     fetchMessages();
@@ -66,7 +69,6 @@ export default function ChatWindow({
       });
 
       let newMessages: Message[] = data;
-
       newMessages = newMessages.reverse();
 
       if (!anchorRef.current && newMessages.length > 0) {
@@ -78,18 +80,16 @@ export default function ChatWindow({
       }
 
       setMessages((prev) => {
-        const merged = cursor ? [...newMessages, ...prev] : newMessages;
-        return merged;
+        return cursor ? [...newMessages, ...prev] : newMessages;
       });
 
-      requestAnimationFrame(() => {
-        if (!el) return;
-
-        if (cursor) {
+      if (cursor && el) {
+        // Dùng rAF ở đây vẫn cần: để đợi DOM render xong rồi mới restore scroll position
+        requestAnimationFrame(() => {
           const newScrollHeight = el.scrollHeight;
           el.scrollTop = newScrollHeight - prevScrollHeight;
-        }
-      });
+        });
+      }
     } catch (error: any) {
       toastError(t(`chat.response.${error}`));
       router.push(`/${locale}/messages`);
@@ -99,6 +99,7 @@ export default function ChatWindow({
     }
   };
 
+  // Scroll xuống cuối sau lần fetch đầu tiên
   useEffect(() => {
     if (!messages.length) return;
     if (didInitialScroll.current) return;
@@ -107,12 +108,25 @@ export default function ChatWindow({
     if (!el) return;
 
     el.scrollTop = el.scrollHeight;
-
-    requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
-    });
-
     didInitialScroll.current = true;
+  }, [messages]);
+
+  // Xử lý scroll khi có tin nhắn mới từ người khác (sau khi DOM đã render xong)
+  useEffect(() => {
+    if (!incomingMessageRef.current) return;
+    incomingMessageRef.current = false;
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const threshold = el.clientHeight * 0.5; // 50% chiều cao container
+
+    if (distanceFromBottom < threshold) {
+      scrollToBottom(el, true);
+    } else {
+      setShowNew(true);
+    }
   }, [messages]);
 
   const handleScroll = () => {
@@ -124,7 +138,10 @@ export default function ChatWindow({
       if (oldest) fetchMessages(oldest.id);
     }
 
-    if (isNearBottom(containerRef.current)) {
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const threshold = el.clientHeight * 0.5;
+
+    if (distanceFromBottom < threshold) {
       setShowNew(false);
     }
   };
@@ -143,9 +160,7 @@ export default function ChatWindow({
     setMessages((prev) => [...prev, temp as Message]);
     setInput("");
 
-    requestAnimationFrame(() => {
-      scrollToBottom(containerRef.current, true);
-    });
+    scrollToBottom(containerRef.current, true);
 
     try {
       const { data } = await chatService.sendMessage({
@@ -159,9 +174,7 @@ export default function ChatWindow({
         anchorRef.current = data.id;
       }
 
-      requestAnimationFrame(() => {
-        scrollToBottom(containerRef.current, true);
-      });
+      scrollToBottom(containerRef.current, true);
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== temp.id));
     }
@@ -170,49 +183,29 @@ export default function ChatWindow({
   const conversationName = useMemo(() => {
     const otherUser = getOtherUser(selectedConversation, currentUser.id);
 
-    const displayName = selectedConversation.isGroup
+    return selectedConversation.isGroup
       ? selectedConversation?.title || t("chat.sidebar.unknown")
       : otherUser?.fullName;
-
-    return displayName;
   }, [conversationId, selectedConversation]);
 
   useEffect(() => {
-    const socket = getSocket();
-
-    // Join conversation room
     socket.emit("conversation:join", conversationId);
 
-    // Handle new message
     const handleNewMessage = (message: Message) => {
       if (message.conversationId !== conversationId) return;
-
       if (isMe(message.senderId, currentUser.id)) return;
 
       setMessages((prev) => {
         const exists = prev.find((m) => m.id === message.id);
         if (exists) return prev;
 
+        incomingMessageRef.current = true;
         return [...prev, message];
-      });
-
-      requestAnimationFrame(() => {
-        const el = containerRef.current;
-        if (!el) return;
-
-        const isBottom = isNearBottom(el);
-
-        if (isBottom) {
-          scrollToBottom(el, true);
-        } else {
-          setShowNew(true);
-        }
       });
     };
 
     socket.on("message:new", handleNewMessage);
 
-    // cleanup
     return () => {
       socket.off("message:new", handleNewMessage);
 
@@ -286,7 +279,6 @@ export default function ChatWindow({
                     {m.sender.fullName}
                   </div>
                 )}
-
                 {moment(m.createdAt).format("HH:mm")}
               </div>
             </div>
