@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Phone, PhoneOff, Send, Video } from "lucide-react";
 import chatService from "@/services/chat";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Message } from "@/types/chat";
 import { CallEndReason, MESSAGE_LIMIT, MessageType } from "@/constants";
 import { Input } from "../ui/input";
@@ -23,6 +23,13 @@ import { toastError } from "@/lib/toast";
 import { getSocket } from "@/lib/socket";
 import Link from "next/link";
 import { useCallContext } from "@/contexts/CallContext";
+import {
+  setMessages,
+  addMessage,
+  updateMessage,
+  prependMessages,
+  removeMessage,
+} from "@/redux/reducers/message";
 
 export default function ChatWindow({
   conversationId,
@@ -35,8 +42,9 @@ export default function ChatWindow({
   const router = useRouter();
   const { t, locale, ready } = useTranslation();
   const socket = getSocket();
+  const dispatch = useAppDispatch();
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const messages = useAppSelector((state) => state.messages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -51,7 +59,7 @@ export default function ChatWindow({
   const { startCall } = useCallContext();
 
   useEffect(() => {
-    setMessages([]);
+    dispatch(setMessages([]));
     setHasMore(true);
     anchorRef.current = null;
     didInitialScroll.current = false;
@@ -88,9 +96,11 @@ export default function ChatWindow({
         setHasMore(false);
       }
 
-      setMessages((prev) => {
-        return cursor ? [...newMessages, ...prev] : newMessages;
-      });
+      if (cursor) {
+        dispatch(prependMessages(newMessages));
+      } else {
+        dispatch(setMessages(newMessages));
+      }
 
       if (cursor && el) {
         // Dùng rAF ở đây vẫn cần: để đợi DOM render xong rồi mới restore scroll position
@@ -158,15 +168,15 @@ export default function ChatWindow({
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const temp: Partial<Message> = {
+    const temp = {
       id: Date.now(),
       conversationId,
       senderId: currentUser.id,
       content: input,
-      createdAt: new Date(),
-    };
+      createdAt: new Date().toISOString(),
+    } as Message;
 
-    setMessages((prev) => [...prev, temp as Message]);
+    dispatch(addMessage(temp as Message));
     setInput("");
 
     scrollToBottom(containerRef.current, true);
@@ -174,10 +184,10 @@ export default function ChatWindow({
     try {
       const { data } = await chatService.sendMessage({
         conversationId,
-        content: temp.content || "",
+        content: temp.content,
       });
 
-      setMessages((prev) => prev.map((m) => (m.id === temp.id ? data : m)));
+      dispatch(updateMessage(data));
 
       if (anchorRef.current && data.id > anchorRef.current) {
         anchorRef.current = data.id;
@@ -185,7 +195,7 @@ export default function ChatWindow({
 
       scrollToBottom(containerRef.current, true);
     } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== temp.id));
+      dispatch(removeMessage(temp.id));
     }
   };
 
@@ -215,13 +225,9 @@ export default function ChatWindow({
       if (message.conversationId !== conversationId) return;
       if (isMe(message.senderId, currentUser.id)) return;
 
-      setMessages((prev) => {
-        const exists = prev.find((m) => m.id === message.id);
-        if (exists) return prev;
+      incomingMessageRef.current = true;
 
-        incomingMessageRef.current = true;
-        return [...prev, message];
-      });
+      if (message.type !== MessageType.CALL) dispatch(addMessage(message));
     };
 
     socket.on("message:new", handleNewMessage);
@@ -232,7 +238,7 @@ export default function ChatWindow({
       // optional: leave room (không bắt buộc nhưng tốt)
       // socket.emit("conversation:leave", conversationId);
     };
-  }, [conversationId]);
+  }, [conversationId, currentUser.id, dispatch, socket]);
 
   const renderMessageContent = (m: Message, isMine: boolean) => {
     switch (m.type) {

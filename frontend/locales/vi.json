@@ -97,7 +97,11 @@
       "viewMore": "Xem thêm"
     },
     "message": {
-      "title": "Tin nhắn"
+      "title": "Tin nhắn",
+      "missedCall": "đã bỏ lỡ một cuộc gọi",
+      "call": "đã hoàn thành cuộc gọi",
+      "file": "đã gửi một file",
+      "image": "đã gửi một ảnh"
     }
   },
   "composePost": {

@@ -97,7 +97,11 @@
       "viewMore": "View more"
     },
     "message": {
-      "title": "Messages"
+      "title": "Messages",
+      "missedCall": "missed a call",
+      "call": "call ended",
+      "file": "sent a file",
+      "image": "sent an image"
     }
   },
   "composePost": {

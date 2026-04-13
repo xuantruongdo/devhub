@@ -11,6 +11,10 @@ export class SendMessageDto {
   conversationId!: number;
 
   @IsOptional()
+  @IsNumber()
+  callerId!: number;
+
+  @IsOptional()
   @IsString()
   content?: string;
 

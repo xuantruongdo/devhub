@@ -17,6 +17,7 @@ interface UseWebRTCOptions {
     conversationId: number;
     callDuration: number;
     callStatus: CallEndReason;
+    callerId: number;
   }) => void;
 }
 
@@ -56,6 +57,9 @@ export function useWebRTC({
   const [incomingConversationId, setIncomingConversationId] = useState<
     number | null
   >(null);
+
+  // ID người gọi đến, nhận từ offer payload để hiển thị trên UI
+  const [callerId, setCallerId] = useState<number | null>(null);
 
   // Tên người gọi đến, nhận từ offer payload để hiển thị trên UI
   const [callerName, setCallerName] = useState<string | null>(null);
@@ -117,6 +121,7 @@ export function useWebRTC({
       setIsMuted(false);
       setIsCameraOff(false);
       setCallerName(null);
+      setCallerId(null);
 
       // Reset các ref
       otherUserIdRef.current = null;
@@ -137,14 +142,14 @@ export function useWebRTC({
       setTimeout(() => {
         setCallStatus(CallStatus.IDLE);
         setEndReason(null);
-      }, 1500);
+      }, 500);
     },
     [remoteStream],
   );
 
   // Kết thúc cuộc gọi từ phía mình: thông báo đối phương rồi cleanup
   const endCall = useCallback(
-    (targetUserId: number) => {
+    (targetUserId: number, callerId: number) => {
       const duration = getCallDuration();
 
       socket.emit("call:end", { conversationId, targetUserId });
@@ -155,6 +160,7 @@ export function useWebRTC({
         conversationId,
         callDuration: duration,
         callStatus: CallEndReason.ENDED,
+        callerId,
       });
 
       cleanup(CallEndReason.ENDED);
@@ -164,7 +170,8 @@ export function useWebRTC({
 
   // Từ chối cuộc gọi đến: thông báo đối phương rồi cleanup
   const rejectCall = useCallback(
-    (targetUserId: number) => {
+    (targetUserId: number, callerId: number) => {
+      console.log("+++callerId", callerId);
       socket.emit("call:reject", { conversationId, targetUserId });
 
       // Người reject lưu message
@@ -172,6 +179,7 @@ export function useWebRTC({
         conversationId,
         callDuration: 0,
         callStatus: CallEndReason.REJECTED,
+        callerId,
       });
 
       cleanup(CallEndReason.REJECTED);
@@ -237,7 +245,7 @@ export function useWebRTC({
 
   // Khởi tạo cuộc gọi: lấy media → tạo offer → gửi qua socket
   const startCall = useCallback(
-    async (targetUserId: number, callerDisplayName: string) => {
+    async (targetUserId: number, callerName: string) => {
       try {
         // Chặn spam, chỉ cho gọi khi đang IDLE
         if (callStatus !== CallStatus.IDLE) return;
@@ -260,7 +268,7 @@ export function useWebRTC({
           conversationId,
           targetUserId,
           callerId: currentUserId,
-          callerName: callerDisplayName,
+          callerName,
           offer,
         });
 
@@ -271,6 +279,7 @@ export function useWebRTC({
             conversationId,
             callDuration: 0,
             callStatus: CallEndReason.TIMEOUT,
+            callerId: callerId!,
           });
 
           cleanup(CallEndReason.TIMEOUT);
@@ -359,13 +368,15 @@ export function useWebRTC({
       callerId,
       offer,
       conversationId: incomingConvId,
-      callerName: name,
+      callerName,
     }: OfferPayload) => {
+      console.log("============callerId", callerId);
       otherUserIdRef.current = callerId;
       setIncomingCallFrom(callerId);
       setIncomingConversationId(incomingConvId);
       // Lưu tên người gọi từ payload để hiển thị trên overlay
-      setCallerName(name ?? null);
+      setCallerId(callerId);
+      setCallerName(callerName);
       setCallStatus(CallStatus.RECEIVING);
       pendingOfferRef.current = { callerId, offer };
     };
@@ -421,6 +432,7 @@ export function useWebRTC({
     isCameraOff,
     incomingCallFrom,
     incomingConversationId,
+    callerId,
     callerName,
     endReason,
     getOtherUserId,

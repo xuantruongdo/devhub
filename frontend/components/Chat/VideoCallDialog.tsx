@@ -61,13 +61,13 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
     switch (callStatus) {
       case CallStatus.CALLING:
         return (
-          <div className="flex flex-col items-center gap-5 py-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center animate-pulse">
-              <Phone className="w-7 h-7 text-blue-500" />
+          <div className="flex flex-col items-center gap-5 py-6 text-center text-foreground">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+              <Phone className="w-7 h-7 text-primary" />
             </div>
 
             <div>
-              <p className="font-semibold text-base">
+              <p className="font-semibold text-base text-foreground">
                 {callerName || t("chat.call.calling.title")}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -77,7 +77,7 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
 
             <button
               onClick={onEnd}
-              className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center shadow-md"
+              className="w-14 h-14 rounded-full bg-destructive hover:opacity-90 flex items-center justify-center shadow-md transition"
             >
               <PhoneOff className="w-6 h-6 text-white" />
             </button>
@@ -86,13 +86,13 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
 
       case CallStatus.RECEIVING:
         return (
-          <div className="flex flex-col items-center gap-5 py-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
-              <Video className="w-7 h-7 text-green-600" />
+          <div className="flex flex-col items-center gap-5 py-6 text-center text-foreground">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-bounce">
+              <Video className="w-7 h-7 text-primary" />
             </div>
 
             <div>
-              <p className="font-semibold text-base">
+              <p className="font-semibold text-base text-foreground">
                 {callerName || t("chat.call.receiving.title")}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -103,16 +103,16 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
             <div className="flex gap-6 mt-2">
               <button
                 onClick={onReject}
-                className="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center shadow"
+                className="w-12 h-12 rounded-full bg-destructive hover:opacity-90 flex items-center justify-center shadow transition"
               >
                 <PhoneOff className="w-5 h-5 text-white" />
               </button>
 
               <button
                 onClick={onAccept}
-                className="w-12 h-12 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center shadow"
+                className="w-12 h-12 rounded-full bg-primary hover:opacity-90 flex items-center justify-center shadow transition"
               >
-                <Phone className="w-5 h-5 text-white" />
+                <Phone className="w-5 h-5 text-primary-foreground" />
               </button>
             </div>
           </div>
@@ -120,17 +120,17 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
 
       case CallStatus.CONNECTED:
         return (
-          <>
-            <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center px-4 py-2 bg-black/40 text-white text-sm">
+          <div className="relative w-full h-full bg-background text-foreground">
+            <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center px-4 py-2 bg-background/70 backdrop-blur border-b border-border text-sm text-foreground">
               <span className="font-medium">
                 {callerName || t("chat.call.connected.title")}
               </span>
-              <span className="text-xs opacity-70">
+              <span className="text-xs text-muted-foreground">
                 {t("chat.call.connected.status")}
               </span>
             </div>
 
-            <div className="relative bg-black aspect-video">
+            <div className="relative bg-black/90 aspect-video">
               <video
                 ref={remoteVideoRef}
                 autoPlay
@@ -139,12 +139,12 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
               />
 
               {!remoteStream && (
-                <div className="absolute inset-0 flex items-center justify-center text-white/70 text-sm">
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
                   {t("chat.call.connected.connecting")}
                 </div>
               )}
 
-              <div className="absolute bottom-4 right-4 w-32 h-24 rounded-xl overflow-hidden border border-white/20 shadow-lg bg-black">
+              <div className="absolute bottom-4 right-4 w-32 h-24 rounded-xl overflow-hidden border border-border shadow-lg bg-black/70">
                 <video
                   ref={localVideoRef}
                   autoPlay
@@ -155,58 +155,61 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
                 />
 
                 {isCameraOff && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                    <VideoOff className="w-5 h-5 text-white/70" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                    <VideoOff className="w-5 h-5 text-white/80" />
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-center items-center gap-6 py-5 bg-white">
+            <div className="flex justify-center items-center gap-6 py-5 bg-background border-t border-border">
               <button
                 onClick={onToggleMute}
-                className={`w-12 h-12 rounded-full flex items-center justify-center shadow ${
+                className={`w-12 h-12 rounded-full flex items-center justify-center shadow transition ${
                   isMuted
-                    ? "bg-red-500 hover:bg-red-600"
-                    : "bg-gray-100 hover:bg-gray-200"
+                    ? "bg-destructive hover:opacity-90"
+                    : "bg-muted hover:bg-muted/80"
                 }`}
               >
                 {isMuted ? (
                   <MicOff className="w-5 h-5 text-white" />
                 ) : (
-                  <Mic className="w-5 h-5 text-gray-700" />
+                  <Mic className="w-5 h-5 text-foreground" />
                 )}
               </button>
 
+              {/* End call */}
               <button
                 onClick={onEnd}
-                className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center shadow-lg"
+                className="w-14 h-14 rounded-full bg-destructive hover:opacity-90 flex items-center justify-center shadow-lg transition"
               >
                 <PhoneOff className="w-6 h-6 text-white" />
               </button>
 
               <button
                 onClick={onToggleCamera}
-                className={`w-12 h-12 rounded-full flex items-center justify-center shadow ${
+                className={`w-12 h-12 rounded-full flex items-center justify-center shadow transition ${
                   isCameraOff
-                    ? "bg-red-500 hover:bg-red-600"
-                    : "bg-gray-100 hover:bg-gray-200"
+                    ? "bg-destructive hover:opacity-90"
+                    : "bg-muted hover:bg-muted/80"
                 }`}
               >
                 {isCameraOff ? (
                   <VideoOff className="w-5 h-5 text-white" />
                 ) : (
-                  <Video className="w-5 h-5 text-gray-700" />
+                  <Video className="w-5 h-5 text-foreground" />
                 )}
               </button>
             </div>
-          </>
+          </div>
         );
 
       case CallStatus.ENDED:
         return (
-          <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <PhoneOff className="w-10 h-10 text-red-500" />
+          <div className="flex flex-col items-center gap-4 py-6 text-center text-foreground">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <PhoneOff className="w-6 h-6 text-destructive" />
+            </div>
 
             <p className="font-semibold text-base">
               {endReason === CallEndReason.REJECTED &&
@@ -234,10 +237,10 @@ export default function VideoCallDialog(props: VideoCallDialogProps) {
       onConfirm={() => {}}
       hideCancelButton
       hideConfirmButton
-      className={`${
+      className={`py-[20px] w-full ${
         callStatus === CallStatus.CONNECTED
-          ? "sm:max-w-3xl p-0 overflow-hidden"
-          : "sm:max-w-xs text-center"
+          ? "sm:max-w-6xl overflow-hidden"
+          : "sm:max-w-md text-center"
       }`}
       contentClassName="max-h-none"
     >

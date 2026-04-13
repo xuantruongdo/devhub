@@ -12,7 +12,7 @@ export interface Message {
   callStatus: CallEndReason;
   content?: string;
   fileUrl?: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface Participant {
@@ -44,6 +44,7 @@ export interface ConversationInput {
 export interface SendMessageInput {
   conversationId: number;
   content?: string;
+  callerId?: number;
   type?: MessageType;
   callDuration?: number;
   callStatus?: CallEndReason;

@@ -11,6 +11,7 @@ export default function IncomingCallOverlay() {
     remoteStream,
     isMuted,
     isCameraOff,
+    callerId,
     callerName,
     endReason,
     acceptCall,
@@ -23,7 +24,7 @@ export default function IncomingCallOverlay() {
 
   const handleEnd = () => {
     const targetId = getOtherUserId();
-    if (targetId) endCall(targetId);
+    if (targetId) endCall(targetId, callerId!);
   };
 
   return (
@@ -36,7 +37,9 @@ export default function IncomingCallOverlay() {
       callerName={callerName}
       endReason={endReason}
       onAccept={acceptCall}
-      onReject={() => incomingCallFrom && rejectCall(incomingCallFrom)}
+      onReject={() =>
+        incomingCallFrom && callerId && rejectCall(incomingCallFrom, callerId)
+      }
       onEnd={handleEnd}
       onToggleMute={toggleMute}
       onToggleCamera={toggleCamera}

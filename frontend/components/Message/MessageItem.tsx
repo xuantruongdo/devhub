@@ -3,7 +3,7 @@
 import Link from "next/link";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Conversation } from "@/types/chat";
+import { Conversation, Message } from "@/types/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getOtherUser, getUnread, isMe } from "@/lib/utils";
@@ -30,25 +30,23 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
 
   const unread = getUnread([conversation], currentUser.id);
 
-  const renderLastMessage = (msg: any) => {
-    switch (msg?.type) {
-      case MessageType.TEXT:
-        return msg.content;
-
+  const renderLastMessage = (msg: Message) => {
+    switch (msg.type) {
       case MessageType.CALL:
         return msg.callStatus === CallEndReason.REJECTED ||
           msg.callStatus === CallEndReason.TIMEOUT
-          ? t("chat.sidebar.missed_call")
-          : t("chat.sidebar.call");
+          ? t("header.message.missedCall")
+          : t("header.message.call");
 
       case MessageType.FILE:
-        return t("chat.sidebar.file");
+        return t("header.message.file");
 
       case MessageType.IMAGE:
-        return t("chat.sidebar.image");
+        return t("header.message.image");
 
+      case MessageType.TEXT:
       default:
-        return t("chat.sidebar.message");
+        return msg.content;
     }
   };
 
