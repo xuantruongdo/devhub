@@ -11,6 +11,8 @@ export interface VideoCallOverlayProps {
   callState: CallState;
   isMuted: boolean;
   isCameraOff: boolean;
+  isRemoteMuted: boolean;
+  isRemoteCameraOff: boolean;
   remoteName: string | null;
   remoteAvatar: string | null;
 
@@ -32,6 +34,8 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
     callState,
     isMuted,
     isCameraOff,
+    isRemoteMuted,
+    isRemoteCameraOff,
     remoteName,
     remoteAvatar,
     localVideoRef,
@@ -67,8 +71,7 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
     }
 
     if (callState === CallState.INCOMING) {
-      audioRef.current.play().catch(() => {
-      });
+      audioRef.current.play().catch(() => {});
     } else {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -169,9 +172,41 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
               <p className="text-sm text-white/70 mt-1">
                 {formatDuration(duration)}
               </p>
+
+              {(isRemoteMuted || isRemoteCameraOff) && (
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {isRemoteMuted && (
+                    <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                      <MicOff className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-xs text-red-300">
+                        {t("chat.call.remote.muted") ??
+                          `${remoteName} đã tắt mic`}
+                      </span>
+                    </div>
+                  )}
+                  {isRemoteCameraOff && (
+                    <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                      <VideoOff className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-xs text-red-300">
+                        {t("chat.call.remote.cameraOff") ??
+                          `${remoteName} đã tắt camera`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-5">
+            {isRemoteCameraOff && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/80 z-[1]">
+                {renderAvatar()}
+                <p className="text-white/60 text-sm mt-3">
+                  {t("chat.call.remote.cameraOffHint") ?? "Camera đã tắt"}
+                </p>
+              </div>
+            )}
+
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-5 z-[2]">
               <button
                 onClick={onToggleMute}
                 className="bg-white/10 p-4 rounded-full"
@@ -206,6 +241,8 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
     }
   };
 
+  const showLocalCam = callState !== CallState.INCOMING;
+
   return (
     <div className="fixed inset-0 z-50 bg-zinc-900 flex flex-col select-none">
       <video
@@ -217,21 +254,23 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
 
       <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
-      <div className="absolute top-4 right-4 w-28 h-40 md:w-36 md:h-52 rounded-2xl overflow-hidden border border-white/20 shadow-xl z-10">
-        <video
-          ref={localVideoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover"
-        />
+      {showLocalCam && (
+        <div className="absolute top-4 right-4 w-28 h-40 md:w-36 md:h-52 rounded-2xl overflow-hidden border border-white/20 shadow-xl z-10">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
 
-        {isCameraOff && (
-          <div className="absolute inset-0 bg-zinc-800 flex items-center justify-center">
-            <VideoOff className="w-6 h-6 text-zinc-400" />
-          </div>
-        )}
-      </div>
+          {isCameraOff && (
+            <div className="absolute inset-0 bg-zinc-800 flex items-center justify-center">
+              <VideoOff className="w-6 h-6 text-zinc-400" />
+            </div>
+          )}
+        </div>
+      )}
 
       {renderContent()}
     </div>

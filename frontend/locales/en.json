@@ -103,7 +103,8 @@
       "rejected": "Rejected call",
       "call": "Call ended",
       "file": "Sent a file",
-      "image": "Sent an image"
+      "image": "Sent an image",
+      "viewAll": "View all"
     }
   },
   "composePost": {

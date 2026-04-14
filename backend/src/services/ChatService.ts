@@ -85,7 +85,7 @@ export class ChatService {
       throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);
 
     const message = await AppDataSource.transaction(async () => {
-      const msg = await this.messageRepo.create({
+      const savedMsg = await this.messageRepo.save({
         conversationId,
         senderId,
         content,
@@ -95,13 +95,14 @@ export class ChatService {
       });
 
       await this.conversationRepo.update(conversationId, {
-        lastMessageId: msg.id,
+        lastMessageId: savedMsg.id,
         updatedAt: new Date(),
       });
 
       await this.participantRepo.incrementUnread(conversationId, senderId);
 
-      const fullMessage = await this.messageRepo.findOne(msg.id, {
+      const fullMessage = await this.messageRepo.findOne({
+        where: { id: savedMsg.id },
         relations: {
           sender: true,
         },
@@ -204,15 +205,19 @@ export class ChatService {
 
   async markAsRead(conversationId: number, userId: number) {
     // Lấy last message
-    const lastMessage = await this.messageRepo.findLastMessage(conversationId);
-
+    const lastMessage = await this.messageRepo.findOne({
+      where: { conversationId },
+      order: { id: "DESC" },
+    });
     if (!lastMessage) return true;
 
     // Tìm participant
-    const participant = await this.participantRepo.findByConversationAndUser(
-      conversationId,
-      userId,
-    );
+    const participant = await this.participantRepo.findOne({
+      where: {
+        conversationId,
+        userId,
+      },
+    });
 
     if (!participant)
       throw new ForbiddenError(ChatCodeError.CANNOT_ACCESS_CONVERSATION);

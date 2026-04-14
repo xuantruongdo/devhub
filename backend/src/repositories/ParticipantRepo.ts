@@ -1,23 +1,16 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { ConversationParticipant } from "../entities/ConversationParticipant";
+import { BaseRepo } from "./BaseRepo";
 
 @Service()
-export class ParticipantRepo {
-  private repo = AppDataSource.getRepository(ConversationParticipant);
-
-  async create(data: Partial<ConversationParticipant>) {
-    const p = this.repo.create(data);
-    return this.repo.save(p);
-  }
-
-  async findOne(options: { where: Partial<ConversationParticipant> }) {
-    return this.repo.findOne(options);
+export class ParticipantRepo extends BaseRepo<ConversationParticipant> {
+  constructor() {
+    super(ConversationParticipant, AppDataSource);
   }
 
   async findByUser(userId: number) {
-    return this.repo
-      .createQueryBuilder("cp")
+    return this.createQueryBuilder("cp")
 
       .leftJoinAndSelect("cp.conversation", "c")
 
@@ -43,14 +36,8 @@ export class ParticipantRepo {
       .getMany();
   }
 
-  async update(id: number, data: Partial<ConversationParticipant>) {
-    await this.repo.update(id, data);
-    return this.repo.findOne({ where: { id } });
-  }
-
   async incrementUnread(conversationId: number, excludeUserId: number) {
-    await this.repo
-      .createQueryBuilder()
+    await this.createQueryBuilder()
       .update()
       .set({
         unreadCount: () => "unreadCount + 1",
@@ -58,18 +45,5 @@ export class ParticipantRepo {
       .where("conversationId = :conversationId", { conversationId })
       .andWhere("userId != :excludeUserId", { excludeUserId })
       .execute();
-  }
-
-  async resetUnread(conversationId: number, userId: number) {
-    await this.repo.update({ conversationId, userId }, { unreadCount: 0 });
-  }
-
-  async findByConversationAndUser(conversationId: number, userId: number) {
-    return this.repo.findOne({
-      where: {
-        conversationId,
-        userId,
-      },
-    });
   }
 }

@@ -4,19 +4,17 @@ import { Message } from "../entities/Message";
 import { MESSAGE_LIMIT } from "../constants";
 import { UserProps } from "../types/auth";
 import { ConversationParticipant } from "../entities/ConversationParticipant";
-import { FindOneOptions } from "typeorm";
+import { BaseRepo } from "./BaseRepo";
 
 @Service()
-export class MessageRepo {
-  private repo = AppDataSource.getRepository(Message);
+export class MessageRepo extends BaseRepo<Message> {
+  constructor() {
+    super(Message, AppDataSource);
+  }
+
   private participantRepo = AppDataSource.getRepository(
     ConversationParticipant,
   );
-
-  async create(data: Partial<Message>) {
-    const msg = this.repo.create(data);
-    return this.repo.save(msg);
-  }
 
   async getMessages(
     conversationId: number,
@@ -27,10 +25,9 @@ export class MessageRepo {
       anchor?: number;
     },
   ) {
-    const limit = options?.limit || MESSAGE_LIMIT;
+    const limit = options?.limit ?? MESSAGE_LIMIT;
 
-    const qb = this.repo
-      .createQueryBuilder("m")
+    const qb = this.createQueryBuilder("m")
       .leftJoin("m.sender", "sender")
       .addSelect([
         "sender.id",
@@ -71,21 +68,5 @@ export class MessageRepo {
     }
 
     return messages;
-  }
-
-  async findOne(messageId: number, options?: FindOneOptions<Message>) {
-    return this.repo.findOne({
-      where: {
-        id: messageId,
-      },
-      ...options,
-    });
-  }
-
-  async findLastMessage(conversationId: number) {
-    return this.repo.findOne({
-      where: { conversationId },
-      order: { id: "DESC" },
-    });
   }
 }

@@ -17,9 +17,9 @@ import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
 import { FollowType } from "../constants";
-import { NotificationService } from "./Notification";
 import { Notification, NotificationType } from "../entities/Notification";
 import { emitNewNotification } from "../libs/io";
+import { NotificationService } from "./NotificationService";
 
 @Service()
 export class UserService {
@@ -41,7 +41,7 @@ export class UserService {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      const user = await this.userRepo.create({
+      const user = await this.userRepo.save({
         username,
         fullName: data.fullName,
         email: data.email,
@@ -372,17 +372,15 @@ export class UserService {
     currentUser: UserProps,
   ) {
     try {
-      const user = await this.userRepo.findOne(
-        { id },
-        {
-          relations: [
-            "followers",
-            "followers.followers",
-            "followings",
-            "followings.followers",
-          ],
-        },
-      );
+      const user = await this.userRepo.findOne({
+        where: { id },
+        relations: [
+          "followers",
+          "followers.followers",
+          "followings",
+          "followings.followers",
+        ],
+      });
 
       if (!user) {
         throw new BadRequestError("User not found");

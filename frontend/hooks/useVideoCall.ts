@@ -165,9 +165,11 @@ export function useVideoCall({
 
     localStreamRef.current = stream;
 
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
+    setTimeout(() => {
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+    }, 100);
 
     return stream;
   }, []);

@@ -2,10 +2,15 @@ import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { Post } from "../entities/Post";
 import { Comment } from "../entities/Comment";
+import { BaseRepo } from "./BaseRepo";
+import { Repository } from "typeorm";
 
 @Service()
-export class PostRepo {
-  private repo = AppDataSource.getRepository(Post);
+export class PostRepo extends BaseRepo<Post> {
+  constructor() {
+    super(Post, AppDataSource);
+  }
+
   private commentRepo = AppDataSource.getRepository(Comment);
 
   /**
@@ -32,8 +37,7 @@ export class PostRepo {
    * @returns Danh sách các post được sắp xếp theo feed
    */
   async findAllFeed(currentUserId: number, followingsIds: number[]) {
-    const query = this.repo
-      .createQueryBuilder("post")
+    const query = this.createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
 
       .leftJoin("post.likes", "like", "like.userId = :currentUserId", {
@@ -93,8 +97,7 @@ export class PostRepo {
   }
 
   async findPostsByUsername(username: string, currentUserId: number) {
-    const query = this.repo
-      .createQueryBuilder("post")
+    const query = this.createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
 
       // check isLiked
@@ -148,10 +151,9 @@ export class PostRepo {
     });
   }
 
-  async findOne(id: number, currentUserId: number) {
+  async findOnePost(id: number, currentUserId: number) {
     // GET POST
-    const postQuery = this.repo
-      .createQueryBuilder("post")
+    const postQuery = this.createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
       .leftJoin("post.likes", "postLike", "postLike.userId = :currentUserId", {
         currentUserId,
@@ -279,26 +281,8 @@ export class PostRepo {
     };
   }
 
-  async findById(id: number) {
-    return this.repo
-      .createQueryBuilder("post")
-      .leftJoinAndSelect("post.author", "author")
-      .select([
-        "post",
-        "author.id",
-        "author.username",
-        "author.fullName",
-        "author.email",
-        "author.avatar",
-        "author.isVerified",
-      ])
-      .where("post.id = :id", { id })
-      .getOne();
-  }
-
   async findMe(userId: number) {
-    return this.repo
-      .createQueryBuilder("post")
+    return this.createQueryBuilder("post")
       .leftJoinAndSelect("post.author", "author")
       .select([
         "post",
@@ -312,18 +296,5 @@ export class PostRepo {
       .where("post.authorId = :userId", { userId })
       .orderBy("post.createdAt", "DESC")
       .getMany();
-  }
-
-  async create(data: Partial<Post>) {
-    const post = this.repo.create(data);
-    return this.repo.save(post);
-  }
-
-  async save(post: Partial<Post>) {
-    return this.repo.save(post);
-  }
-
-  async remove(post: Post) {
-    return this.repo.remove(post);
   }
 }

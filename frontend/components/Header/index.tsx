@@ -23,7 +23,7 @@ import Link from "next/link";
 import { Locale } from "@/types/i18n";
 import { NotificationPanel } from "../Notification/NotificationPanel";
 import notificationService from "@/services/notification";
-import { LIMIT } from "@/constants";
+import { LIMIT, MessageType } from "@/constants";
 import { setNotifications } from "@/redux/reducers/notifications";
 import { Notification as NotificationProps } from "@/types/notification";
 import { Conversation } from "@/types/chat";
@@ -463,6 +463,8 @@ export default function Header() {
         const filtered = prev.filter((c) => c.id !== conv.id);
         return [conv, ...filtered];
       });
+
+      if (conv.lastMessage.type === MessageType.CALL) return;
 
       const title = `New message from ${conv.lastMessage.sender.fullName}`;
       const body = conv.isGroup
