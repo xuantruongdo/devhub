@@ -1,21 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, PhoneOff, Send, Video } from "lucide-react";
 import chatService from "@/services/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { Message } from "@/types/chat";
-import { MESSAGE_LIMIT } from "@/constants";
+import { CallEndReason, MESSAGE_LIMIT, MessageType } from "@/constants";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSkeleton } from "./MessageSkeleton";
-import { getOtherUser, isMe, scrollToBottom } from "@/lib/utils";
+import {
+  formatDuration,
+  getOtherUser,
+  isMe,
+  scrollToBottom,
+} from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
-import { useSocket } from "@/hooks/useSocket";
+import { useVideoCallContext } from "@/contexts/VideoCallContext";
+import { useSocketContext } from "@/contexts/SocketContext";
 
 export default function ChatWindow({
   conversationId,
@@ -27,7 +33,7 @@ export default function ChatWindow({
 
   const router = useRouter();
   const { t, locale, ready } = useTranslation();
-  const socket = useSocket(currentUser.id);
+  const { socket } = useSocketContext();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -40,6 +46,8 @@ export default function ChatWindow({
   const fetchingRef = useRef(false);
   const didInitialScroll = useRef(false);
   const incomingMessageRef = useRef(false);
+
+  const { startCall } = useVideoCallContext();
 
   useEffect(() => {
     setMessages([]);
@@ -79,9 +87,7 @@ export default function ChatWindow({
         setHasMore(false);
       }
 
-      setMessages((prev) => {
-        return cursor ? [...newMessages, ...prev] : newMessages;
-      });
+      setMessages((prev) => (cursor ? [...newMessages, ...prev] : newMessages));
 
       if (cursor && el) {
         // Dùng rAF ở đây vẫn cần: để đợi DOM render xong rồi mới restore scroll position
@@ -99,7 +105,7 @@ export default function ChatWindow({
     }
   };
 
-  // Scroll xuống cuối sau lần fetch đầu tiên
+  // Scroll xuống sau lần fetch đầu
   useEffect(() => {
     if (!messages.length) return;
     if (didInitialScroll.current) return;
@@ -111,7 +117,7 @@ export default function ChatWindow({
     didInitialScroll.current = true;
   }, [messages]);
 
-  // Xử lý scroll khi có tin nhắn mới từ người khác (sau khi DOM đã render xong)
+  // Scroll khi nhận tin nhắn mới từ người khác
   useEffect(() => {
     if (!incomingMessageRef.current) return;
     incomingMessageRef.current = false;
@@ -120,7 +126,7 @@ export default function ChatWindow({
     if (!el) return;
 
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const threshold = el.clientHeight * 0.5; // 50% chiều cao container
+    const threshold = el.clientHeight * 0.5;
 
     if (distanceFromBottom < threshold) {
       scrollToBottom(el, true);
@@ -159,7 +165,6 @@ export default function ChatWindow({
 
     setMessages((prev) => [...prev, temp as Message]);
     setInput("");
-
     scrollToBottom(containerRef.current, true);
 
     try {
@@ -180,20 +185,31 @@ export default function ChatWindow({
     }
   };
 
+  const otherUser = useMemo(() => {
+    if (selectedConversation?.isGroup) return null;
+
+    return getOtherUser(selectedConversation, currentUser.id);
+  }, [selectedConversation, currentUser.id]);
+
   const conversationName = useMemo(() => {
-    const otherUser = getOtherUser(selectedConversation, currentUser.id);
+    if (selectedConversation?.isGroup) {
+      return selectedConversation?.title || "N/A";
+    }
 
-    return selectedConversation.isGroup
-      ? selectedConversation?.title || t("chat.sidebar.unknown")
-      : otherUser?.fullName;
-  }, [conversationId, selectedConversation]);
+    return otherUser?.fullName;
+  }, [selectedConversation?.isGroup, selectedConversation?.title, otherUser]);
 
+  // ── Socket: nhận tin nhắn mới (gồm cả call message) ──
   useEffect(() => {
     socket.emit("conversation:join", conversationId);
 
     const handleNewMessage = (message: Message) => {
       if (message.conversationId !== conversationId) return;
-      if (isMe(message.senderId, currentUser.id)) return;
+      if (
+        isMe(message.senderId, currentUser.id) &&
+        message.type !== MessageType.CALL
+      )
+        return;
 
       setMessages((prev) => {
         const exists = prev.find((m) => m.id === message.id);
@@ -217,110 +233,211 @@ export default function ChatWindow({
   if (!ready) return null;
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
-      <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
-        <div className="flex items-center gap-2">
-          <button onClick={() => router.push(`/${locale}/messages`)}>
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="font-medium">{t("chat.window.title")}</span>
-        </div>
-        <span className="font-medium">{conversationName}</span>
-      </div>
+    <>
+      <div className="flex flex-col h-full min-h-0 relative">
+        <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.push(`/${locale}/messages`)}>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="font-medium">{t("chat.window.title")}</span>
+          </div>
 
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-      >
-        {messages.map((m) => {
-          const isMine = isMe(m.senderId, currentUser.id);
+          <div className="flex items-center gap-3">
+            <span className="font-medium">{conversationName}</span>
 
-          return (
-            <div key={m.id} className="space-y-1">
-              <div
-                className={`flex items-end gap-2 ${
-                  isMine ? "justify-end" : "justify-start"
-                }`}
+            {!selectedConversation.isGroup && otherUser && (
+              <button
+                onClick={() => startCall(otherUser.id, selectedConversation.id)}
+                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
               >
-                {!isMine && (
-                  <Avatar size="lg" className="cursor-pointer">
-                    {m.sender?.avatar ? (
-                      <AvatarImage
-                        src={m.sender?.avatar}
-                        alt={m.sender.fullName}
-                      />
-                    ) : (
-                      <AvatarFallback>
-                        {m.sender.fullName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                )}
+                <Video className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
 
+        <div className="hidden md:flex items-center justify-between p-3 border-b shrink-0">
+          <span className="font-medium">{conversationName}</span>
+
+          {!selectedConversation.isGroup && otherUser && (
+            <button
+              onClick={() => startCall(otherUser.id, selectedConversation.id)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
+            >
+              <Video className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        >
+          {messages.map((m) => {
+            const isMine = isMe(m.senderId, currentUser.id);
+
+            const renderMessageContent = () => {
+              switch (m.type) {
+                case MessageType.CALL:
+                  return <CallMessageBubble message={m} />;
+
+                case MessageType.TEXT:
+                  return (
+                    <div
+                      className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                        isMine
+                          ? "bg-blue-500 text-white"
+                          : "bg-white text-black border"
+                      }`}
+                    >
+                      {m.content}
+                    </div>
+                  );
+
+                case MessageType.IMAGE:
+                  return <></>;
+
+                case MessageType.FILE:
+                  return <></>;
+
+                default:
+                  return null;
+              }
+            };
+
+            return (
+              <div key={m.id} className="space-y-1">
                 <div
-                  className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                    isMine
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-black border"
+                  className={`flex items-end gap-2 ${
+                    isMine ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {m.content}
+                  {!isMine && (
+                    <Avatar size="lg" className="cursor-pointer">
+                      {m.sender?.avatar ? (
+                        <AvatarImage
+                          src={m.sender?.avatar}
+                          alt={m.sender.fullName}
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {m.sender.fullName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  )}
+
+                  {renderMessageContent()}
+                </div>
+
+                <div
+                  className={`text-[11px] text-gray-400 ${
+                    isMine ? "text-right pr-1" : "pl-2"
+                  }`}
+                >
+                  {!isMine && m.sender?.fullName && (
+                    <div className="text-gray-500 text-[10px]">
+                      {m.sender.fullName}
+                    </div>
+                  )}
+                  {moment(m.createdAt).format("HH:mm")}
                 </div>
               </div>
+            );
+          })}
 
-              <div
-                className={`text-[11px] text-gray-400 ${
-                  isMine ? "text-right pr-1" : "pl-2"
-                }`}
-              >
-                {!isMine && m.sender?.fullName && (
-                  <div className="text-gray-500 text-[10px]">
-                    {m.sender.fullName}
-                  </div>
-                )}
-                {moment(m.createdAt).format("HH:mm")}
-              </div>
-            </div>
-          );
-        })}
+          {loading && (
+            <>
+              <MessageSkeleton />
+              <MessageSkeleton isMine />
+              <MessageSkeleton />
+            </>
+          )}
+        </div>
 
-        {loading && (
-          <>
-            <MessageSkeleton />
-            <MessageSkeleton isMine />
-            <MessageSkeleton />
-          </>
+        {showNew && (
+          <button
+            onClick={() => {
+              scrollToBottom(containerRef.current, true);
+              setShowNew(false);
+            }}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+          >
+            {t("chat.window.newMessages")}
+          </button>
         )}
+
+        <div className="p-3 border-t flex gap-2 shrink-0">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t("chat.window.typeMessage")}
+            className="flex-1 rounded-full"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSend();
+            }}
+          />
+          <Button onClick={handleSend} size="icon">
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
+    </>
+  );
+}
 
-      {showNew && (
-        <button
-          onClick={() => {
-            scrollToBottom(containerRef.current, true);
-            setShowNew(false);
-          }}
-          className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
-        >
-          {t("chat.window.newMessages")}
-        </button>
-      )}
+function CallMessageBubble({ message }: { message: Message }) {
+  const { t } = useTranslation();
 
-      <div className="p-3 border-t flex gap-2 shrink-0">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t("chat.window.typeMessage")}
-          className="flex-1 rounded-full"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSend();
-          }}
-        />
+  let Icon = PhoneOff;
+  let label = "";
+  let colorClass = "text-gray-600 bg-gray-100 border-gray-200";
 
-        <Button onClick={handleSend} size="icon">
-          <Send className="w-4 h-4" />
-        </Button>
-      </div>
+  switch (message.callStatus) {
+    case CallEndReason.ENDED: {
+      Icon = Video;
+      colorClass = "text-green-600 bg-green-50 border-green-200";
+
+      if (message.callDuration && message.callDuration > 0) {
+        label = `${t("chat.call.ended.ended")} • ${formatDuration(
+          message.callDuration,
+        )}`;
+      } else {
+        label = t("chat.call.ended.ended");
+      }
+
+      break;
+    }
+
+    case CallEndReason.REJECTED: {
+      Icon = PhoneOff;
+      colorClass = "text-red-600 bg-red-50 border-red-200";
+      label = t("chat.call.ended.rejected");
+      break;
+    }
+
+    case CallEndReason.TIMEOUT: {
+      Icon = PhoneOff;
+      colorClass = "text-red-600 bg-red-50 border-red-200";
+      label = t("chat.call.ended.missed");
+      break;
+    }
+
+    default: {
+      Icon = PhoneOff;
+      colorClass = "text-red-600 bg-red-50 border-red-200";
+      label = t("chat.call.ended.missed");
+    }
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-2 text-sm rounded-2xl border max-w-[240px] ${colorClass}`}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{label}</span>
     </div>
   );
 }

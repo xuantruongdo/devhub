@@ -97,7 +97,13 @@
       "viewMore": "Xem thêm"
     },
     "message": {
-      "title": "Tin nhắn"
+      "title": "Tin nhắn",
+      "you": "Bạn",
+      "missed": "Đã bỏ lỡ một cuộc gọi",
+      "rejected": "Đã từ chối một cuộc gọi",
+      "call": "Đã hoàn thành cuộc gọi",
+      "file": "Đã gửi một file",
+      "image": "Đã gửi một ảnh"
     }
   },
   "composePost": {
@@ -177,14 +183,33 @@
       "messages": "Tin nhắn",
       "noMessages": "Chưa có tin nhắn",
       "unknown": "Không xác định",
-      "you": "Bạn",
-      "file": "File",
-      "viewAll": "Xem tất cả"
+      "message": {
+        "title": "Tin nhắn",
+        "you": "Bạn",
+        "missed": "Đã bỏ lỡ một cuộc gọi",
+        "rejected": "Đã từ chối một cuộc gọi",
+        "call": "Đã hoàn thành cuộc gọi",
+        "file": "Đã gửi một file",
+        "image": "Đã gửi một ảnh"
+      }
     },
     "window": {
       "title": "Chat",
       "typeMessage": "Nhập tin nhắn...",
       "newMessages": "Tin nhắn mới"
+    },
+    "call": {
+      "calling": {
+        "title": "Đang gọi..."
+      },
+      "receiving": {
+        "title": "Cuộc gọi đến"
+      },
+      "ended": {
+        "ended": "Cuộc gọi video",
+        "missed": "Cuộc gọi nhỡ",
+        "rejected": "Cuộc gọi bị từ chối"
+      }
     },
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "Bạn không có quyền truy cập cuộc trò chuyện này"

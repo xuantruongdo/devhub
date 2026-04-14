@@ -93,7 +93,7 @@ export class UserRepo {
     return this.repo.findOne({ where: { id } });
   }
 
-  async findByUsername(username: string, currentUserId: number) {
+  async findByUsername(username: string, currentUserId?: number) {
     const qb = this.repo
       .createQueryBuilder("user")
       .leftJoin(

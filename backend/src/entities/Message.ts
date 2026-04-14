@@ -14,6 +14,13 @@ export enum MessageType {
   TEXT = "text",
   IMAGE = "image",
   FILE = "file",
+  CALL = "call",
+}
+
+export enum CallStatus {
+  REJECTED = "rejected",
+  TIMEOUT = "timeout",
+  ENDED = "ended",
 }
 
 @Entity()
@@ -41,6 +48,12 @@ export class Message {
 
   @Column({ nullable: true })
   fileUrl?: string;
+
+  @Column({ nullable: true })
+  callDuration?: number;
+
+  @Column({ nullable: true })
+  callStatus?: CallStatus;
 
   @ManyToOne(() => Conversation, (c) => c.messages, {
     onDelete: "CASCADE",

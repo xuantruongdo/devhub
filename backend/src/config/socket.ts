@@ -43,6 +43,50 @@ export const initSocket = (server: http.Server) => {
       console.log(`💬 Joined conversation room: conversation:${id}`);
     });
 
+    socket.on(
+      "call:offer",
+      ({ to, from, offer, conversationId, callerName, callerAvatar }) => {
+        socket.to(`user:${to}`).emit("call:incoming", {
+          from,
+          offer,
+          conversationId,
+          callerName,
+          callerAvatar,
+        });
+      },
+    );
+
+    socket.on("call:answer", ({ to, from, answer }) => {
+      socket.to(`user:${to}`).emit("call:answered", {
+        from,
+        answer,
+      });
+    });
+
+    socket.on("call:ice-candidate", ({ to, candidate }) => {
+      socket.to(`user:${to}`).emit("call:ice-candidate", {
+        candidate,
+      });
+    });
+
+    socket.on("call:end", ({ to, from }) => {
+      socket.to(`user:${to}`).emit("call:ended", { from });
+    });
+
+    socket.on("call:reject", ({ to, from, conversationId }) => {
+      socket.to(`user:${to}`).emit("call:rejected", {
+        from,
+        conversationId,
+      });
+    });
+
+    socket.on("call:cancel", ({ to, from, conversationId }) => {
+      socket.to(`user:${to}`).emit("call:cancelled", {
+        from,
+        conversationId,
+      });
+    });
+
     socket.on("disconnect", () => {
       console.log("🔴 User disconnected:", socket.id);
     });

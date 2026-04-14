@@ -3,7 +3,7 @@ import { AppDataSource } from "../config/data-source";
 import { MessageRepo } from "../repositories/MessageRepo";
 import { ConversationRepo } from "../repositories/ConversationRepo";
 import { ParticipantRepo } from "../repositories/ParticipantRepo";
-import { Message } from "../entities/Message";
+import { CallStatus, MessageType } from "../entities/Message";
 import { Conversation } from "../entities/Conversation";
 import { UserProps } from "../types/auth";
 import { ForbiddenError } from "routing-controllers";
@@ -60,10 +60,22 @@ export class ChatService {
   async sendMessage(params: {
     conversationId: number;
     sender: UserProps;
-    content: string;
+    callerId?: number;
+    content?: string;
+    type?: MessageType;
+    callDuration?: number;
+    callStatus?: CallStatus;
   }) {
-    const { conversationId, sender, content } = params;
-    const senderId = sender.id;
+    const {
+      conversationId,
+      sender,
+      content,
+      type,
+      callDuration,
+      callStatus,
+      callerId,
+    } = params;
+    const senderId = callerId ? callerId : sender.id;
 
     const participant = await this.participantRepo.findOne({
       where: { conversationId, userId: senderId },
@@ -77,6 +89,9 @@ export class ChatService {
         conversationId,
         senderId,
         content,
+        type,
+        callDuration,
+        callStatus,
       });
 
       await this.conversationRepo.update(conversationId, {
@@ -86,13 +101,34 @@ export class ChatService {
 
       await this.participantRepo.incrementUnread(conversationId, senderId);
 
-      return msg;
+      const fullMessage = await this.messageRepo.findOne(msg.id, {
+        relations: {
+          sender: true,
+        },
+        select: {
+          id: true,
+          conversationId: true,
+          content: true,
+          type: true,
+          callDuration: true,
+          callStatus: true,
+          createdAt: true,
+          senderId: true,
+          sender: {
+            id: true,
+            email: true,
+            username: true,
+            fullName: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+      });
+
+      return fullMessage;
     });
 
-    emitNewMessage(conversationId, {
-      ...message,
-      sender,
-    });
+    if (message) emitNewMessage(conversationId, message);
 
     const updatedConversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
@@ -121,6 +157,8 @@ export class ChatService {
           content: true,
           type: true,
           fileUrl: true,
+          callDuration: true,
+          callStatus: true,
           senderId: true,
           sender: {
             id: true,

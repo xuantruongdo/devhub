@@ -83,3 +83,11 @@ export const getUnread = (
     return sum + (me?.unreadCount ?? 0);
   }, 0);
 };
+
+export const formatDuration = (sec: number) => {
+  const m = Math.floor(sec / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+};

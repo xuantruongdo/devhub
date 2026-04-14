@@ -34,7 +34,11 @@ export class ChatController {
     return this.chatService.sendMessage({
       conversationId: body.conversationId,
       sender: user,
+      callerId: body.callerId,
       content: body.content,
+      type: body.type,
+      callDuration: body.callDuration,
+      callStatus: body.callStatus,
     });
   }
 

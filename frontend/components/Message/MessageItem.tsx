@@ -3,11 +3,11 @@
 import Link from "next/link";
 import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Conversation } from "@/types/chat";
+import { Conversation, Message } from "@/types/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getOtherUser, getUnread, isMe } from "@/lib/utils";
-import { MessageType } from "@/constants";
+import { CallEndReason, MessageType } from "@/constants";
 
 type Props = {
   conversation: Conversation;
@@ -29,6 +29,33 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
   const fallbackText = displayName?.charAt(0)?.toUpperCase() || "?";
 
   const unread = getUnread([conversation], currentUser.id);
+
+  const renderLastMessage = (msg: Message) => {
+    switch (msg.type) {
+      case MessageType.CALL:
+        switch (msg.callStatus) {
+          case CallEndReason.REJECTED:
+            return t("header.message.rejected");
+
+          case CallEndReason.TIMEOUT:
+            return t("header.message.missed");
+
+          case CallEndReason.ENDED:
+          default:
+            return t("header.message.call");
+        }
+
+      case MessageType.FILE:
+        return t("header.message.file");
+
+      case MessageType.IMAGE:
+        return t("header.message.image");
+
+      case MessageType.TEXT:
+      default:
+        return msg.content;
+    }
+  };
 
   return (
     <Link
@@ -60,14 +87,13 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
         <p className="text-sm text-gray-500 truncate">
           {conversation.lastMessage ? (
             <>
-              {isMe(conversation.lastMessage.senderId, currentUser.id) && (
-                <>{t("chat.sidebar.you")}: </>
-              )}
+              {isMe(conversation.lastMessage.senderId, currentUser.id) &&
+                conversation.lastMessage.type !== MessageType.CALL && (
+                  <>{t("header.message.you")}: </>
+                )}
 
-              <span className="truncate inline-block max-w-[100px] align-bottom">
-                {conversation.lastMessage.type === MessageType.TEXT
-                  ? conversation.lastMessage.content
-                  : t("chat.sidebar.file")}
+              <span className="truncate inline-block max-w-[300px] align-bottom">
+                {renderLastMessage(conversation.lastMessage)}
               </span>
 
               {" · "}

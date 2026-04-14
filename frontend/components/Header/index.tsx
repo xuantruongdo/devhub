@@ -30,8 +30,7 @@ import { Conversation } from "@/types/chat";
 import chatService from "@/services/chat";
 import { MessagesPanel } from "../Message/MessagesPanel";
 import { getUnread, isMe } from "@/lib/utils";
-import { getSocket } from "@/lib/socket";
-import { useSocket } from "@/hooks/useSocket";
+import { useSocketContext } from "@/contexts/SocketContext";
 
 const FAKE_USERS = [
   {
@@ -230,7 +229,7 @@ function UserDropdown({
             </div>
 
             {unreadNotifs > 0 && (
-              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full !bg-primary !text-primary-foreground font-medium">
                 {unreadNotifs}
               </span>
             )}
@@ -252,7 +251,7 @@ function UserDropdown({
             </div>
 
             {unreadMsgs > 0 && (
-              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground font-medium">
+              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full !bg-primary !text-primary-foreground font-medium">
                 {unreadMsgs}
               </span>
             )}
@@ -295,7 +294,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, locale } = useTranslation();
-  const socket = useSocket(currentUser.id);
+  const { socket } = useSocketContext();
 
   // Notification
   const notifications = useAppSelector((state) => state.notifications);
