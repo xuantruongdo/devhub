@@ -97,7 +97,13 @@
       "viewMore": "View more"
     },
     "message": {
-      "title": "Messages"
+      "title": "Messages",
+      "you": "You",
+      "missed": "Missed a call",
+      "rejected": "Rejected call",
+      "call": "Call ended",
+      "file": "Sent a file",
+      "image": "Sent an image"
     }
   },
   "composePost": {
@@ -178,13 +184,33 @@
       "noMessages": "No messages yet",
       "unknown": "Unknown",
       "you": "You",
-      "file": "File",
-      "viewAll": "View all"
+      "message": {
+        "title": "Messages",
+        "you": "You",
+        "missed": "Missed a call",
+        "rejected": "Rejected call",
+        "call": "Call ended",
+        "file": "Sent a file",
+        "image": "Sent an image"
+      }
     },
     "window": {
       "title": "Chat",
       "typeMessage": "Type a message...",
       "newMessages": "New messages"
+    },
+    "call": {
+      "calling": {
+        "title": "Calling..."
+      },
+      "receiving": {
+        "title": "Incoming call"
+      },
+      "ended": {
+        "ended": "Video call",
+        "missed": "Missed call",
+        "rejected": "Rejected call "
+      }
     },
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "You do not have permission to access this conversation"

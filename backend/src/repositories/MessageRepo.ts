@@ -4,6 +4,7 @@ import { Message } from "../entities/Message";
 import { MESSAGE_LIMIT } from "../constants";
 import { UserProps } from "../types/auth";
 import { ConversationParticipant } from "../entities/ConversationParticipant";
+import { FindOneOptions } from "typeorm";
 
 @Service()
 export class MessageRepo {
@@ -72,10 +73,12 @@ export class MessageRepo {
     return messages;
   }
 
-  async findById(id: number) {
+  async findOne(messageId: number, options?: FindOneOptions<Message>) {
     return this.repo.findOne({
-      where: { id },
-      relations: ["sender"],
+      where: {
+        id: messageId,
+      },
+      ...options,
     });
   }
 

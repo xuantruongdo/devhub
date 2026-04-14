@@ -3,13 +3,13 @@
 import { toastError } from "@/lib/toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import chatService from "@/services/chat";
-import { Conversation } from "@/types/chat";
+import { Conversation, Message } from "@/types/chat";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ConversationSkeleton } from "./ConversationSkeleton";
-import { MessageType } from "@/constants";
+import { CallEndReason, MessageType } from "@/constants";
 import moment from "moment";
 import { getOtherUser, getUnread, isMe } from "@/lib/utils";
 import { setSelectedConversation } from "@/redux/reducers/conversation";
@@ -60,10 +60,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
           ...c,
           participants: c.participants.map((p) => {
             if (isMe(p.userId, currentUser.id)) {
-              return {
-                ...p,
-                unreadCount: 0,
-              };
+              return { ...p, unreadCount: 0 };
             }
             return p;
           }),
@@ -72,9 +69,35 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
     );
 
     dispatch(setSelectedConversation(conversation));
-
     router.push(`/${locale}/messages/${conversation.id}`);
     window.scrollTo({ top: 0 });
+  };
+
+  const renderLastMessage = (msg: Message) => {
+    switch (msg.type) {
+      case MessageType.CALL:
+        switch (msg.callStatus) {
+          case CallEndReason.REJECTED:
+            return t("chat.sidebar.message.rejected");
+
+          case CallEndReason.TIMEOUT:
+            return t("chat.sidebar.message.missed");
+
+          case CallEndReason.ENDED:
+          default:
+            return t("chat.sidebar.message.call");
+        }
+
+      case MessageType.FILE:
+        return t("chat.sidebar.message.file");
+
+      case MessageType.IMAGE:
+        return t("chat.sidebar.message.image");
+
+      case MessageType.TEXT:
+      default:
+        return msg.content;
+    }
   };
 
   if (!ready) return null;
@@ -93,76 +116,73 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
             ))}
           </div>
         )}
-        {conversations.length > 0
-          ? conversations.map((c) => {
-              const otherUser = getOtherUser(c, currentUser.id);
-              const unread = getUnread([c], currentUser.id);
 
-              const displayName = c.isGroup
-                ? c.title || t("chat.sidebar.unknown")
-                : otherUser?.fullName;
+        {conversations.length > 0 &&
+          conversations.map((c) => {
+            const otherUser = getOtherUser(c, currentUser.id);
+            const unread = getUnread([c], currentUser.id);
 
-              const avatarSrc = !c.isGroup ? otherUser?.avatar : null;
+            const displayName = c.isGroup ? c.title : otherUser?.fullName;
 
-              const fallbackText = displayName?.charAt(0)?.toUpperCase() || "?";
+            const avatarSrc = !c.isGroup ? otherUser?.avatar : null;
+            const fallbackText = displayName?.charAt(0);
 
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => handleOpenConversation(c)}
-                  className={`
+            return (
+              <button
+                key={c.id}
+                onClick={() => handleOpenConversation(c)}
+                className={`
                   w-full flex items-center gap-3 px-4 py-3 text-left
-                  hover:bg-gray-100 dark:hover:bg-white/10
-                  cursor-pointer transition-colors
-                  ${activeId === c.id ? "bg-gray-100 dark:bg-white/10" : ""}
+                  hover:bg-muted/60 transition-colors cursor-pointer
+                  ${activeId === c.id ? "bg-muted/60" : ""}
                 `}
-                >
-                  <Avatar className="w-10 h-10">
-                    {avatarSrc ? (
-                      <AvatarImage src={avatarSrc} />
-                    ) : (
-                      <AvatarFallback>{fallbackText}</AvatarFallback>
+              >
+                <Avatar className="w-10 h-10">
+                  {avatarSrc ? (
+                    <AvatarImage src={avatarSrc} />
+                  ) : (
+                    <AvatarFallback className="uppercase">
+                      {fallbackText}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium truncate">{displayName}</p>
+
+                    {unread > 0 && (
+                      <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                        {unread}
+                      </span>
                     )}
-                  </Avatar>
+                  </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <p className="font-medium truncate">{displayName}</p>
-
-                      {unread > 0 && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                          {unread}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-sm text-gray-500 truncate">
-                      {c.lastMessage ? (
-                        <>
-                          {isMe(c.lastMessage.senderId, currentUser.id) && (
-                            <>{t("chat.sidebar.you")}: </>
+                  <p className="text-sm text-gray-500 truncate">
+                    {c.lastMessage ? (
+                      <>
+                        {isMe(c.lastMessage.senderId, currentUser.id) &&
+                          c.lastMessage.type !== MessageType.CALL && (
+                            <>{t("chat.sidebar.message.you")}: </>
                           )}
 
-                          <span className="truncate inline-block max-w-[100px] align-bottom">
-                            {c.lastMessage.type === MessageType.TEXT
-                              ? c.lastMessage.content
-                              : t("chat.sidebar.file")}
-                          </span>
+                        <span className="truncate inline-block max-w-[140px] align-bottom">
+                          {renderLastMessage(c.lastMessage)}
+                        </span>
 
-                          {" · "}
-                          <span className="text-[11px] text-gray-400 whitespace-nowrap">
-                            {moment(c.lastMessage.createdAt).fromNow()}
-                          </span>
-                        </>
-                      ) : (
-                        t("chat.sidebar.noMessages")
-                      )}
-                    </p>
-                  </div>
-                </button>
-              );
-            })
-          : null}
+                        {" · "}
+                        <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                          {moment(c.lastMessage.createdAt).fromNow()}
+                        </span>
+                      </>
+                    ) : (
+                      t("chat.sidebar.noMessages")
+                    )}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
       </div>
     </div>
   );

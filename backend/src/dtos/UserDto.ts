@@ -9,7 +9,6 @@ import {
   IsUrl,
   MinLength,
 } from "class-validator";
-import { MediaType } from "../constants";
 
 export class RegisterDto {
   @IsNotEmpty({ message: "Full name is required" })

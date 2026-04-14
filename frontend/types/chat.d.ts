@@ -1,4 +1,4 @@
-import { MessageType } from "@/constants";
+import { CallStatus, MessageType } from "@/constants";
 import { User } from "./user";
 
 export interface Message {
@@ -10,6 +10,8 @@ export interface Message {
   type: MessageType;
   content?: string;
   fileUrl?: string;
+  callDuration: number;
+  callStatus: CallEndReason;
   createdAt: Date;
 }
 
@@ -41,5 +43,9 @@ export interface ConversationInput {
 
 export interface SendMessageInput {
   conversationId: number;
-  content: string;
+  content?: string;
+  callerId?: number;
+  type?: MessageType;
+  callDuration?: number;
+  callStatus?: CallEndReason;
 }
