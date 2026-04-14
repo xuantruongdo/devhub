@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Conversation } from "@/types/chat";
-import { useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { MessageItem } from "./MessageItem";
 
@@ -64,7 +63,7 @@ export function MessagesPanel({
           onClick={onClose}
           className="flex w-full justify-center text-xs text-primary hover:underline"
         >
-          {t("chat.sidebar.viewAll")} →
+          {t("header.message.viewAll")} →
         </Link>
       </div>
     </div>

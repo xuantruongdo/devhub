@@ -236,3 +236,22 @@ pnpm typeorm migration:show -d src/config/data-source.ts
 * build backend chuẩn production
 
 ---
+
+### ⚠️ Ngrok & CORS Issues
+
+Khi sử dụng **ngrok** để expose backend (ví dụ: `https://xxxx.ngrok.io`), nếu bạn **restart server hoặc thay đổi code backend**, có thể gặp lỗi CORS khi gọi API từ frontend.
+
+🔍 Nguyên nhân:
+
+* Trình duyệt cache CORS / preflight request
+* Cookie / session cũ không còn hợp lệ
+* Ngrok URL thay đổi nhưng frontend vẫn dùng cache cũ
+
+✅ Cách xử lý nhanh:
+
+* Mở **tab ẩn danh (Incognito)** và gọi lại API
+* Hoặc clear cache + cookies của domain ngrok
+* Đảm bảo cập nhật đúng `FRONTEND_URL` / `origin` trong backend
+
+💡 Tip:
+Mỗi lần restart ngrok hoặc backend, nên test lại bằng tab ẩn danh để tránh lỗi CORS khó debug.

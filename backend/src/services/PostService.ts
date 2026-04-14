@@ -18,9 +18,9 @@ import { Post } from "../entities/Post";
 import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
 import { CommentLike } from "../entities/CommentLike";
-import { NotificationService } from "./Notification";
 import { Notification, NotificationType } from "../entities/Notification";
 import { emitNewNotification } from "../libs/io";
+import { NotificationService } from "./NotificationService";
 
 @Service()
 export class PostService {
@@ -32,7 +32,7 @@ export class PostService {
 
   async findOne(id: number, user: UserProps) {
     try {
-      return this.postRepo.findOne(id, user.id);
+      return this.postRepo.findOnePost(id, user.id);
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
@@ -61,21 +61,38 @@ export class PostService {
   }
 
   async create(data: CreatePostDto, user: UserProps) {
-    try {
-      const post = await this.postRepo.create({
-        ...data,
-        authorId: user.id,
-      });
+    const post = await this.postRepo.save({
+      ...data,
+      authorId: user.id,
+    });
 
-      return this.postRepo.findById(post.id);
-    } catch (error: any) {
-      throw new BadRequestError(error.message);
-    }
+    return this.postRepo.findOne({
+      where: { id: post.id },
+      relations: {
+        author: true,
+      },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          id: true,
+          username: true,
+          fullName: true,
+          email: true,
+          avatar: true,
+          isVerified: true,
+        },
+      },
+    });
   }
 
   async update(id: number, data: UpdatePostDto, user: UserProps) {
     try {
-      const post = await this.postRepo.findById(id);
+      const post = await this.postRepo.findOne({
+        where: { id },
+      });
 
       if (!post) throw new BadRequestError(PostCodeError.POST_NOT_FOUND);
 
@@ -92,7 +109,9 @@ export class PostService {
 
   async remove(id: number, user: UserProps) {
     try {
-      const post = await this.postRepo.findById(id);
+      const post = await this.postRepo.findOne({
+        where: { id },
+      });
 
       if (!post) throw new BadRequestError(PostCodeError.POST_NOT_FOUND);
 

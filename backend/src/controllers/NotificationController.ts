@@ -11,8 +11,8 @@ import {
 } from "routing-controllers";
 import { Service } from "typedi";
 import { UserProps } from "../types/auth";
-import { NotificationService } from "../services/Notification";
 import { CreateNotificationDto } from "../dtos/NotificationDto";
+import { NotificationService } from "../services/NotificationService";
 
 @Service()
 @JsonController("/notifications")

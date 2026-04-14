@@ -17,7 +17,7 @@ export class NotificationService {
 
     if (recipientId === senderId) return null;
 
-    return this.notificationRepo.create({
+    return this.notificationRepo.save({
       ...params,
       isRead: false,
     });
@@ -59,6 +59,6 @@ export class NotificationService {
   }
 
   async remove(id: number) {
-    return this.notificationRepo.remove(id);
+    return this.notificationRepo.delete(id);
   }
 }

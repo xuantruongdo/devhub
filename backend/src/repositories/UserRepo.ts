@@ -1,18 +1,19 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { FindUserOptions, UserProps } from "../types/auth";
-import { FindOptionsWhere } from "typeorm";
+import { FindUserOptions } from "../types/auth";
+import { BaseRepo } from "./BaseRepo";
 
 @Service()
-export class UserRepo {
-  private repo = AppDataSource.getRepository(User);
+export class UserRepo extends BaseRepo<User> {
+  constructor() {
+    super(User, AppDataSource);
+  }
 
   async findById(id: number, options: FindUserOptions = {}) {
     const { includeRefreshToken = false } = options;
 
-    const qb = this.repo
-      .createQueryBuilder("user")
+    const qb = this.createQueryBuilder("user")
       .leftJoinAndSelect("user.followers", "follower")
       .leftJoinAndSelect("user.followings", "following")
       .where("user.id = :id", { id });
@@ -48,54 +49,13 @@ export class UserRepo {
   }
 
   async findByEmail(email: string) {
-    return this.repo.findOne({
+    return this.findOne({
       where: { email },
     });
   }
 
-  async findOne(
-    where: FindOptionsWhere<User>,
-    options?: {
-      relations?: string[];
-    },
-  ): Promise<User | null> {
-    const { relations } = options || {};
-
-    const user = await this.repo.findOne({
-      where,
-      relations,
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        isVerified: true,
-        role: true,
-        followers: true,
-        followings: true,
-      },
-    });
-
-    return user;
-  }
-
-  async save(user: User): Promise<User> {
-    return this.repo.save(user);
-  }
-
-  async create(data: Partial<User>) {
-    const user = this.repo.create(data);
-    return this.save(user);
-  }
-
-  async update(id: number, data: Partial<User>) {
-    await this.repo.update(id, data);
-    return this.repo.findOne({ where: { id } });
-  }
-
   async findByUsername(username: string, currentUserId?: number) {
-    const qb = this.repo
-      .createQueryBuilder("user")
+    const qb = this.createQueryBuilder("user")
       .leftJoin(
         "user_followers",
         "uf",

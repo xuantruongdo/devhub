@@ -103,7 +103,8 @@
       "rejected": "Đã từ chối một cuộc gọi",
       "call": "Đã hoàn thành cuộc gọi",
       "file": "Đã gửi một file",
-      "image": "Đã gửi một ảnh"
+      "image": "Đã gửi một ảnh",
+      "viewAll": "Xem tất cả tin nhắn"
     }
   },
   "composePost": {
