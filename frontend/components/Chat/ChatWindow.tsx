@@ -231,42 +231,21 @@ export default function ChatWindow({
     };
   }, [conversationId]);
 
-  useEffect(() => {
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    if (!isMobile) return;
-
-    const updateVH = () => {
-      const vh = window.visualViewport?.height || window.innerHeight;
-      document.documentElement.style.setProperty("--vh", `${vh}px`);
-    };
-
-    updateVH();
-
-    window.visualViewport?.addEventListener("resize", updateVH);
-    window.addEventListener("resize", updateVH);
-
-    return () => {
-      window.visualViewport?.removeEventListener("resize", updateVH);
-      window.removeEventListener("resize", updateVH);
-    };
-  }, []);
-
   if (!ready) return null;
 
   return (
     <>
-      <div className="flex flex-col h-[calc(var(--vh)-66px)] overflow-hidden overscroll-none relative">
-        <div className="md:hidden fixed top-[64px] left-0 right-0 z-50 bg-background border-b flex items-center justify-between p-3">
+      {/* ── MOBILE LAYOUT ── */}
+      <div className="md:hidden flex flex-col h-[100dvh]">
+        {/* Header: fixed, top-[66px] */}
+        <div className="fixed top-[66px] left-0 right-0 z-10 flex items-center justify-between p-3 border-b bg-white shrink-0">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <span className="font-medium">{t("chat.window.title")}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
             <span className="font-medium">{conversationName}</span>
-
+          </div>
+          <div className="flex items-center gap-3">
             {!selectedConversation.isGroup && otherUser && (
               <button
                 onClick={() => startCall(otherUser.id, selectedConversation.id)}
@@ -277,22 +256,11 @@ export default function ChatWindow({
             )}
           </div>
         </div>
-        <div className="hidden md:flex items-center justify-between p-3 border-b shrink-0">
-          <span className="font-medium">{conversationName}</span>
-
-          {!selectedConversation.isGroup && otherUser && (
-            <button
-              onClick={() => startCall(otherUser.id, selectedConversation.id)}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
-            >
-              <Video className="w-5 h-5" />
-            </button>
-          )}
-        </div>
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-24 md:pb-4"
+          className="flex-1 overflow-y-auto p-4 space-y-4 pt-[57px] pb-[68px]"
+          style={{ overscrollBehavior: "contain" }}
         >
           {messages.map((m) => {
             const isMine = isMe(m.senderId, currentUser.id);
@@ -381,12 +349,13 @@ export default function ChatWindow({
               scrollToBottom(containerRef.current, true);
               setShowNew(false);
             }}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-10 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
           >
             {t("chat.window.newMessages")}
           </button>
         )}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background flex gap-2 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+
+        <div className="fixed bottom-0 left-0 right-0 z-10 p-3 border-t bg-white flex gap-2 shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -400,7 +369,112 @@ export default function ChatWindow({
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <div className="hidden md:flex p-3 border-t gap-2 shrink-0">
+      </div>
+
+      <div className="hidden md:flex flex-col h-full min-h-0 relative overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b shrink-0">
+          <span className="font-medium">{conversationName}</span>
+          {!selectedConversation.isGroup && otherUser && (
+            <button
+              onClick={() => startCall(otherUser.id, selectedConversation.id)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
+            >
+              <Video className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        >
+          {messages.map((m) => {
+            const isMine = isMe(m.senderId, currentUser.id);
+            const renderMessageContent = () => {
+              switch (m.type) {
+                case MessageType.CALL:
+                  return <CallMessageBubble message={m} />;
+                case MessageType.TEXT:
+                  return (
+                    <div
+                      className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                        isMine
+                          ? "bg-blue-500 text-white"
+                          : "bg-white text-black border"
+                      }`}
+                    >
+                      {m.content}
+                    </div>
+                  );
+                case MessageType.IMAGE:
+                  return <></>;
+                case MessageType.FILE:
+                  return <></>;
+                default:
+                  return null;
+              }
+            };
+            return (
+              <div key={m.id} className="space-y-1">
+                <div
+                  className={`flex items-end gap-2 ${
+                    isMine ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {!isMine && (
+                    <Avatar size="lg" className="cursor-pointer">
+                      {m.sender?.avatar ? (
+                        <AvatarImage
+                          src={m.sender?.avatar}
+                          alt={m.sender.fullName}
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {m.sender.fullName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  )}
+                  {renderMessageContent()}
+                </div>
+                <div
+                  className={`text-[11px] text-gray-400 ${
+                    isMine ? "text-right pr-1" : "pl-2"
+                  }`}
+                >
+                  {!isMine && m.sender?.fullName && (
+                    <div className="text-gray-500 text-[10px]">
+                      {m.sender.fullName}
+                    </div>
+                  )}
+                  {moment(m.createdAt).format("HH:mm")}
+                </div>
+              </div>
+            );
+          })}
+          {loading && (
+            <>
+              <MessageSkeleton />
+              <MessageSkeleton isMine />
+              <MessageSkeleton />
+            </>
+          )}
+        </div>
+
+        {showNew && (
+          <button
+            onClick={() => {
+              scrollToBottom(containerRef.current, true);
+              setShowNew(false);
+            }}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+          >
+            {t("chat.window.newMessages")}
+          </button>
+        )}
+
+        <div className="p-3 border-t flex gap-2 shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
