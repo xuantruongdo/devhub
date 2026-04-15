@@ -24,6 +24,10 @@ import { useVideoCallContext } from "@/contexts/VideoCallContext";
 import { useSocketContext } from "@/contexts/SocketContext";
 import Link from "next/link";
 
+const NAVBAR_HEIGHT = 64;
+const CHAT_HEADER_HEIGHT = 57;
+const INPUT_BAR_HEIGHT = 64;
+
 export default function ChatWindow({
   conversationId,
 }: {
@@ -235,8 +239,11 @@ export default function ChatWindow({
 
   return (
     <>
-      <div className="md:hidden flex flex-col h-[100dvh]">
-        <div className="fixed top-[64px] left-0 right-0 z-10 flex items-center justify-between p-3 border-b bg-background shrink-0">
+      <div className="md:hidden">
+        <div
+          className="fixed left-0 right-0 z-10 flex items-center justify-between px-3 border-b bg-background"
+          style={{ top: NAVBAR_HEIGHT, height: CHAT_HEADER_HEIGHT }}
+        >
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
@@ -254,11 +261,17 @@ export default function ChatWindow({
             )}
           </div>
         </div>
+
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 space-y-4 pt-[70px] pb-[140px]"
-          style={{ overscrollBehavior: "contain" }}
+          className="fixed left-0 right-0 overflow-y-auto p-4 space-y-4"
+          style={{
+            top: NAVBAR_HEIGHT + CHAT_HEADER_HEIGHT,
+            bottom: INPUT_BAR_HEIGHT,
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+          }}
         >
           {messages.map((m) => {
             const isMine = isMe(m.senderId, currentUser.id);
@@ -347,13 +360,17 @@ export default function ChatWindow({
               scrollToBottom(containerRef.current, true);
               setShowNew(false);
             }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-10 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+            className="fixed left-1/2 -translate-x-1/2 z-20 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
+            style={{ bottom: INPUT_BAR_HEIGHT + 12 }}
           >
             {t("chat.window.newMessages")}
           </button>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 z-10 p-3 border-t bg-background flex gap-2 shrink-0">
+        <div
+          className="fixed left-0 right-0 z-10 px-3 border-t bg-background flex items-center gap-2"
+          style={{ bottom: 0, height: INPUT_BAR_HEIGHT }}
+        >
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
