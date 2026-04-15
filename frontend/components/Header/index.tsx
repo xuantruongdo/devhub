@@ -518,7 +518,7 @@ export default function Header() {
           </h1>
         </Link>
 
-        <div className="flex-1 max-w-[200px] sm:max-w-md" ref={searchRef}>
+        <div className="flex-1 w-full sm:max-w-md" ref={searchRef}>
           <div className="relative w-full">
             <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 sm:h-5 sm:w-5 -translate-y-1/2 text-muted-foreground" />
             <Input

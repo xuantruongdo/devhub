@@ -406,20 +406,22 @@ export function useVideoCall({
     const callerId = callerIdRef.current;
     const toUserId = remoteUserIdRef.current;
 
+    cleanup();
+
     if (toUserId) {
       socket.emit("call:reject", { to: toUserId, from: currentUserId });
     }
 
     if (callerId) {
-      await chatService.sendMessage({
-        conversationId,
-        type: MessageType.CALL,
-        callStatus: CallEndReason.REJECTED,
-        callerId,
-      });
+      chatService
+        .sendMessage({
+          conversationId,
+          type: MessageType.CALL,
+          callStatus: CallEndReason.REJECTED,
+          callerId,
+        })
+        .catch(console.error);
     }
-
-    cleanup();
   }, [socket, currentUserId, cleanup, clearAutoRejectTimer]);
 
   /**
@@ -427,7 +429,7 @@ export function useVideoCall({
    * - Emit socket để báo phía kia
    * - Lưu message với status ENDED kèm thời lượng
    */
-  const endCall = useCallback(async () => {
+  const endCall = useCallback(() => {
     const conversationId = conversationIdRef.current;
     if (!conversationId) return;
 
@@ -437,21 +439,23 @@ export function useVideoCall({
     const callerId = callerIdRef.current;
     const toUserId = remoteUserIdRef.current;
 
+    cleanup();
+
     if (toUserId) {
       socket.emit("call:end", { to: toUserId, from: currentUserId });
     }
 
     if (callerId) {
-      await chatService.sendMessage({
-        conversationId,
-        type: MessageType.CALL,
-        callDuration: duration,
-        callStatus: CallEndReason.ENDED,
-        callerId,
-      });
+      chatService
+        .sendMessage({
+          conversationId,
+          type: MessageType.CALL,
+          callDuration: duration,
+          callStatus: CallEndReason.ENDED,
+          callerId,
+        })
+        .catch(console.error);
     }
-
-    cleanup();
   }, [socket, currentUserId, cleanup, clearAutoRejectTimer]);
 
   /**
@@ -459,7 +463,7 @@ export function useVideoCall({
    * - Emit socket để báo phía nhận
    * - Lưu message với status TIMEOUT
    */
-  const cancelCall = useCallback(async () => {
+  const cancelCall = useCallback(() => {
     const conversationId = conversationIdRef.current;
     if (!conversationId) return;
 
@@ -468,20 +472,22 @@ export function useVideoCall({
     const callerId = callerIdRef.current;
     const toUserId = remoteUserIdRef.current;
 
+    cleanup();
+
     if (toUserId) {
       socket.emit("call:cancel", { to: toUserId, from: currentUserId });
     }
 
     if (callerId) {
-      await chatService.sendMessage({
-        conversationId,
-        type: MessageType.CALL,
-        callStatus: CallEndReason.TIMEOUT,
-        callerId,
-      });
+      chatService
+        .sendMessage({
+          conversationId,
+          type: MessageType.CALL,
+          callStatus: CallEndReason.TIMEOUT,
+          callerId,
+        })
+        .catch(console.error);
     }
-
-    cleanup();
   }, [socket, currentUserId, cleanup, clearAutoRejectTimer]);
 
   /** Bật/tắt micro */

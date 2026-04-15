@@ -22,6 +22,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
 import { useVideoCallContext } from "@/contexts/VideoCallContext";
 import { useSocketContext } from "@/contexts/SocketContext";
+import Link from "next/link";
 
 export default function ChatWindow({
   conversationId,
@@ -237,9 +238,9 @@ export default function ChatWindow({
       <div className="flex flex-col h-full min-h-0 relative">
         <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
           <div className="flex items-center gap-2">
-            <button onClick={() => router.push(`/${locale}/messages`)}>
+            <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
-            </button>
+            </Link>
             <span className="font-medium">{t("chat.window.title")}</span>
           </div>
 

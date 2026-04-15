@@ -47,80 +47,6 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [isRemoteMuted, setIsRemoteMuted] = useState(false);
-  const [isRemoteCameraOff, setIsRemoteCameraOff] = useState(false);
-
-  useEffect(() => {
-    if (callState !== CallState.CONNECTED) {
-      setIsRemoteMuted(false);
-      setIsRemoteCameraOff(false);
-      return;
-    }
-
-    const videoEl = remoteVideoRef.current;
-    if (!videoEl) return;
-
-    const readTrackStates = () => {
-      const stream = videoEl.srcObject as MediaStream | null;
-      if (!stream) return;
-
-      const audioTracks = stream.getAudioTracks();
-      const videoTracks = stream.getVideoTracks();
-
-      setIsRemoteMuted(
-        audioTracks.length === 0 || audioTracks.every((t) => !t.enabled),
-      );
-      setIsRemoteCameraOff(
-        videoTracks.length === 0 || videoTracks.every((t) => !t.enabled),
-      );
-    };
-
-    const subscribeToStream = (stream: MediaStream | null) => {
-      if (!stream) return () => {};
-
-      readTrackStates();
-
-      const handleChange = () => readTrackStates();
-
-      stream.getTracks().forEach((track) => {
-        track.addEventListener("mute", handleChange);
-        track.addEventListener("unmute", handleChange);
-        track.addEventListener("ended", handleChange);
-      });
-
-      stream.addEventListener("addtrack", () => {
-        readTrackStates();
-        stream.getTracks().forEach((track) => {
-          track.addEventListener("mute", handleChange);
-          track.addEventListener("unmute", handleChange);
-          track.addEventListener("ended", handleChange);
-        });
-      });
-
-      stream.addEventListener("removetrack", handleChange);
-
-      return () => {
-        stream.getTracks().forEach((track) => {
-          track.removeEventListener("mute", handleChange);
-          track.removeEventListener("unmute", handleChange);
-          track.removeEventListener("ended", handleChange);
-        });
-      };
-    };
-
-    let cleanup = subscribeToStream(videoEl.srcObject as MediaStream | null);
-
-    const pollInterval = setInterval(() => {
-      const stream = videoEl.srcObject as MediaStream | null;
-      if (stream) readTrackStates();
-    }, 1500);
-
-    return () => {
-      cleanup();
-      clearInterval(pollInterval);
-    };
-  }, [callState, remoteVideoRef]);
-
   useEffect(() => {
     if (callState !== CallState.CONNECTED) {
       setDuration(0);
@@ -195,7 +121,7 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
 
             <button
               onClick={onCancel}
-              className="bg-red-500 hover:bg-red-600 rounded-full p-5"
+              className="bg-red-500 p-5 rounded-full cursor-pointer transition-all duration-200 hover:bg-red-600 hover:scale-110 active:scale-95"
             >
               <PhoneOff className="w-7 h-7 text-white" />
             </button>
@@ -219,14 +145,14 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
             <div className="flex gap-16">
               <button
                 onClick={onReject}
-                className="bg-red-500 hover:bg-red-600 rounded-full p-5"
+                className="bg-red-500 p-5 rounded-full cursor-pointer transition-all duration-200 hover:bg-red-600 hover:scale-110 active:scale-95"
               >
                 <PhoneOff className="w-8 h-8 text-white" />
               </button>
 
               <button
                 onClick={onAccept}
-                className="bg-green-500 hover:bg-green-600 rounded-full p-5"
+                className="bg-green-500 hover:bg-green-600 rounded-full p-5 cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95"
               >
                 <Phone className="w-8 h-8 text-white" />
               </button>
@@ -242,35 +168,7 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
               <p className="text-sm text-white/70 mt-1">
                 {formatDuration(duration)}
               </p>
-
-              {(isRemoteMuted || isRemoteCameraOff) && (
-                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap px-4">
-                  {isRemoteMuted && (
-                    <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                      <MicOff className="w-3.5 h-3.5 text-red-400" />
-                      <span className="text-xs text-red-300">
-                        {remoteName} đã tắt mic
-                      </span>
-                    </span>
-                  )}
-                  {isRemoteCameraOff && (
-                    <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                      <VideoOff className="w-3.5 h-3.5 text-red-400" />
-                      <span className="text-xs text-red-300">
-                        {remoteName} đã tắt camera
-                      </span>
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
-
-            {isRemoteCameraOff && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/85 z-[1]">
-                {renderAvatar()}
-                <p className="text-white/50 text-sm mt-3">Camera đã tắt</p>
-              </div>
-            )}
 
             <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-5 z-[2]">
               <button
