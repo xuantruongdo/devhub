@@ -10,8 +10,7 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
   const hasConversation = !!conversationId;
 
   return (
-    <div className="h-[calc(100dvh-66px)] flex bg-background">
-      {/* Sidebar */}
+    <div className="h-[calc(100svh-66px)] flex bg-background overflow-hidden">
       <div
         className={`
           w-full md:w-80 border-r flex flex-col
@@ -21,7 +20,6 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
         <ChatSidebar activeId={Number(conversationId)} />
       </div>
 
-      {/* Chat */}
       <div
         className={`
           flex-1

@@ -235,7 +235,7 @@ export default function ChatWindow({
 
   return (
     <>
-      <div className="flex flex-col h-full relative overflow-hidden">
+      <div className="flex flex-col h-full overflow-hidden overscroll-none relative">
         <div className="md:hidden shrink-0 flex items-center justify-between p-3 border-b">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
