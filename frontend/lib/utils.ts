@@ -63,6 +63,10 @@ export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
     top: el.scrollHeight,
     behavior: smooth ? "smooth" : "auto",
   });
+
+  setTimeout(() => {
+    el.scrollTop = el.scrollHeight;
+  }, 50);
 };
 
 export const isMe = (userId: number, currentUserId: number) => {

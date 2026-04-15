@@ -105,6 +105,16 @@
       "file": "Sent a file",
       "image": "Sent an image",
       "viewAll": "View all"
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "title": "Language",
+      "en": "English",
+      "vi": "Vietnamese"
     }
   },
   "composePost": {

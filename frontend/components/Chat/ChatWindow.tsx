@@ -235,8 +235,8 @@ export default function ChatWindow({
 
   return (
     <>
-      <div className="flex flex-col h-full min-h-0 relative">
-        <div className="md:hidden flex items-center justify-between p-3 border-b shrink-0">
+      <div className="flex flex-col h-[calc(100dvh-66px)] md:h-full min-h-0 relative overflow-hidden">
+        <div className="md:hidden shrink-0 z-10 flex items-center justify-between p-3 border-b shrink-0">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />

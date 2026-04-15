@@ -1,6 +1,15 @@
 "use client";
 
-import { Bell, LogOut, MessageCircle, Search, Settings, X } from "lucide-react";
+import {
+  Bell,
+  Languages,
+  LogOut,
+  MessageCircle,
+  Moon,
+  Search,
+  Settings,
+  X,
+} from "lucide-react";
 import { ModeToggle } from "../ModeToggle";
 import { LanguageToggle } from "../LanguageToggle";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
@@ -176,19 +185,16 @@ function SearchDropdown({ query }: { query: string }) {
 function UserDropdown({
   user,
   onLogout,
-  t,
-  locale,
   unreadNotifs,
   unreadMsgs,
 }: {
   user: CurrentUserResponse;
   onLogout: () => void;
-  t: (key: string) => string;
-  locale: Locale;
   unreadNotifs: number;
   unreadMsgs: number;
 }) {
   const router = useRouter();
+  const { t, locale } = useTranslation();
 
   return (
     <DropdownMenu>
@@ -259,15 +265,23 @@ function UserDropdown({
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem>
-            <LanguageToggle />
-            <span className="ml-2">Language</span>
-          </DropdownMenuItem>
+          <LanguageToggle
+            trigger={
+              <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                <Languages className="w-4 h-4" />
+                <span>{t("header.language.title")}</span>
+              </DropdownMenuItem>
+            }
+          />
 
-          <DropdownMenuItem>
-            <ModeToggle />
-            <span className="ml-2">Theme</span>
-          </DropdownMenuItem>
+          <ModeToggle
+            trigger={
+              <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                <Moon className="w-4 h-4" />
+                <span>{t("header.theme.title")}</span>
+              </DropdownMenuItem>
+            }
+          />
 
           <DropdownMenuSeparator />
         </div>
@@ -471,6 +485,7 @@ export default function Header() {
         ? `${conv.lastMessage.content} - ${conv.lastMessage.sender.fullName}`
         : conv.lastMessage.content;
 
+      // PHẢI CÓ ĐOẠN CHECK, NẾU KHÔNG APP SẼ BỊ CRASH TRÊN MOBILE
       if (
         document.hidden ||
         (!document.hasFocus() && "Notification" in window)
@@ -607,8 +622,6 @@ export default function Header() {
           <UserDropdown
             user={currentUser}
             onLogout={onLogout}
-            t={t}
-            locale={locale}
             unreadNotifs={unreadNotifs}
             unreadMsgs={unreadMsgs}
           />
@@ -618,8 +631,6 @@ export default function Header() {
           <UserDropdown
             user={currentUser}
             onLogout={onLogout}
-            t={t}
-            locale={locale}
             unreadNotifs={unreadNotifs}
             unreadMsgs={unreadMsgs}
           />

@@ -103,6 +103,7 @@ export default function AuthenticatedLayout({
   }, [dispatch, router]);
 
   useEffect(() => {
+    // PHẢI CÓ ĐOẠN CHECK, NẾU KHÔNG APP SẼ BỊ CRASH TRÊN MOBILE
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
         Notification.requestPermission();

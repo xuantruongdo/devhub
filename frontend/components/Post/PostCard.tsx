@@ -39,6 +39,7 @@ interface PostCardProps {
 export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   const currentUser = useAppSelector((state) => state.currentUser);
   const { t, locale, ready } = useTranslation();
+
   const {
     author,
     content,
@@ -50,6 +51,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
     shareCount,
     isLiked,
   } = post;
+
   const [liked, setLiked] = useState(() => isLiked);
   const [likes, setLikes] = useState(() => likeCount);
 
@@ -71,7 +73,6 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
     try {
       setLiked((prev) => !prev);
       setLikes((prev) => (liked ? prev - 1 : prev + 1));
-
       await postService.like(post.id);
     } catch (error) {
       setLiked(isLiked);
@@ -83,10 +84,10 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
   if (!ready) return null;
 
   return (
-    <article className="border-b border-border p-4 hover:bg-muted/30 transition">
-      <div className="flex gap-3 sm:gap-4">
+    <article className="border-b border-border px-4 py-5 hover:bg-muted/30 transition">
+      <div className="flex gap-3">
         <Link href={`/${locale}/${author.username}`}>
-          <Avatar size="lg">
+          <Avatar size="lg" className="mt-1">
             {author.avatar ? (
               <AvatarImage src={author.avatar} alt={author.fullName} />
             ) : (
@@ -98,36 +99,38 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
         </Link>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0 flex-wrap">
-              <div className="flex items-center gap-1">
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1 flex-wrap">
                 <Link
                   href={`/${locale}/${author.username}`}
-                  className="font-bold text-foreground truncate"
+                  className="font-semibold text-foreground hover:underline"
                 >
                   {author.fullName}
                 </Link>
+
                 {author.isVerified && (
                   <Image
-                    src={"/verification-badge.svg"}
-                    alt="Verification Badge"
-                    width={20}
-                    height={20}
-                    className="object-cover"
+                    src="/verification-badge.svg"
+                    alt="verified"
+                    width={16}
+                    height={16}
                   />
                 )}
-              </div>
-              <p className="text-muted-foreground truncate hidden sm:block">
-                {author.username}
-              </p>
-              <span className="text-muted-foreground hidden sm:block">·</span>
-              <div className="flex items-center gap-1 text-muted-foreground text-sm whitespace-nowrap">
-                <span>{moment(createdAt).fromNow()}</span>
-                <span>·</span>
 
-                <span className="flex items-center gap-1">
-                  {visibilityConfig[visibility]?.icon}
+                <span className="text-muted-foreground text-sm">
+                  @{author.username}
                 </span>
+
+                <span className="text-muted-foreground text-sm">·</span>
+
+                <span className="text-muted-foreground text-sm">
+                  {moment(createdAt).fromNow()}
+                </span>
+
+                <span className="text-muted-foreground text-sm">·</span>
+
+                {visibilityConfig[visibility]?.icon}
               </div>
             </div>
 
@@ -135,10 +138,11 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="p-2 hover:bg-primary/10 rounded-full transition text-muted-foreground flex-shrink-0">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button className="p-2 rounded-full hover:bg-primary/10 transition">
+                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={() => setSelectedPost(post)}
@@ -147,9 +151,10 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                       <Edit className="h-4 w-4" />
                       {t("post.edit")}
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={openModal}
-                      className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
+                      className="flex items-center gap-2 text-destructive"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                       {t("post.delete")}
@@ -181,66 +186,52 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
             )}
           </div>
 
-          <p className="mt-2 text-base text-foreground leading-relaxed">
-            {content}
-          </p>
+          {content && (
+            <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line">
+              {content}
+            </p>
+          )}
 
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {images &&
-              images.slice(0, 2).map((url, i) => {
-                const isLast = i === 1 && images.length > 2;
-                return (
-                  <div
-                    key={i}
-                    className="relative w-full aspect-[4/3] overflow-hidden rounded-lg cursor-pointer"
-                    onClick={() => setLightboxIndex(i)}
-                  >
-                    <Image
-                      src={url}
-                      alt={`post image ${i}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      priority
-                    />
-                    {isLast && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
-                        <span className="text-white text-2xl font-semibold">
-                          +{images.length - 1}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
+          {images && images.length > 0 && (
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {images &&
+                images.slice(0, 2).map((url, i) => {
+                  const isLast = i === 1 && images.length > 2;
+                  return (
+                    <div
+                      key={i}
+                      className="relative w-full aspect-[4/3] overflow-hidden rounded-lg cursor-pointer"
+                      onClick={() => setLightboxIndex(i)}
+                    >
+                      <Image
+                        src={url}
+                        alt={`post image ${i}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        priority
+                      />
+                      {isLast && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
+                          <span className="text-white text-2xl font-semibold">
+                            +{images.length - 1}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
 
-          <div className="flex justify-between mt-4 max-w-xs text-muted-foreground text-sm">
-            <Link
-              href={`/posts/${post.id}`}
-              className="flex items-center group"
-              scroll={false}
-            >
-              <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
-                <MessageCircle className="h-4 w-4" />
-              </div>
-              <span className={`text-xs sm:text-sm`}>{commentCount}</span>
-            </Link>
-
-            <button className="flex items-center group cursor-pointer">
-              <div className="p-2 group-hover:bg-primary/10 rounded-full transition">
-                <Share className="h-4 w-4" />
-              </div>
-              <span className={`text-xs sm:text-sm`}>{shareCount}</span>
-            </button>
-
+          <div className="flex justify-between mt-4 max-w-md text-muted-foreground">
             <button
-              className="flex items-center group cursor-pointer"
               onClick={handleLike}
+              className="flex items-center gap-1 group"
             >
-              <div className="p-2 group-hover:bg-destructive/10 rounded-full transition">
+              <div className="p-2 rounded-full group-hover:bg-destructive/10 transition">
                 <Heart
-                  className={`h-4 w-4 transition ${
+                  className={`h-4 w-4 ${
                     liked
                       ? "text-red-500 fill-red-500"
                       : "group-hover:text-destructive"
@@ -248,12 +239,30 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                 />
               </div>
               <span
-                className={`text-xs sm:text-sm ${
+                className={`text-sm ${
                   liked ? "text-red-500" : "group-hover:text-destructive"
                 }`}
               >
                 {likes}
               </span>
+            </button>
+
+            <Link
+              href={`/posts/${post.id}`}
+              className="flex items-center gap-1 group"
+              scroll={false}
+            >
+              <div className="p-2 rounded-full group-hover:bg-primary/10 transition">
+                <MessageCircle className="h-4 w-4" />
+              </div>
+              <span className="text-sm">{commentCount}</span>
+            </Link>
+
+            <button className="flex items-center gap-1 group">
+              <div className="p-2 rounded-full group-hover:bg-primary/10 transition">
+                <Share className="h-4 w-4" />
+              </div>
+              <span className="text-sm">{shareCount}</span>
             </button>
           </div>
         </div>

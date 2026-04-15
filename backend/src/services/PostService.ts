@@ -74,6 +74,11 @@ export class PostService {
       select: {
         id: true,
         content: true,
+        images: true,
+        visibility: true,
+        likeCount: true,
+        commentCount: true,
+        shareCount: true,
         createdAt: true,
         updatedAt: true,
         author: {
@@ -101,7 +106,32 @@ export class PostService {
 
       const updatedPost = Object.assign(post, data);
 
-      return this.postRepo.save(updatedPost);
+      await this.postRepo.save(updatedPost);
+      return this.postRepo.findOne({
+        where: { id: post.id },
+        relations: {
+          author: true,
+        },
+        select: {
+          id: true,
+          content: true,
+          images: true,
+          visibility: true,
+          likeCount: true,
+          commentCount: true,
+          shareCount: true,
+          createdAt: true,
+          updatedAt: true,
+          author: {
+            id: true,
+            username: true,
+            fullName: true,
+            email: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+      });
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

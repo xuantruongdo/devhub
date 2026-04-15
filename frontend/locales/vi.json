@@ -105,6 +105,16 @@
       "file": "Đã gửi một file",
       "image": "Đã gửi một ảnh",
       "viewAll": "Xem tất cả tin nhắn"
+    },
+    "theme": {
+      "title": "Chủ đề",
+      "light": "Sáng",
+      "dark": "Tối"
+    },
+    "language": {
+      "title": "Ngôn ngữ",
+      "en": "Tiếng Anh",
+      "vi": "Tiếng Việt"
     }
   },
   "composePost": {

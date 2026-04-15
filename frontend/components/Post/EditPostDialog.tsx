@@ -10,7 +10,7 @@ import { toastError } from "@/lib/toast";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { uploadStorage } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
-import { MAX_COUNT_FILE, PostVisibility } from "@/constants";
+import { MAX_COUNT_FILE, MAX_POST_CONTENT, PostVisibility } from "@/constants";
 import { CustomSelect } from "../ui/select";
 
 interface EditPostDialogProps {
@@ -104,19 +104,34 @@ export function EditPostDialog({
       className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
     >
       <div className="flex flex-col gap-4">
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={t("editPost.placeholder")}
-          rows={4}
-          className="resize-none"
-        />
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={t("composePost.placeholder")}
+            maxLength={MAX_POST_CONTENT}
+            rows={2}
+            className="border-none !bg-transparent shadow-none resize-none outline-none ring-0 
+             focus-visible:ring-0 focus-visible:border-none
+             text-base sm:text-lg leading-relaxed px-0 py-0 min-h-0"
+          />
 
-        <CustomSelect
-          options={visibilityOptions}
-          value={visibility}
-          onValueChange={(v) => setVisibility(v as PostVisibility)}
-        />
+          <div className="flex items-center justify-between">
+            <CustomSelect
+              options={visibilityOptions}
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as PostVisibility)}
+              className="h-7 text-xs font-medium text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-full px-3"
+            />
+            {content.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {content.length} / {MAX_POST_CONTENT}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-border" />
 
         {(images.length > 0 || previews.length > 0) && (
           <div className="grid grid-cols-3 gap-2">

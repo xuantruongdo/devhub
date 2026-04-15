@@ -12,7 +12,7 @@ import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
 import { Post, PostInput, VisibilityOption } from "@/types/post";
 import ComposePostUpload, { ComposePostPreview } from "./ComposePostUpload";
-import { PostVisibility } from "@/constants";
+import { MAX_POST_CONTENT, PostVisibility } from "@/constants";
 import { CustomSelect } from "../ui/select";
 
 interface ComposePostProps {
@@ -67,139 +67,83 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
     }
   };
 
+  const canPost = content.trim() || images.length > 0;
+
   if (!ready) return null;
 
   return (
-    <div className="border-b border-border bg-card">
-      <div className="md:hidden px-4 py-3 border-b border-border">
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-3 items-center">
-            <Avatar size="lg">
-              {user.avatar ? (
-                <AvatarImage src={user.avatar} alt={user.fullName} />
-              ) : (
-                <AvatarFallback>
-                  {user.fullName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
+    <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">
+      <div className="flex gap-3">
+        <Avatar size="lg" className="shrink-0 mt-0.5">
+          {user.avatar ? (
+            <AvatarImage src={user.avatar} alt={user.fullName} />
+          ) : (
+            <AvatarFallback className="uppercase">
+              {user.fullName.charAt(0)}
+            </AvatarFallback>
+          )}
+        </Avatar>
 
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={t("composePost.placeholder")}
-              className="flex-1 bg-muted resize-none max-h-[calc(1.5rem*4)] px-4 py-2 text-sm"
-              rows={1}
-              maxLength={500}
-            />
-          </div>
-
-          <CustomSelect
-            options={visibilityOptions}
-            value={visibility}
-            onValueChange={(v) => setVisibility(v as PostVisibility)}
-            className="w-fit"
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={t("composePost.placeholder")}
+            maxLength={MAX_POST_CONTENT}
+            rows={2}
+            className="border-none !bg-transparent rounded-none shadow-none resize-none outline-none ring-0 
+             focus-visible:ring-0 focus-visible:border-none
+             text-base sm:text-lg leading-relaxed px-0 py-0 min-h-0"
           />
+
+          <div className="flex items-center justify-between">
+            <CustomSelect
+              options={visibilityOptions}
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as PostVisibility)}
+              className="h-7 text-xs font-medium text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-full px-3"
+            />
+            {content.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {content.length} / {MAX_POST_CONTENT}
+              </span>
+            )}
+          </div>
 
           <ComposePostPreview images={images} setImages={setImages} />
 
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2">
+          <div className="border-t border-border" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-0.5 -ml-2">
               <ComposePostUpload
                 images={images}
                 setImages={setImages}
-                inputId="compose-post-image-mobile"
+                inputId="compose-post-image"
               />
-              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                <Smile className="h-5 w-5" />
-              </button>
-              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                <Calendar className="h-5 w-5" />
-              </button>
-              <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                <MapPin className="h-5 w-5" />
-              </button>
+              {[
+                { icon: Smile, label: "emoji" },
+                { icon: Calendar, label: "schedule" },
+                { icon: MapPin, label: "location" },
+              ].map(({ icon: Icon, label }) => (
+                <button
+                  key={label}
+                  aria-label={label}
+                  className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors"
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
             </div>
 
             <Button
               onClick={handlePost}
-              disabled={!content.trim() && images.length === 0}
+              disabled={!canPost}
               loading={loading}
-              className={`px-6 py-4 rounded-full font-bold text-primary-foreground ${
-                !content.trim() && images.length === 0
-                  ? "bg-primary opacity-50 cursor-not-allowed"
-                  : "bg-primary hover:bg-primary/90"
-              }`}
+              className="rounded-full px-5 py-2 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               {t("composePost.post")}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden md:block px-4 sm:px-6 py-6">
-        <div className="flex gap-4">
-          <Avatar size="lg">
-            {user.avatar ? (
-              <AvatarImage src={user.avatar} alt={user.fullName} />
-            ) : (
-              <AvatarFallback>
-                {user.fullName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            )}
-          </Avatar>
-
-          <div className="flex-1">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={t("composePost.placeholder")}
-              className="w-full text-xl resize-none max-h-[calc(1.5rem*6)]"
-              rows={1}
-              maxLength={500}
-            />
-
-            <div className="mt-2">
-              <CustomSelect
-                options={visibilityOptions}
-                value={visibility}
-                onValueChange={(v) => setVisibility(v as PostVisibility)}
-              />
-            </div>
-
-            <ComposePostPreview images={images} setImages={setImages} />
-
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center gap-2">
-                <ComposePostUpload
-                  images={images}
-                  setImages={setImages}
-                  inputId="compose-post-image-desktop"
-                />
-                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                  <Smile className="h-5 w-5" />
-                </button>
-                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                  <Calendar className="h-5 w-5" />
-                </button>
-                <button className="p-2 text-primary hover:bg-primary/10 rounded-full">
-                  <MapPin className="h-5 w-5" />
-                </button>
-              </div>
-
-              <Button
-                onClick={handlePost}
-                disabled={!content.trim() && images.length === 0}
-                loading={loading}
-                className={`px-8 py-5 rounded-full font-bold text-primary-foreground cursor-pointer ${
-                  !content.trim() && images.length === 0
-                    ? "bg-primary opacity-50 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary/90"
-                }`}
-              >
-                {t("composePost.post")}
-              </Button>
-            </div>
           </div>
         </div>
       </div>

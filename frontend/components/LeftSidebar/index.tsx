@@ -22,6 +22,7 @@ import { useRouter, usePathname } from "next/navigation";
 import authService from "@/services/auth";
 import { toastError } from "@/lib/toast";
 import { useTranslation } from "@/hooks/useTranslation";
+import Link from "next/link";
 
 export default function LeftSidebar() {
   const user = useAppSelector((state) => state.currentUser);
@@ -121,10 +122,14 @@ export default function LeftSidebar() {
 
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-3 py-2 border-b">
-              <p className="text-sm font-semibold text-foreground">
-                {user.fullName}
-              </p>
-              <p className="text-xs text-muted-foreground">@{user.username}</p>
+              <Link href={`/${locale}/${user.username}`}>
+                <p className="text-sm font-semibold text-foreground">
+                  {user.fullName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  @{user.username}
+                </p>
+              </Link>
             </div>
 
             <DropdownMenuItem className="cursor-pointer">

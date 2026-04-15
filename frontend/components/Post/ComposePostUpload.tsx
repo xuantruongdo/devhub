@@ -39,26 +39,54 @@ export function ComposePostPreview({
   if (!images.length) return null;
 
   return (
-    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {previewUrls.map((url, i) => (
-        <div key={i} className="relative w-full overflow-hidden rounded-lg">
-          <Image
-            src={url}
-            alt={`preview ${i}`}
-            width={800}
-            height={600}
-            className="w-full h-auto max-h-[600px] object-contain"
-            sizes="(max-width: 640px) 100vw, 50vw"
-          />
-
-          <button
-            onClick={() => removeImage(i)}
-            className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md hover:bg-black/80"
+    <div className="mt-3">
+      <div className="grid grid-cols-3 gap-2 md:hidden">
+        {previewUrls.map((url, i) => (
+          <div
+            key={i}
+            className="relative w-full aspect-square overflow-hidden rounded-lg bg-muted"
           >
-            ✕
-          </button>
-        </div>
-      ))}
+            <Image
+              src={url}
+              alt={`preview ${i}`}
+              fill
+              className="object-cover"
+              sizes="33vw"
+            />
+
+            <button
+              onClick={() => removeImage(i)}
+              className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded-md hover:bg-black/80"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden md:flex gap-2 overflow-x-auto">
+        {previewUrls.map((url, i) => (
+          <div
+            key={i}
+            className="relative flex-shrink-0 w-40 h-40 rounded-lg overflow-hidden bg-muted"
+          >
+            <Image
+              src={url}
+              alt={`preview ${i}`}
+              fill
+              className="object-cover"
+              sizes="160px"
+            />
+
+            <button
+              onClick={() => removeImage(i)}
+              className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded-md hover:bg-black/80"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
