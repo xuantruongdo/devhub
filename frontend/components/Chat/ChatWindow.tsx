@@ -236,7 +236,7 @@ export default function ChatWindow({
   return (
     <>
       <div className="flex flex-col h-full overflow-hidden overscroll-none relative">
-        <div className="md:hidden shrink-0 flex items-center justify-between p-3 border-b">
+        <div className="md:hidden fixed top-[66px] left-0 right-0 z-50 bg-background border-b flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
@@ -274,7 +274,7 @@ export default function ChatWindow({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 py-20 md:py-5"
         >
           {messages.map((m) => {
             const isMine = isMe(m.senderId, currentUser.id);
@@ -370,7 +370,22 @@ export default function ChatWindow({
           </button>
         )}
 
-        <div className="p-3 border-t flex gap-2 shrink-0">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background flex gap-2 p-3">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t("chat.window.typeMessage")}
+            className="flex-1 rounded-full"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSend();
+            }}
+          />
+          <Button onClick={handleSend} size="icon">
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="hidden md:flex p-3 border-t gap-2 shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}

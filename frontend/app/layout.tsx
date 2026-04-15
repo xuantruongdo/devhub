@@ -28,12 +28,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // Ngăn người dùng zoom thủ công làm vỡ layout chat
-  userScalable: false,
-  interactiveWidget: 'resizes-content', // Đây là dòng bạn cần
-}
+  maximumScale: 1,
+};
 
 export default function RootLayout({
   children,
