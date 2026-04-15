@@ -235,10 +235,8 @@ export default function ChatWindow({
 
   return (
     <>
-      {/* ── MOBILE LAYOUT ── */}
       <div className="md:hidden flex flex-col h-[100dvh]">
-        {/* Header: fixed, top-[66px] */}
-        <div className="fixed top-[66px] left-0 right-0 z-10 flex items-center justify-between p-3 border-b bg-white shrink-0">
+        <div className="fixed top-[64px] left-0 right-0 z-10 flex items-center justify-between p-3 border-b bg-background shrink-0">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
@@ -259,7 +257,7 @@ export default function ChatWindow({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 space-y-4 pt-[57px] pb-[68px]"
+          className="flex-1 overflow-y-auto p-4 space-y-4 pt-[70px] pb-[140px]"
           style={{ overscrollBehavior: "contain" }}
         >
           {messages.map((m) => {
@@ -355,7 +353,7 @@ export default function ChatWindow({
           </button>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 z-10 p-3 border-t bg-white flex gap-2 shrink-0">
+        <div className="fixed bottom-0 left-0 right-0 z-10 p-3 border-t bg-background flex gap-2 shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
