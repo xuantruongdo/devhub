@@ -231,12 +231,32 @@ export default function ChatWindow({
     };
   }, [conversationId]);
 
+  useEffect(() => {
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    if (!isMobile) return;
+
+    const updateVH = () => {
+      const vh = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+
+    updateVH();
+
+    window.visualViewport?.addEventListener("resize", updateVH);
+    window.addEventListener("resize", updateVH);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateVH);
+      window.removeEventListener("resize", updateVH);
+    };
+  }, []);
+
   if (!ready) return null;
 
   return (
     <>
-      <div className="flex flex-col h-full overflow-hidden overscroll-none relative">
-        <div className="md:hidden fixed top-[66px] left-0 right-0 z-50 bg-background border-b flex items-center justify-between p-3">
+      <div className="flex flex-col h-[calc(var(--vh)-66px)] overflow-hidden overscroll-none relative">
+        <div className="md:hidden fixed top-[64px] left-0 right-0 z-50 bg-background border-b flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
@@ -257,7 +277,6 @@ export default function ChatWindow({
             )}
           </div>
         </div>
-
         <div className="hidden md:flex items-center justify-between p-3 border-b shrink-0">
           <span className="font-medium">{conversationName}</span>
 
@@ -270,11 +289,10 @@ export default function ChatWindow({
             </button>
           )}
         </div>
-
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 py-20 md:py-5"
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 pb-24 md:pb-4"
         >
           {messages.map((m) => {
             const isMine = isMe(m.senderId, currentUser.id);
@@ -357,7 +375,6 @@ export default function ChatWindow({
             </>
           )}
         </div>
-
         {showNew && (
           <button
             onClick={() => {
@@ -369,8 +386,7 @@ export default function ChatWindow({
             {t("chat.window.newMessages")}
           </button>
         )}
-
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background flex gap-2 p-3">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background flex gap-2 p-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -384,7 +400,6 @@ export default function ChatWindow({
             <Send className="w-4 h-4" />
           </Button>
         </div>
-
         <div className="hidden md:flex p-3 border-t gap-2 shrink-0">
           <Input
             value={input}
