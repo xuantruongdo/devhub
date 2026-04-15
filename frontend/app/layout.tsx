@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { ReactNode, Suspense } from "react";
+import { Suspense } from "react";
 import { StoreProvider } from "@/components/StoreProvider";
 
 const geistSans = Geist({
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
   authors: [{ name: "DevHub Team" }],
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, // Chỉ dùng nếu bạn muốn chặn zoom
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,7 +44,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body cz-shortcut-listen="true">
+      <body>
         <Suspense>
           <StoreProvider>
             <ThemeProvider
