@@ -471,7 +471,10 @@ export default function Header() {
         ? `${conv.lastMessage.content} - ${conv.lastMessage.sender.fullName}`
         : conv.lastMessage.content;
 
-      if (document.hidden || !document.hasFocus()) {
+      if (
+        document.hidden ||
+        (!document.hasFocus() && "Notification" in window)
+      ) {
         if (Notification.permission === "granted") {
           new Notification(title, {
             body,

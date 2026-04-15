@@ -103,8 +103,10 @@ export default function AuthenticatedLayout({
   }, [dispatch, router]);
 
   useEffect(() => {
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
     }
   }, []);
 
