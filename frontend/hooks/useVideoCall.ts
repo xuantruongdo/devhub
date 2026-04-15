@@ -87,6 +87,30 @@ export function useVideoCall({
   /** ID của cuộc hội thoại — cần để lưu message sau khi kết thúc */
   const conversationIdRef = useRef<number | null>(null);
 
+  /**
+   * Mirror của callState dưới dạng ref.
+   * Socket listeners đọc ref này thay vì đọc callState qua closure,
+   * tránh tình trạng handler bắt event với state cũ (stale closure).
+   */
+  const callStateRef = useRef<CallState>(CallState.IDLE);
+
+  /**
+   * Buffer các ICE candidate đến trước khi peer được khởi tạo.
+   * Xảy ra thường xuyên trên mạng mobile (4G/5G): initiator gửi
+   * candidate rất nhanh, đến nơi trước khi người nhận bấm Accept
+   * và peerRef.current được tạo → signal() gọi trên null → bị drop.
+   */
+  const iceCandidateQueue = useRef<SignalData[]>([]);
+
+  /**
+   * Dùng hàm này thay cho setCallState trực tiếp ở mọi nơi trong hook.
+   * Đảm bảo callStateRef.current luôn khớp với React state.
+   */
+  const updateCallState = useCallback((state: CallState) => {
+    callStateRef.current = state;
+    setCallState(state);
+  }, []);
+
   // ─────────────────────────────────────────────────────────
   // TIMER HELPERS
   // ─────────────────────────────────────────────────────────
@@ -143,15 +167,17 @@ export function useVideoCall({
     remoteUserIdRef.current = null;
     conversationIdRef.current = null;
 
+    iceCandidateQueue.current = [];
+
     // Reset state
-    setCallState(CallState.IDLE);
+    updateCallState(CallState.IDLE);
     setRemoteUserId(null);
     setIncomingOffer(null);
     setIsMuted(false);
     setIsCameraOff(false);
     setRemoteName(null);
     setRemoteAvatar(null);
-  }, [clearAutoRejectTimer, stopDurationTimer]);
+  }, [clearAutoRejectTimer, stopDurationTimer, updateCallState]);
 
   /**
    * Yêu cầu quyền truy cập camera & mic, lưu stream vào ref
@@ -189,14 +215,14 @@ export function useVideoCall({
       });
 
       peer.on("connect", () => {
-        setCallState(CallState.CONNECTED);
+        updateCallState(CallState.CONNECTED);
         startDurationTimer();
       });
 
       peer.on("close", cleanup);
       peer.on("error", cleanup);
     },
-    [cleanup, startDurationTimer],
+    [cleanup, startDurationTimer, updateCallState],
   );
 
   // AUTO REJECT (khi người nhận không bắt máy)
@@ -238,8 +264,7 @@ export function useVideoCall({
       callerName,
       callerAvatar,
     }: IncomingCallPayload) => {
-      // Bỏ qua nếu đang bận
-      if (callState !== CallState.IDLE) return;
+      if (callStateRef.current !== CallState.IDLE) return;
 
       callerIdRef.current = from;
       remoteUserIdRef.current = from;
@@ -249,7 +274,7 @@ export function useVideoCall({
       setIncomingOffer(offer);
       setRemoteName(callerName);
       setRemoteAvatar(callerAvatar);
-      setCallState(CallState.INCOMING);
+      updateCallState(CallState.INCOMING);
     };
 
     /** Nhận answer SDP từ người được gọi — hoàn tất handshake */
@@ -259,7 +284,11 @@ export function useVideoCall({
 
     /** Nhận ICE candidate từ phía bên kia — dùng để duy trì kết nối */
     const handleIceCandidate = ({ candidate }: IceCandidatePayload) => {
-      peerRef.current?.signal(candidate);
+      if (peerRef.current) {
+        peerRef.current.signal(candidate);
+      } else {
+        iceCandidateQueue.current.push(candidate);
+      }
     };
 
     socket.on("call:incoming", handleIncomingCall);
@@ -277,7 +306,7 @@ export function useVideoCall({
       socket.off("call:rejected", cleanup);
       socket.off("call:cancelled", cleanup);
     };
-  }, [socket, callState, cleanup]);
+  }, [socket, cleanup, updateCallState]);
 
   /**
    * Bắt đầu cuộc gọi đến người dùng khác:
@@ -324,7 +353,7 @@ export function useVideoCall({
         conversationIdRef.current = conversationId;
 
         setRemoteUserId(toUserId);
-        setCallState(CallState.CALLING);
+        updateCallState(CallState.CALLING);
       } catch (error) {
         console.error("[useVideoCall] startCall error:", error);
         cleanup();
@@ -338,6 +367,7 @@ export function useVideoCall({
       getLocalStream,
       setupPeerEvents,
       cleanup,
+      updateCallState,
     ],
   );
 
@@ -383,6 +413,9 @@ export function useVideoCall({
 
     peer.signal(incomingOffer);
     setupPeerEvents(peer);
+
+    iceCandidateQueue.current.forEach((candidate) => peer.signal(candidate));
+    iceCandidateQueue.current = [];
   }, [
     socket,
     currentUserId,
