@@ -10,10 +10,10 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
   const hasConversation = !!conversationId;
 
   return (
-    <div className="h-[calc(100svh-66px)] flex bg-background overflow-hidden">
+    <div className="h-[calc(100dvh-66px)] max-h-[calc(100dvh-66px)] flex bg-background overflow-hidden">
       <div
         className={`
-          w-full md:w-80 border-r flex flex-col
+          w-full md:w-80 border-r flex flex-col min-h-0
           ${hasConversation ? "hidden md:flex" : "flex"}
         `}
       >
@@ -22,7 +22,7 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
 
       <div
         className={`
-          flex-1
+          flex-1 min-h-0
           ${!hasConversation ? "hidden md:block" : "block"}
         `}
       >
