@@ -10,7 +10,7 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
   const hasConversation = !!conversationId;
 
   return (
-    <div className="h-[calc(100vh-66px)] flex bg-background">
+    <div className="h-[calc(100dvh-66px)] flex bg-background">
       {/* Sidebar */}
       <div
         className={`

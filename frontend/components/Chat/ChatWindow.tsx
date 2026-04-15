@@ -235,7 +235,7 @@ export default function ChatWindow({
 
   return (
     <>
-      <div className="flex flex-col h-[100vh-66px] overflow-hidden">
+      <div className="flex flex-col h-full relative overflow-hidden">
         <div className="md:hidden shrink-0 flex items-center justify-between p-3 border-b">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
@@ -257,6 +257,7 @@ export default function ChatWindow({
             )}
           </div>
         </div>
+
         <div className="hidden md:flex items-center justify-between p-3 border-b shrink-0">
           <span className="font-medium">{conversationName}</span>
 
@@ -269,6 +270,7 @@ export default function ChatWindow({
             </button>
           )}
         </div>
+
         <div
           ref={containerRef}
           onScroll={handleScroll}
@@ -355,6 +357,7 @@ export default function ChatWindow({
             </>
           )}
         </div>
+
         {showNew && (
           <button
             onClick={() => {
@@ -366,6 +369,7 @@ export default function ChatWindow({
             {t("chat.window.newMessages")}
           </button>
         )}
+
         <div className="p-3 border-t flex gap-2 shrink-0">
           <Input
             value={input}
