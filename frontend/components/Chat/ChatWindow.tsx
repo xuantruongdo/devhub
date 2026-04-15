@@ -235,8 +235,8 @@ export default function ChatWindow({
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100dvh-66px)] md:h-full min-h-0 relative overflow-hidden">
-        <div className="md:hidden shrink-0 z-10 flex items-center justify-between p-3 border-b shrink-0">
+      <div className="flex flex-col h-full min-h-0 relative overflow-hidden">
+        <div className="md:hidden shrink-0 z-10 flex items-center justify-between p-3 border-b">
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/messages`}>
               <ArrowLeft className="w-5 h-5" />
@@ -250,7 +250,7 @@ export default function ChatWindow({
             {!selectedConversation.isGroup && otherUser && (
               <button
                 onClick={() => startCall(otherUser.id, selectedConversation.id)}
-                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-gray-100 text-blue-500"
               >
                 <Video className="w-5 h-5" />
               </button>
@@ -264,7 +264,7 @@ export default function ChatWindow({
           {!selectedConversation.isGroup && otherUser && (
             <button
               onClick={() => startCall(otherUser.id, selectedConversation.id)}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors text-blue-500 cursor-pointer"
+              className="p-2 rounded-full hover:bg-gray-100 text-blue-500"
             >
               <Video className="w-5 h-5" />
             </button>
@@ -279,35 +279,6 @@ export default function ChatWindow({
           {messages.map((m) => {
             const isMine = isMe(m.senderId, currentUser.id);
 
-            const renderMessageContent = () => {
-              switch (m.type) {
-                case MessageType.CALL:
-                  return <CallMessageBubble message={m} />;
-
-                case MessageType.TEXT:
-                  return (
-                    <div
-                      className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                        isMine
-                          ? "bg-blue-500 text-white"
-                          : "bg-white text-black border"
-                      }`}
-                    >
-                      {m.content}
-                    </div>
-                  );
-
-                case MessageType.IMAGE:
-                  return <></>;
-
-                case MessageType.FILE:
-                  return <></>;
-
-                default:
-                  return null;
-              }
-            };
-
             return (
               <div key={m.id} className="space-y-1">
                 <div
@@ -316,12 +287,9 @@ export default function ChatWindow({
                   }`}
                 >
                   {!isMine && (
-                    <Avatar size="lg" className="cursor-pointer">
+                    <Avatar>
                       {m.sender?.avatar ? (
-                        <AvatarImage
-                          src={m.sender?.avatar}
-                          alt={m.sender.fullName}
-                        />
+                        <AvatarImage src={m.sender.avatar} />
                       ) : (
                         <AvatarFallback>
                           {m.sender.fullName.charAt(0).toUpperCase()}
@@ -330,7 +298,15 @@ export default function ChatWindow({
                     </Avatar>
                   )}
 
-                  {renderMessageContent()}
+                  <div
+                    className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                      isMine
+                        ? "bg-blue-500 text-white"
+                        : "bg-white text-black border"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
                 </div>
 
                 <div
@@ -338,11 +314,6 @@ export default function ChatWindow({
                     isMine ? "text-right pr-1" : "pl-2"
                   }`}
                 >
-                  {!isMine && m.sender?.fullName && (
-                    <div className="text-gray-500 text-[10px]">
-                      {m.sender.fullName}
-                    </div>
-                  )}
                   {moment(m.createdAt).format("HH:mm")}
                 </div>
               </div>
@@ -370,12 +341,12 @@ export default function ChatWindow({
           </button>
         )}
 
-        <div className="p-3 border-t flex gap-2 shrink-0">
+        <div className="p-3 border-t flex gap-2 shrink-0 pb-[env(safe-area-inset-bottom)]">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("chat.window.typeMessage")}
-            className="flex-1 rounded-full"
+            className="flex-1 rounded-full text-base"
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSend();
             }}

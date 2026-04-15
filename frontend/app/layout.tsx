@@ -27,11 +27,11 @@ export const metadata: Metadata = {
   authors: [{ name: "DevHub Team" }],
 };
 
-// export const viewport: Viewport = {
-//   width: "device-width",
-//   initialScale: 1,
-//   maximumScale: 1, // Chỉ dùng nếu bạn muốn chặn zoom
-// };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, // Chỉ dùng nếu bạn muốn chặn zoom
+};
 
 export default function RootLayout({
   children,
