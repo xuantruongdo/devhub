@@ -29,8 +29,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   width: "device-width",
-  initialScale: 1,
-  maximumScale: 1, // Chỉ dùng nếu bạn muốn chặn zoom
+  initialScale: 1
 };
 
 export default function RootLayout({
