@@ -23,7 +23,10 @@ export class MailService {
   private async sendMail({ to, subject, html }: SendMailOptions) {
     try {
       await this.transporter.sendMail({
-        from: `"No Reply" <${process.env.SMTP_USER}>`,
+        from: {
+          name: "DevHub Team",
+          address: process.env.SMTP_USER as string,
+        },
         to,
         subject,
         html,
@@ -42,7 +45,7 @@ export class MailService {
   ) {
     const filePath = path.join(
       process.cwd(),
-      "templates",
+      "src/templates",
       `${templateName}.ejs`,
     );
 

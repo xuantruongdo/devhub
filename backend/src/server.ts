@@ -17,6 +17,7 @@ import { NotificationController } from "./controllers/NotificationController";
 import { ChatController } from "./controllers/ChatController";
 import { initSocket } from "./config/socket";
 import http from "http";
+import { initWorkers } from "./config/worker";
 
 useContainer(Container);
 
@@ -25,6 +26,8 @@ const PORT = Number(process.env.PORT) || 4040;
 AppDataSource.initialize()
   .then(() => {
     console.log("✅ Connected to PostgreSQL");
+
+    initWorkers();
 
     const app = express();
 

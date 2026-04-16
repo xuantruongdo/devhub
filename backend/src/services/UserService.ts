@@ -63,7 +63,7 @@ export class UserService {
         isVerified: user.isVerified,
       };
 
-      const emailToken = this.jwtService.signRefreshToken(payload);
+      const emailToken = this.jwtService.signVerifyEmailToken(payload);
 
       await emailQueue.add(EmailJobName.SEND_VERIFY_EMAIL, {
         email: user.email,
@@ -81,12 +81,14 @@ export class UserService {
   async verifyEmail(data: VerifyEmailDto) {
     try {
       const decoded = this.jwtService.verifyEmailToken(data.token);
-      const user = await this.userRepo.findOne(decoded.id);
+      const user = await this.userRepo.findOne({
+        where: { id: decoded.id },
+      });
       if (!user) {
         throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
       }
 
-      user.isVerified = true;
+      user.isActive = true;
       await this.userRepo.save(user);
 
       return { success: true };
