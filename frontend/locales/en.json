@@ -63,6 +63,7 @@
         "reset": "Reset"
       },
       "footer": {
+        "google": "Login with Google",
         "noAccount": "Don't have an account?",
         "register": "Register"
       },
@@ -70,7 +71,8 @@
         "emailRequired": "Email is required.",
         "emailInvalid": "Please enter a valid email address.",
         "passwordRequired": "Password is required.",
-        "passwordMin": "Password must be at least 6 characters."
+        "passwordMin": "Password must be at least 6 characters.",
+        "loginRequired": "Please log in to continue"
       },
       "response": {
         "INVALID_CREDENTIALS": "Invalid email or password",

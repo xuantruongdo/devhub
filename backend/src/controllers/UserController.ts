@@ -13,6 +13,7 @@ import { Service } from "typedi";
 import { UserService } from "../services/UserService";
 import {
   LoginDto,
+  LoginWithGoogleDto,
   RegisterDto,
   UpdateMediaDto,
   UpdateUserDto,
@@ -29,15 +30,24 @@ export class UserController {
 
   @Public()
   @Post("/register")
-  async register(@Body({ validate: true }) body: RegisterDto) {
+  async register(@Body() body: RegisterDto) {
     await this.userService.register(body);
     return { success: true };
   }
 
   @Public()
   @Post("/login")
-  async login(@Body({ validate: true }) body: LoginDto, @Res() res: Response) {
+  async login(@Body() body: LoginDto, @Res() res: Response) {
     return await this.userService.login(body, res);
+  }
+
+  @Public()
+  @Post("/google")
+  async loginWithGoogle(
+    @Body() body: LoginWithGoogleDto,
+    @Res() res: Response,
+  ) {
+    return this.userService.loginWithGoogle(body, res);
   }
 
   @Get("/current")

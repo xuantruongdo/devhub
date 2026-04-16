@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -24,10 +23,13 @@ import { useAppDispatch } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { setCurrentUser } from "@/redux/reducers/currentUser";
 import Link from "next/link";
+import Image from "next/image";
+import { getGoogleOAuthURL } from "@/lib/google";
+import { useState } from "react";
 
 export function LoginForm() {
   const { t, locale, ready } = useTranslation();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
@@ -51,6 +53,16 @@ export function LoginForm() {
       toastError(t(`auth.login.response.${error}`));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onLoginGoogle = async () => {
+    try {
+      const googleUrl = getGoogleOAuthURL();
+      console.log("===googleUrl", googleUrl);
+      window.location.href = googleUrl;
+    } catch (error) {
+      toastError(error);
     }
   };
 
@@ -123,6 +135,21 @@ export function LoginForm() {
               {t("auth.login.footer.register")}
             </Link>
           </p>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center gap-2"
+            onClick={onLoginGoogle}
+          >
+            <Image
+              src="/images/google.webp"
+              alt="Google"
+              width={18}
+              height={18}
+            />
+            {t("auth.login.footer.google")}
+          </Button>
         </CardFooter>
       </Card>
     </div>

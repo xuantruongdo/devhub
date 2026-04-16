@@ -63,6 +63,7 @@
         "reset": "Đặt lại"
       },
       "footer": {
+        "google": "Đăng nhập với Google",
         "noAccount": "Chưa có tài khoản?",
         "register": "Đăng ký"
       },
@@ -70,7 +71,8 @@
         "emailRequired": "Email là bắt buộc.",
         "emailInvalid": "Vui lòng nhập địa chỉ email hợp lệ.",
         "passwordRequired": "Mật khẩu là bắt buộc.",
-        "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự."
+        "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự.",
+        "loginRequired": "Vui lòng đăng nhập để tiếp tục"
       },
       "response": {
         "INVALID_CREDENTIALS": "Email hoặc mật khẩu không hợp lệ",

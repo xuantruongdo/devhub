@@ -3,6 +3,7 @@ import { UserRepo } from "../repositories/UserRepo";
 import bcrypt from "bcrypt";
 import {
   LoginDto,
+  LoginWithGoogleDto,
   RegisterDto,
   UpdateMediaDto,
   UpdateUserDto,
@@ -103,6 +104,55 @@ export class UserService {
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
+  }
+
+  async loginWithGoogle(body: LoginWithGoogleDto, res: Response) {
+    const { email, fullName, avatar } = body;
+
+    let user = await this.userRepo.findByEmail(email);
+    if (!user) {
+      const username = await generateUsername(fullName, this.userRepo);
+      const newUser = this.userRepo.create({
+        email,
+        username,
+        fullName,
+        avatar,
+        isActive: true,
+      });
+
+      user = await this.userRepo.save(newUser);
+    }
+
+    const payload = {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      isVerified: user.isVerified,
+    };
+
+    const accessToken = this.jwtService.signAccessToken(payload);
+    const refreshToken = this.jwtService.signRefreshToken(payload);
+
+    user.refreshToken = refreshToken;
+    user.lastLogin = new Date();
+    await this.userRepo.update(user.id, {
+      refreshToken: user.refreshToken,
+      lastLogin: user.lastLogin,
+    });
+
+    const { password: _, refreshToken: __, ...userData } = user;
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+    });
+
+    return { accessToken, user: userData };
   }
 
   async refresh(req: Request, res: Response) {
