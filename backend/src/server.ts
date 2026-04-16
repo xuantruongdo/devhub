@@ -27,7 +27,8 @@ AppDataSource.initialize()
   .then(() => {
     console.log("✅ Connected to PostgreSQL");
 
-    initWorkers();
+    // Tạm tắt phần queue, BẬT lại sau khi build redis
+    // initWorkers();
 
     const app = express();
 
