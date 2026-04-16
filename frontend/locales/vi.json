@@ -227,5 +227,17 @@
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "Bạn không có quyền truy cập cuộc trò chuyện này"
     }
+  },
+  "verifyEmail": {
+    "loading": "Đang xác thực email của bạn...",
+    "success": {
+      "title": "Xác thực email thành công",
+      "desc": "Đang chuyển đến trang đăng nhập..."
+    },
+    "error": {
+      "title": "Link không hợp lệ hoặc đã hết hạn",
+      "desc": "Vui lòng yêu cầu gửi lại email xác thực.",
+      "back": "Quay lại đăng ký"
+    }
   }
 }

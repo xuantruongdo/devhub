@@ -17,6 +17,7 @@ import {
   RegisterDto,
   UpdateMediaDto,
   UpdateUserDto,
+  VerifyEmailDto,
 } from "../dtos/UserDto";
 import { Request, Response } from "express";
 import { Public } from "../decorators/public.route.decorator";
@@ -42,12 +43,18 @@ export class UserController {
   }
 
   @Public()
+  @Post("/verify-email")
+  async verifyEmail(@Body() body: VerifyEmailDto) {
+    return await this.userService.verifyEmail(body);
+  }
+
+  @Public()
   @Post("/google")
   async loginWithGoogle(
     @Body() body: LoginWithGoogleDto,
     @Res() res: Response,
   ) {
-    return this.userService.loginWithGoogle(body, res);
+    return await this.userService.loginWithGoogle(body, res);
   }
 
   @Get("/current")

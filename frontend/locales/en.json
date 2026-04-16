@@ -228,5 +228,17 @@
     "response": {
       "CANNOT_ACCESS_CONVERSATION": "You do not have permission to access this conversation"
     }
+  },
+  "verifyEmail": {
+    "loading": "Verifying your email...",
+    "success": {
+      "title": "Email verified successfully",
+      "desc": "Redirecting you to login..."
+    },
+    "error": {
+      "title": "Invalid or expired link",
+      "desc": "Please request a new verification email.",
+      "back": "Back to Register"
+    }
   }
 }

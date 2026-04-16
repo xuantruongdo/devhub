@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>DevHub - Verify your email</title>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f0f2f5;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: 40px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      "
+    >
+      <div style="background: #2d7dd2; padding: 28px 32px; text-align: center">
+        <h1
+          style="
+            margin: 0;
+            color: #fff;
+            font-size: 20px;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+          "
+        >
+          DevHub
+        </h1>
+        <p style="margin: 6px 0 0; color: #bfdbfe; font-size: 13px">
+          Build. Connect. Ship faster.
+        </p>
+      </div>
+
+      <div style="padding: 36px 40px">
+        <h2
+          style="
+            margin: 0 0 12px;
+            color: #1e293b;
+            font-size: 20px;
+            font-weight: 600;
+          "
+        >
+          Welcome, <%= fullName %> 👋
+        </h2>
+
+        <p
+          style="
+            font-size: 15px;
+            line-height: 1.7;
+            color: #475569;
+            margin: 0 0 16px;
+          "
+        >
+          Thanks for joining <strong>DevHub</strong>. You're just one step away
+          from activating your account.
+        </p>
+
+        <p style="font-size: 15px; color: #475569; margin: 0 0 16px">
+          Please verify your email address to continue:
+        </p>
+
+        <div style="text-align: center; margin: 32px 0">
+          <a
+            href="<%= verifyUrl %>"
+            target="_blank"
+            style="
+              background: #2d7dd2;
+              color: #fff;
+              padding: 13px 32px;
+              border-radius: 8px;
+              text-decoration: none;
+              font-weight: 600;
+              font-size: 15px;
+              display: inline-block;
+            "
+          >
+            Verify Email
+          </a>
+        </div>
+
+        <div
+          style="
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+          "
+        >
+          <p style="margin: 0; font-size: 13px; color: #92400e">
+            ⚠ This verification link will expire in <strong>3 minutes</strong>.
+          </p>
+        </div>
+
+        <p
+          style="
+            font-size: 13px;
+            color: #94a3b8;
+            word-break: break-all;
+            margin: 0;
+          "
+        >
+          If the button doesn't work, copy this link:<br />
+          <a href="<%= verifyUrl %>" target="_blank" style="color: #2d7dd2">
+            <%= verifyUrl %>
+          </a>
+        </p>
+      </div>
+
+      <div
+        style="
+          padding: 20px;
+          text-align: center;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          color: #94a3b8;
+          font-size: 12px;
+        "
+      >
+        © <%= new Date().getFullYear() %> DevHub. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

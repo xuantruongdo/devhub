@@ -1,5 +1,10 @@
 import instance from "@/lib/api";
-import { LoginInput, LoginWithGoogle, RegisterInput } from "@/types/auth";
+import {
+  LoginInput,
+  LoginWithGoogle,
+  RegisterInput,
+  VerifyEmail,
+} from "@/types/auth";
 
 class AuthService {
   async register(data: RegisterInput) {
@@ -20,6 +25,10 @@ class AuthService {
 
   async loginGoogle(data: LoginWithGoogle) {
     return await instance.post("/users/google", data);
+  }
+
+  async verifyEmail(data: VerifyEmail) {
+    return await instance.post("/users/verify-email", data);
   }
 }
 
