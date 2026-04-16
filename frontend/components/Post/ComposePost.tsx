@@ -21,7 +21,7 @@ interface ComposePostProps {
 
 export default function ComposePost({ onSuccess }: ComposePostProps) {
   const user = useAppSelector((state) => state.currentUser);
-  const { t, ready } = useTranslation();
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,8 +68,6 @@ export default function ComposePost({ onSuccess }: ComposePostProps) {
   };
 
   const canPost = content.trim() || images.length > 0;
-
-  if (!ready) return null;
 
   return (
     <div className="border-b border-border bg-card px-4 py-4 sm:px-6 sm:py-5">

@@ -46,7 +46,8 @@ export default function ChatWindow({
   const [hasMore, setHasMore] = useState(true);
   const [showNew, setShowNew] = useState(false);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mobileContainerRef = useRef<HTMLDivElement | null>(null);
+  const desktopContainerRef = useRef<HTMLDivElement | null>(null);
   const anchorRef = useRef<number | null>(null);
   const fetchingRef = useRef(false);
   const didInitialScroll = useRef(false);
@@ -71,8 +72,10 @@ export default function ChatWindow({
     fetchingRef.current = true;
     setLoading(true);
 
-    const el = containerRef.current;
-    const prevScrollHeight = el?.scrollHeight || 0;
+    const mobileEl = mobileContainerRef.current;
+    const desktopEl = desktopContainerRef.current;
+    const prevMobileScrollHeight = mobileEl?.scrollHeight || 0;
+    const prevDesktopScrollHeight = desktopEl?.scrollHeight || 0;
 
     try {
       const { data } = await chatService.getMessages(conversationId, {
@@ -94,11 +97,16 @@ export default function ChatWindow({
 
       setMessages((prev) => (cursor ? [...newMessages, ...prev] : newMessages));
 
-      if (cursor && el) {
+      if (cursor) {
         // Dùng rAF ở đây vẫn cần: để đợi DOM render xong rồi mới restore scroll position
         requestAnimationFrame(() => {
-          const newScrollHeight = el.scrollHeight;
-          el.scrollTop = newScrollHeight - prevScrollHeight;
+          if (mobileEl) {
+            mobileEl.scrollTop = mobileEl.scrollHeight - prevMobileScrollHeight;
+          }
+          if (desktopEl) {
+            desktopEl.scrollTop =
+              desktopEl.scrollHeight - prevDesktopScrollHeight;
+          }
         });
       }
     } catch (error: any) {
@@ -115,10 +123,15 @@ export default function ChatWindow({
     if (!messages.length) return;
     if (didInitialScroll.current) return;
 
-    const el = containerRef.current;
-    if (!el) return;
+    if (mobileContainerRef.current) {
+      mobileContainerRef.current.scrollTop =
+        mobileContainerRef.current.scrollHeight;
+    }
+    if (desktopContainerRef.current) {
+      desktopContainerRef.current.scrollTop =
+        desktopContainerRef.current.scrollHeight;
+    }
 
-    el.scrollTop = el.scrollHeight;
     didInitialScroll.current = true;
   }, [messages]);
 
@@ -127,21 +140,24 @@ export default function ChatWindow({
     if (!incomingMessageRef.current) return;
     incomingMessageRef.current = false;
 
-    const el = containerRef.current;
-    if (!el) return;
+    const checkAndScroll = (el: HTMLDivElement | null) => {
+      if (!el) return;
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
+      const threshold = el.clientHeight * 0.5;
 
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const threshold = el.clientHeight * 0.5;
+      if (distanceFromBottom < threshold) {
+        scrollToBottom(el, true);
+      } else {
+        setShowNew(true);
+      }
+    };
 
-    if (distanceFromBottom < threshold) {
-      scrollToBottom(el, true);
-    } else {
-      setShowNew(true);
-    }
+    checkAndScroll(mobileContainerRef.current);
+    checkAndScroll(desktopContainerRef.current);
   }, [messages]);
 
-  const handleScroll = () => {
-    const el = containerRef.current;
+  const handleScroll = (el: HTMLDivElement | null) => {
     if (!el || loading || !hasMore || fetchingRef.current) return;
 
     if (el.scrollTop <= 50) {
@@ -170,7 +186,8 @@ export default function ChatWindow({
 
     setMessages((prev) => [...prev, temp as Message]);
     setInput("");
-    scrollToBottom(containerRef.current, true);
+    scrollToBottom(mobileContainerRef.current, true);
+    scrollToBottom(desktopContainerRef.current, true);
 
     try {
       const { data } = await chatService.sendMessage({
@@ -184,7 +201,8 @@ export default function ChatWindow({
         anchorRef.current = data.id;
       }
 
-      scrollToBottom(containerRef.current, true);
+      scrollToBottom(mobileContainerRef.current, true);
+      scrollToBottom(desktopContainerRef.current, true);
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== temp.id));
     }
@@ -235,6 +253,64 @@ export default function ChatWindow({
     };
   }, [conversationId]);
 
+  const renderMessages = (isMine: boolean, m: Message) => {
+    const renderMessageContent = () => {
+      switch (m.type) {
+        case MessageType.CALL:
+          return <CallMessageBubble message={m} />;
+        case MessageType.TEXT:
+          return (
+            <div
+              className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                isMine ? "bg-blue-500 text-white" : "bg-white text-black border"
+              }`}
+            >
+              {m.content}
+            </div>
+          );
+        case MessageType.IMAGE:
+          return <></>;
+        case MessageType.FILE:
+          return <></>;
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div key={m.id} className="space-y-1">
+        <div
+          className={`flex items-end gap-2 ${
+            isMine ? "justify-end" : "justify-start"
+          }`}
+        >
+          {!isMine && (
+            <Avatar size="lg" className="cursor-pointer">
+              {m.sender?.avatar ? (
+                <AvatarImage src={m.sender?.avatar} alt={m.sender.fullName} />
+              ) : (
+                <AvatarFallback>
+                  {m.sender.fullName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              )}
+            </Avatar>
+          )}
+          {renderMessageContent()}
+        </div>
+        <div
+          className={`text-[11px] text-gray-400 ${
+            isMine ? "text-right pr-1" : "pl-2"
+          }`}
+        >
+          {!isMine && m.sender?.fullName && (
+            <div className="text-gray-500 text-[10px]">{m.sender.fullName}</div>
+          )}
+          {moment(m.createdAt).format("HH:mm DD/MM")}
+        </div>
+      </div>
+    );
+  };
+
   if (!ready) return null;
 
   return (
@@ -263,8 +339,8 @@ export default function ChatWindow({
         </div>
 
         <div
-          ref={containerRef}
-          onScroll={handleScroll}
+          ref={mobileContainerRef}
+          onScroll={() => handleScroll(mobileContainerRef.current)}
           className="fixed left-0 right-0 overflow-y-auto p-4 space-y-4"
           style={{
             top: NAVBAR_HEIGHT + CHAT_HEADER_HEIGHT,
@@ -273,78 +349,9 @@ export default function ChatWindow({
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {messages.map((m) => {
-            const isMine = isMe(m.senderId, currentUser.id);
-
-            const renderMessageContent = () => {
-              switch (m.type) {
-                case MessageType.CALL:
-                  return <CallMessageBubble message={m} />;
-
-                case MessageType.TEXT:
-                  return (
-                    <div
-                      className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                        isMine
-                          ? "bg-blue-500 text-white"
-                          : "bg-white text-black border"
-                      }`}
-                    >
-                      {m.content}
-                    </div>
-                  );
-
-                case MessageType.IMAGE:
-                  return <></>;
-
-                case MessageType.FILE:
-                  return <></>;
-
-                default:
-                  return null;
-              }
-            };
-
-            return (
-              <div key={m.id} className="space-y-1">
-                <div
-                  className={`flex items-end gap-2 ${
-                    isMine ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {!isMine && (
-                    <Avatar size="lg" className="cursor-pointer">
-                      {m.sender?.avatar ? (
-                        <AvatarImage
-                          src={m.sender?.avatar}
-                          alt={m.sender.fullName}
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {m.sender.fullName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  )}
-
-                  {renderMessageContent()}
-                </div>
-
-                <div
-                  className={`text-[11px] text-gray-400 ${
-                    isMine ? "text-right pr-1" : "pl-2"
-                  }`}
-                >
-                  {!isMine && m.sender?.fullName && (
-                    <div className="text-gray-500 text-[10px]">
-                      {m.sender.fullName}
-                    </div>
-                  )}
-                  {moment(m.createdAt).format("HH:mm")}
-                </div>
-              </div>
-            );
-          })}
+          {messages.map((m) =>
+            renderMessages(isMe(m.senderId, currentUser.id), m),
+          )}
 
           {loading && (
             <>
@@ -354,10 +361,11 @@ export default function ChatWindow({
             </>
           )}
         </div>
+
         {showNew && (
           <button
             onClick={() => {
-              scrollToBottom(containerRef.current, true);
+              scrollToBottom(mobileContainerRef.current, true);
               setShowNew(false);
             }}
             className="fixed left-1/2 -translate-x-1/2 z-20 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"
@@ -400,78 +408,23 @@ export default function ChatWindow({
         </div>
 
         <div
-          ref={containerRef}
-          onScroll={handleScroll}
+          ref={desktopContainerRef}
+          onScroll={() => handleScroll(desktopContainerRef.current)}
           className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
         >
-          {messages.map((m) => {
-            const isMine = isMe(m.senderId, currentUser.id);
-            const renderMessageContent = () => {
-              switch (m.type) {
-                case MessageType.CALL:
-                  return <CallMessageBubble message={m} />;
-                case MessageType.TEXT:
-                  return (
-                    <div
-                      className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
-                        isMine
-                          ? "bg-blue-500 text-white"
-                          : "bg-white text-black border"
-                      }`}
-                    >
-                      {m.content}
-                    </div>
-                  );
-                case MessageType.IMAGE:
-                  return <></>;
-                case MessageType.FILE:
-                  return <></>;
-                default:
-                  return null;
-              }
-            };
-            return (
-              <div key={m.id} className="space-y-1">
-                <div
-                  className={`flex items-end gap-2 ${
-                    isMine ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {!isMine && (
-                    <Avatar size="lg" className="cursor-pointer">
-                      {m.sender?.avatar ? (
-                        <AvatarImage
-                          src={m.sender?.avatar}
-                          alt={m.sender.fullName}
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {m.sender.fullName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  )}
-                  {renderMessageContent()}
-                </div>
-                <div
-                  className={`text-[11px] text-gray-400 ${
-                    isMine ? "text-right pr-1" : "pl-2"
-                  }`}
-                >
-                  {!isMine && m.sender?.fullName && (
-                    <div className="text-gray-500 text-[10px]">
-                      {m.sender.fullName}
-                    </div>
-                  )}
-                  {moment(m.createdAt).format("HH:mm")}
-                </div>
-              </div>
-            );
-          })}
+          {messages.map((m) =>
+            renderMessages(isMe(m.senderId, currentUser.id), m),
+          )}
+
           {loading && (
             <>
               <MessageSkeleton />
               <MessageSkeleton isMine />
+              <MessageSkeleton />
+              <MessageSkeleton />
+              <MessageSkeleton isMine />
+              <MessageSkeleton isMine />
+              <MessageSkeleton />
               <MessageSkeleton />
             </>
           )}
@@ -480,7 +433,7 @@ export default function ChatWindow({
         {showNew && (
           <button
             onClick={() => {
-              scrollToBottom(containerRef.current, true);
+              scrollToBottom(desktopContainerRef.current, true);
               setShowNew(false);
             }}
             className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs shadow"

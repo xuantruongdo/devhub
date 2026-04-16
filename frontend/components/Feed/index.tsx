@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toastError } from "@/lib/toast";
 import postService from "@/services/post";
 import ComposePost from "../Post/ComposePost";
@@ -13,26 +13,30 @@ import {
   deletePost,
 } from "@/redux/reducers/feed";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PostSkeleton } from "../Post/PostSkeleton";
 
 export default function Feed() {
   const dispatch = useAppDispatch();
   const posts = useAppSelector((state) => state.feed);
-  const { t, ready } = useTranslation();
+  const { t } = useTranslation();
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFeed = async () => {
       try {
+        setLoading(true);
         const { data } = await postService.getFeed();
         dispatch(setFeed(data));
       } catch (error: any) {
         toastError(error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchFeed();
   }, [dispatch]);
-
-  if (!ready) return null;
 
   return (
     <div className="flex-1 min-h-0 border-r border-border bg-card flex flex-col">
@@ -41,7 +45,12 @@ export default function Feed() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {posts.length === 0 ? (
+        {loading ? (
+          <>
+            <PostSkeleton />
+            <PostSkeleton />
+          </>
+        ) : posts.length === 0 ? (
           <div className="flex items-center justify-center h-24 text-muted-foreground">
             {t("post.noPosts")}
           </div>

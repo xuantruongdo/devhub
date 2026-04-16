@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Conversation, Message } from "@/types/chat";
 import { useAppSelector } from "@/redux/hooks";
 import { useTranslation } from "@/hooks/useTranslation";
-import { getOtherUser, getUnread, isMe } from "@/lib/utils";
+import { formatFromNow, getOtherUser, getUnread, isMe } from "@/lib/utils";
 import { CallEndReason, MessageType } from "@/constants";
 
 type Props = {
@@ -92,13 +92,13 @@ export function MessageItem({ conversation, onOpenConversation }: Props) {
                   <>{t("header.message.you")}: </>
                 )}
 
-              <span className="truncate inline-block max-w-[300px] align-bottom">
+              <span className="truncate inline-block max-w-[150px] align-bottom">
                 {renderLastMessage(conversation.lastMessage)}
               </span>
 
               {" · "}
               <span className="text-[11px] text-gray-400 whitespace-nowrap">
-                {moment(conversation.lastMessage.createdAt).fromNow()}
+                {formatFromNow(conversation.lastMessage.createdAt, locale)}
               </span>
             </>
           ) : (

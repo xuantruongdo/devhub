@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Post } from "@/types/post";
-import moment from "moment";
 import Link from "next/link";
 import Image from "next/image";
 import { useAppSelector } from "@/redux/hooks";
@@ -29,6 +28,7 @@ import { ImageLightbox } from "./ImageLightbox";
 import { EditPostDialog } from "./EditPostDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 import { visibilityConfig } from "../Comment/DetailPostContent";
+import { formatFromNow } from "@/lib/utils";
 
 interface PostCardProps {
   post: Post;
@@ -125,7 +125,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                 <span className="text-muted-foreground text-sm">·</span>
 
                 <span className="text-muted-foreground text-sm">
-                  {moment(createdAt).fromNow()}
+                  {formatFromNow(createdAt, locale)}
                 </span>
 
                 <span className="text-muted-foreground text-sm">·</span>

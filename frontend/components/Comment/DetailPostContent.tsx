@@ -13,7 +13,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import moment from "moment";
 import { CommentInput, CommentInputRef } from "./CommentInput";
 import { Comment, Post } from "@/types/post";
 import postService from "@/services/post";
@@ -32,7 +31,7 @@ import {
 import { ConfirmDeleteDialog } from "../ConfirmDeleteDialog";
 import { EditPostDialog } from "../Post/EditPostDialog";
 import { deletePost, updatePost } from "@/redux/reducers/feed";
-import { navigateFromModal } from "@/lib/utils";
+import { formatFromNow, navigateFromModal } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export const visibilityConfig = {
@@ -155,7 +154,7 @@ export function DetailPostContent({
               <span>·</span>
 
               <span className="whitespace-nowrap">
-                {moment(createdAt).fromNow()}
+                {formatFromNow(createdAt, locale)}
               </span>
 
               <span>·</span>

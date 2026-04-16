@@ -1,6 +1,7 @@
 import storageService from "@/services/storage";
 import { Conversation, Message } from "@/types/chat";
 import { clsx, type ClassValue } from "clsx";
+import moment from "moment";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -66,7 +67,7 @@ export const scrollToBottom = (el: HTMLDivElement | null, smooth = true) => {
 
   setTimeout(() => {
     el.scrollTop = el.scrollHeight;
-  }, 50);
+  }, 0);
 };
 
 export const isMe = (userId: number, currentUserId: number) => {
@@ -95,3 +96,7 @@ export const formatDuration = (sec: number) => {
   const s = (sec % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 };
+
+export function formatFromNow(date: Date, locale: string = "en") {
+  return moment(date).locale(locale).fromNow();
+}

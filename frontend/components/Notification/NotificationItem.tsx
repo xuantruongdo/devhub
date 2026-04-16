@@ -1,11 +1,10 @@
 import { Heart, MessageCircle, UserPlus } from "lucide-react";
-import moment from "moment";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Notification } from "@/types/notification";
 import { useTranslation } from "@/hooks/useTranslation";
 import { NotificationType } from "@/constants";
 import Link from "next/link";
+import { formatFromNow } from "@/lib/utils";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -104,7 +103,7 @@ export default function NotificationItem({
         </p>
 
         <p className="text-xs text-primary mt-1">
-          {moment(n.createdAt).fromNow()}
+          {formatFromNow(n.createdAt, locale)}
         </p>
       </div>
     </Link>

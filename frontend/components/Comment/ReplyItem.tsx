@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import moment from "moment";
 import { Heart, MoreHorizontal, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,7 +13,7 @@ import { useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
-import { isMe, navigateFromModal } from "@/lib/utils";
+import { formatFromNow, isMe, navigateFromModal } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -103,7 +102,7 @@ export function ReplyItem({
         </div>
 
         <div className="text-xs text-muted-foreground">
-          {moment(r.createdAt).fromNow()}
+          {formatFromNow(r.createdAt, locale)}
         </div>
 
         <p className="text-sm">{r.content}</p>

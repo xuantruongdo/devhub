@@ -216,7 +216,7 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
         ref={remoteVideoRef}
         autoPlay
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        className="w-full h-full object-cover scale-x-[-1]"
       />
 
       <div className="absolute inset-0 bg-black/20 pointer-events-none" />
@@ -228,7 +228,7 @@ export function VideoCallOverlay(props: VideoCallOverlayProps) {
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-x-[-1]"
           />
 
           {isCameraOff && (

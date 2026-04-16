@@ -10,8 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ConversationSkeleton } from "./ConversationSkeleton";
 import { CallEndReason, MessageType } from "@/constants";
-import moment from "moment";
-import { getOtherUser, getUnread, isMe } from "@/lib/utils";
+import { formatFromNow, getOtherUser, getUnread, isMe } from "@/lib/utils";
 import { setSelectedConversation } from "@/redux/reducers/conversation";
 
 export default function ChatSidebar({ activeId }: { activeId: number | null }) {
@@ -104,7 +103,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
 
   return (
     <div className="w-full md:w-80 border-r flex flex-col h-full">
-      <div className="p-4 font-semibold border-b">
+      <div className="px-4 !py-[18px] font-semibold border-b">
         {t("chat.sidebar.messages")}
       </div>
 
@@ -172,7 +171,7 @@ export default function ChatSidebar({ activeId }: { activeId: number | null }) {
 
                         {" · "}
                         <span className="text-[11px] text-gray-400 whitespace-nowrap">
-                          {moment(c.lastMessage.createdAt).fromNow()}
+                          {formatFromNow(c.lastMessage.createdAt, locale)}
                         </span>
                       </>
                     ) : (

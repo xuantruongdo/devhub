@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import moment from "moment";
 import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,7 +16,7 @@ import { ReplyList } from "./ReplyList";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { isMe, navigateFromModal } from "@/lib/utils";
+import { formatFromNow, isMe, navigateFromModal } from "@/lib/utils";
 
 interface CommentItemProps {
   postId: number;
@@ -132,7 +131,7 @@ export function CommentItem({
           </div>
 
           <div className="text-xs text-muted-foreground">
-            {moment(c.createdAt).fromNow()}
+            {formatFromNow(c.createdAt, locale)}
           </div>
 
           <p className="text-sm">{c.content}</p>
