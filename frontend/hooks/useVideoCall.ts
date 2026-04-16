@@ -382,6 +382,8 @@ export function useVideoCall({
 
     if (!incomingOffer || !remoteUserIdRef.current) return;
 
+    updateCallState(CallState.CALLING);
+
     const stream = await getLocalStream();
 
     const peer = new SimplePeer({
@@ -423,6 +425,7 @@ export function useVideoCall({
     getLocalStream,
     setupPeerEvents,
     clearAutoRejectTimer,
+    updateCallState,
   ]);
 
   /**

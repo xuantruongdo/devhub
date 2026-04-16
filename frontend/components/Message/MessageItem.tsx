@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import moment from "moment";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Conversation, Message } from "@/types/chat";
 import { useAppSelector } from "@/redux/hooks";
