@@ -25,7 +25,7 @@ export interface LoginWithGoogle {
   avatar: string;
 }
 
-interface GoogleTokenResponse {
+export interface GoogleTokenResponse {
   access_token: string;
   expires_in: number;
   id_token: string;
@@ -34,7 +34,7 @@ interface GoogleTokenResponse {
   token_type: string;
 }
 
-interface GoogleUserProfile {
+export interface GoogleUserProfile {
   id: string;
   email: string;
   verified_email: boolean;
@@ -43,4 +43,8 @@ interface GoogleUserProfile {
   family_name: string;
   picture: string;
   locale: string;
+}
+
+export interface VerifyEmail {
+  token: string;
 }

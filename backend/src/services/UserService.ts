@@ -7,6 +7,7 @@ import {
   RegisterDto,
   UpdateMediaDto,
   UpdateUserDto,
+  VerifyEmailDto,
 } from "../dtos/UserDto";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import { generateUsername } from "../libs/utils";
@@ -17,10 +18,12 @@ import { UserProps } from "../types/auth";
 import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { FollowType } from "../constants";
+import { EmailJobName, FollowType } from "../constants";
 import { Notification, NotificationType } from "../entities/Notification";
 import { emitNewNotification } from "../libs/io";
 import { NotificationService } from "./NotificationService";
+import { MailService } from "./MailService";
+import { emailQueue } from "../queues/email";
 
 @Service()
 export class UserService {
@@ -29,6 +32,7 @@ export class UserService {
     private readonly postRepo: PostRepo,
     private readonly jwtService: JwtService,
     private readonly notificationService: NotificationService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(data: RegisterDto) {
@@ -49,8 +53,43 @@ export class UserService {
         password: hashedPassword,
       });
 
+      const payload = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+      };
+
+      const emailToken = this.jwtService.signRefreshToken(payload);
+
+      await emailQueue.add(EmailJobName.SEND_VERIFY_EMAIL, {
+        email: user.email,
+        fullName: user.fullName,
+        token: emailToken,
+      });
+
       const { password, ...rest } = user;
       return rest;
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async verifyEmail(data: VerifyEmailDto) {
+    try {
+      const decoded = this.jwtService.verifyEmailToken(data.token);
+      const user = await this.userRepo.findOne(decoded.id);
+      if (!user) {
+        throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
+      }
+
+      user.isVerified = true;
+      await this.userRepo.save(user);
+
+      return { success: true };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
@@ -162,9 +201,9 @@ export class UserService {
         throw new UnauthorizedError(AuthCodeError.MISSING_REFRESH_TOKEN);
       }
 
-      const payload = this.jwtService.verifyRefreshToken(token);
+      const decoded = this.jwtService.verifyRefreshToken(token);
 
-      const user = await this.userRepo.findById(payload.id, {
+      const user = await this.userRepo.findById(decoded.id, {
         includeRefreshToken: true,
       });
 
@@ -217,8 +256,8 @@ export class UserService {
 
       if (token) {
         // Xóa refreshToken trong DB — vô hiệu hóa token ngay lập tức
-        const payload = this.jwtService.verifyRefreshToken(token);
-        await this.userRepo.update(payload.id, { refreshToken: undefined });
+        const decoded = this.jwtService.verifyRefreshToken(token);
+        await this.userRepo.update(decoded.id, { refreshToken: undefined });
       }
 
       res.clearCookie("refreshToken", {

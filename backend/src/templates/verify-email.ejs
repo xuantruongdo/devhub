@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>DevHub - Verify your email</title>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #0b1220;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <div
+      style="
+        max-width: 640px;
+        margin: 40px auto;
+        background: #111827;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      "
+    >
+      <div
+        style="
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          padding: 24px;
+          text-align: center;
+        "
+      >
+        <h1
+          style="margin: 0; color: #fff; font-size: 22px; letter-spacing: 1px"
+        >
+          DevHub
+        </h1>
+        <p style="margin: 6px 0 0; color: #e5e7eb; font-size: 14px">
+          Build. Connect. Ship faster.
+        </p>
+      </div>
+
+      <div style="padding: 32px; color: #e5e7eb">
+        <h2 style="margin-top: 0; color: #fff; font-size: 20px">
+          Welcome, <%= fullName %> 👋
+        </h2>
+
+        <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1">
+          Thanks for joining <b>DevHub</b>. You're just one step away from
+          activating your account.
+        </p>
+
+        <p style="font-size: 15px; color: #cbd5e1">
+          Please verify your email to continue:
+        </p>
+
+        <div style="text-align: center; margin: 32px 0">
+          <a
+            href="<%= verifyUrl %>"
+            style="
+              background: #6366f1;
+              color: #fff;
+              padding: 14px 22px;
+              border-radius: 8px;
+              text-decoration: none;
+              font-weight: bold;
+              display: inline-block;
+              box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+            "
+          >
+            Verify Email
+          </a>
+        </div>
+
+        <div
+          style="
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+          "
+        >
+          <p style="margin: 0; font-size: 13px; color: #facc15">
+            ⚠ This verification link will expire in <b>3 minutes</b>.
+          </p>
+        </div>
+
+        <p style="font-size: 13px; color: #94a3b8; word-break: break-all">
+          If the button doesn't work, copy this link:<br />
+          <span style="color: #60a5fa"><%= verifyUrl %></span>
+        </p>
+      </div>
+
+      <div
+        style="
+          padding: 20px;
+          text-align: center;
+          background: #0f172a;
+          color: #64748b;
+          font-size: 12px;
+        "
+      >
+        © <%= new Date().getFullYear() %> DevHub. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

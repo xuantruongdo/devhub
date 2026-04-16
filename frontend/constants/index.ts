@@ -66,3 +66,9 @@ export enum CallState {
 }
 
 export const MAX_POST_CONTENT = 500;
+
+export enum VerifyEmailStatus {
+  LOADING = "loading",
+  SUCCESS = "success",
+  ERROR = "error",
+}

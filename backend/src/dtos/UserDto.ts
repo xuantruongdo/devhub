@@ -29,6 +29,11 @@ export class LoginDto {
   password!: string;
 }
 
+export class VerifyEmailDto {
+  @IsString()
+  token!: string;
+}
+
 export class LoginWithGoogleDto {
   @IsString()
   @IsNotEmpty()
