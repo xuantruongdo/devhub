@@ -613,7 +613,7 @@ export default function Header() {
               unreadCount={unreadMsgs}
               loading={msgLoading}
               onOpenConversation={handleOpenConversation}
-            />{" "}
+            />
           </div>
 
           <LanguageToggle />

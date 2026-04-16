@@ -14,6 +14,7 @@ import { VideoCallOverlay } from "@/components/Chat/VideoCallOverlay";
 import { VideoCallProvider } from "@/contexts/VideoCallContext";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { useSocketContext } from "@/contexts/SocketContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -84,23 +85,24 @@ export default function AuthenticatedLayout({
 
   const dispatch = useAppDispatch();
   const router = useRouter();
-
+  const { t, locale, ready } = useTranslation();
   const currentUser = useAppSelector((state) => state.currentUser);
 
   useEffect(() => {
     const fetchInitData = async () => {
+      if (!ready) return;
       try {
         const { data } = await authService.current();
         dispatch(setCurrentUser(data));
         setLoading(false);
-      } catch (error) {
-        toastError(error);
-        router.push("/login");
+      } catch {
+        toastError(t("auth.login.errors.loginRequired"));
+        router.push(`/${locale}/login`);
       }
     };
 
     fetchInitData();
-  }, [dispatch, router]);
+  }, [dispatch, router, ready]);
 
   useEffect(() => {
     // PHẢI CÓ ĐOẠN CHECK, NẾU KHÔNG APP SẼ BỊ CRASH TRÊN MOBILE

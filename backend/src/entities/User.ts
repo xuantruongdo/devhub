@@ -37,7 +37,7 @@ export class User {
   @Index()
   email!: string;
 
-  @Column()
+  @Column({ nullable: true })
   password!: string;
 
   @Column({

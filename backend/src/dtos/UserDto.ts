@@ -29,6 +29,19 @@ export class LoginDto {
   password!: string;
 }
 
+export class LoginWithGoogleDto {
+  @IsString()
+  @IsNotEmpty()
+  fullName!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  avatar!: string;
+}
+
 export class UpdateUserDto {
   @IsOptional()
   @IsString({ message: "Full name must be a string" })
