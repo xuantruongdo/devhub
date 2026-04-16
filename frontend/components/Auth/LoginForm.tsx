@@ -44,9 +44,12 @@ export function LoginForm() {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setLoading(true);
+
       const { data } = await authService.login(values);
+
       dispatch(setCurrentUser(data.user));
       localStorage.setItem("accessToken", data.accessToken);
+      
       toastSuccess(t("auth.login.success.title"));
       router.push(`/${locale}`);
     } catch (error) {
@@ -59,7 +62,6 @@ export function LoginForm() {
   const onLoginGoogle = async () => {
     try {
       const googleUrl = getGoogleOAuthURL();
-      console.log("===googleUrl", googleUrl);
       window.location.href = googleUrl;
     } catch (error) {
       toastError(error);
