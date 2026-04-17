@@ -15,8 +15,10 @@ export default function GoogleCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { t, locale } = useTranslation();
+  const { t, locale, ready } = useTranslation();
+
   useEffect(() => {
+    if (!ready) return;
     const code = searchParams.get("code");
 
     const handleGoogleCallback = async () => {
@@ -45,7 +47,7 @@ export default function GoogleCallbackPage() {
     };
 
     handleGoogleCallback();
-  }, [searchParams, router, dispatch]);
+  }, [searchParams, router, dispatch, ready]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 dark:from-black dark:to-zinc-900 z-50">
