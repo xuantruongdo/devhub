@@ -54,14 +54,8 @@ export class UserRepo extends BaseRepo<User> {
     });
   }
 
-  async findByUsername(username: string, currentUserId?: number) {
-    const qb = this.createQueryBuilder("user")
-      .leftJoin(
-        "user_followers",
-        "uf",
-        "uf.userId = user.id AND uf.followerId = :currentUserId",
-        { currentUserId },
-      )
+  async findByUsername(username: string) {
+    return this.createQueryBuilder("user")
       .where("user.username = :username", { username })
       .select([
         "user.id",
@@ -83,20 +77,18 @@ export class UserRepo extends BaseRepo<User> {
         "user.createdAt",
         "user.updatedAt",
       ])
-      .addSelect(
-        "CASE WHEN uf.followerId IS NOT NULL THEN 1 ELSE 0 END",
-        "uf_isFollowing",
-      );
+      .getOne();
+  }
 
-    const { raw, entities } = await qb.getRawAndEntities();
-    const user = entities[0];
-    if (!user) return null;
+  async checkIsFollowing(me: number, target: number): Promise<boolean> {
+    const result = await this.createQueryBuilder()
+      .select("1")
+      .from("user_followers", "uf")
+      .where("uf.userId = :target", { target })
+      .andWhere("uf.followerId = :me", { me })
+      .limit(1)
+      .getRawOne();
 
-    const isFollowing = raw[0]?.uf_isFollowing === 1;
-
-    return {
-      ...user,
-      isFollowing,
-    };
+    return !!result;
   }
 }
