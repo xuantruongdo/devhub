@@ -21,8 +21,9 @@ import { User } from "../entities/User";
 import { EmailJobName, FollowType, NotificationJobName } from "../constants";
 import { Notification, NotificationType } from "../entities/Notification";
 import { NotificationService } from "./NotificationService";
-import { MailService } from "./MailService";
 import { emailQueue, notificationQueue } from "../queues";
+import { redis } from "../libs/redis";
+import { CacheService } from "./CacheService";
 
 @Service()
 export class UserService {
@@ -31,7 +32,7 @@ export class UserService {
     private readonly postRepo: PostRepo,
     private readonly jwtService: JwtService,
     private readonly notificationService: NotificationService,
-    private readonly mailService: MailService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async register(data: RegisterDto) {
@@ -289,6 +290,9 @@ export class UserService {
 
       const updatedUser = await this.userRepo.save(user);
 
+      // Clear cache
+      await this.cacheService.clearProfile(user.username);
+
       const payload = {
         id: updatedUser.id,
         username: updatedUser.username,
@@ -332,6 +336,9 @@ export class UserService {
 
       const updatedUser = await this.userRepo.save(Object.assign(user, data));
 
+      // Clear cache
+      await this.cacheService.clearProfile(user.username);
+
       const payload = {
         id: updatedUser.id,
         username: updatedUser.username,
@@ -362,7 +369,36 @@ export class UserService {
 
   async findByUsername(username: string, user: UserProps) {
     try {
-      return this.userRepo.findByUsername(username, user.id);
+      const currentUserId = user.id;
+      const profileKey = `user:username:${username}`;
+
+      let profile = null;
+
+      const cachedProfile = await redis.get(profileKey);
+
+      if (cachedProfile) {
+        profile = JSON.parse(cachedProfile);
+      } else {
+        const foundUser = await this.userRepo.findByUsername(username);
+
+        if (!foundUser) {
+          throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+        }
+
+        profile = foundUser;
+
+        await redis.set(profileKey, JSON.stringify(profile), "EX", 3600);
+      }
+
+      const isFollowing = await this.userRepo.checkIsFollowing(
+        currentUserId,
+        profile.id,
+      );
+
+      return {
+        ...profile,
+        isFollowing,
+      };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

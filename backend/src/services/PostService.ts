@@ -22,18 +22,93 @@ import { Notification, NotificationType } from "../entities/Notification";
 import { NotificationService } from "./NotificationService";
 import { notificationQueue } from "../queues";
 import { NotificationJobName } from "../constants";
+import { redis } from "../libs/redis";
+import { CommentRepo } from "../repositories/CommentRepo";
 
 @Service()
 export class PostService {
   constructor(
     private readonly postRepo: PostRepo,
     private readonly userRepo: UserRepo,
+    private readonly commentRepo: CommentRepo,
     private readonly notificationService: NotificationService,
   ) {}
 
   async findOne(id: number, user: UserProps) {
     try {
-      return this.postRepo.findOnePost(id, user.id);
+      const currentUserId = user.id;
+      const cacheKey = `post:${id}`;
+
+      let post: Post;
+
+      // Cache hit
+      const cached = await redis.get(cacheKey);
+
+      if (cached) {
+        post = JSON.parse(cached);
+      } else {
+        const dbPost = await this.postRepo.findPostById(id, currentUserId);
+
+        if (!dbPost) return null;
+
+        post = dbPost;
+
+        await redis.set(cacheKey, JSON.stringify(post), "EX", 300);
+      }
+
+      // Get count stat
+      const counts = await this.postRepo.getPostCounts(id);
+
+      const comments = await this.commentRepo.getRootComments(
+        id,
+        currentUserId,
+      );
+
+      const replies = await this.commentRepo.getReplies(id, currentUserId);
+
+      const commentIds = comments.map((c) => c.id);
+      const replyIds = replies.map((r) => r.id);
+
+      const [commentLikeMap, replyLikeMap, postIsLiked] = await Promise.all([
+        this.commentRepo.getLikedMap(commentIds, currentUserId),
+        this.commentRepo.getLikedMap(replyIds, currentUserId),
+        this.postRepo.checkPostLiked(id, currentUserId),
+      ]);
+
+      // normalize replies
+      const repliesByParent = new Map<number, Comment[]>();
+
+      for (const r of replies) {
+        const parentId = r.parentId!;
+
+        const mappedReply = {
+          ...r,
+          isLiked: replyLikeMap.get(r.id) ?? false,
+          replies: [],
+        };
+
+        if (!repliesByParent.has(parentId)) {
+          repliesByParent.set(parentId, []);
+        }
+
+        repliesByParent.get(parentId)!.push(mappedReply);
+      }
+
+      // Merge comment
+      const finalComments = comments.map((c) => ({
+        ...c,
+        isLiked: commentLikeMap.get(c.id) ?? false,
+        replies: repliesByParent.get(c.id) ?? [],
+      }));
+
+      return {
+        ...post,
+        likeCount: counts.likeCount,
+        commentCount: counts.commentCount,
+        shareCount: counts.shareCount,
+        isLiked: postIsLiked,
+        comments: finalComments,
+      };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
