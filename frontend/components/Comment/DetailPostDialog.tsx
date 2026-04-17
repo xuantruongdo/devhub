@@ -22,7 +22,7 @@ export function DetailPostDialog({ post }: DetailPostDialogProps) {
       title={""}
       onCancel={handleClose}
       onConfirm={() => {}}
-      className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
+      className="max-h-[60vh] sm:max-h-[90vh] sm:max-w-2xl overflow-y-auto"
       hideCancelButton={true}
       hideConfirmButton={true}
       contentClassName="overflow-y-hidden"
