@@ -8,12 +8,14 @@ import { useAppDispatch } from "@/redux/hooks";
 import { Loader2 } from "lucide-react";
 import { getGoogleTokens, getGoogleUserProfile } from "@/lib/google";
 import { setCurrentUser } from "@/redux/reducers/currentUser";
+import { toastSuccess } from "@/lib/toast";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-
+  const { t, locale } = useTranslation();
   useEffect(() => {
     const code = searchParams.get("code");
 
@@ -33,9 +35,12 @@ export default function GoogleCallbackPage() {
         });
 
         dispatch(setCurrentUser(data.user));
-        router.push("/");
+        localStorage.setItem("accessToken", data.accessToken);
+
+        toastSuccess(t("auth.login.success.title"));
+        router.push(`/${locale}`);
       } catch {
-        router.push("/login?error=google");
+        router.push(`/${locale}/login?error=google`);
       }
     };
 
