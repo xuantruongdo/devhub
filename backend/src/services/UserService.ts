@@ -18,12 +18,11 @@ import { UserProps } from "../types/auth";
 import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { EmailJobName, FollowType } from "../constants";
+import { EmailJobName, FollowType, NotificationJobName } from "../constants";
 import { Notification, NotificationType } from "../entities/Notification";
-import { emitNewNotification } from "../libs/io";
 import { NotificationService } from "./NotificationService";
 import { MailService } from "./MailService";
-import { emailQueue } from "../queues/email";
+import { emailQueue, notificationQueue } from "../queues";
 
 @Service()
 export class UserService {
@@ -448,9 +447,12 @@ export class UserService {
     });
 
     if (notification && recipientId) {
-      emitNewNotification(recipientId, {
-        ...(notification as Notification),
-        sender: user,
+      await notificationQueue.add(NotificationJobName.FOLLOW, {
+        recipientId,
+        notification: {
+          ...(notification as Notification),
+          sender: user,
+        },
       });
     }
 

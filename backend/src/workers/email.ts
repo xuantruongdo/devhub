@@ -1,7 +1,7 @@
 import { Worker, Job } from "bullmq";
 import { Service } from "typedi";
 import { MailService } from "../services/MailService";
-import { connection } from "../queues/email";
+import { connection } from "../queues";
 import { EmailJobName, QueueName } from "../constants";
 
 @Service()

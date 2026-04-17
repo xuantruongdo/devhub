@@ -9,3 +9,7 @@ export const connection = new IORedis(process.env.REDIS_URL!, {
 export const emailQueue = new Queue(QueueName.EMAIL_QUEUE, {
   connection,
 });
+
+export const notificationQueue = new Queue(QueueName.NOTIFICATION_QUEUE, {
+  connection,
+});

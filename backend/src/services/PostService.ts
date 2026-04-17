@@ -19,8 +19,9 @@ import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
 import { CommentLike } from "../entities/CommentLike";
 import { Notification, NotificationType } from "../entities/Notification";
-import { emitNewNotification } from "../libs/io";
 import { NotificationService } from "./NotificationService";
+import { notificationQueue } from "../queues";
+import { NotificationJobName } from "../constants";
 
 @Service()
 export class PostService {
@@ -205,10 +206,19 @@ export class PostService {
       });
 
       if (notification && recipientId) {
-        emitNewNotification(recipientId, {
-          ...(notification as Notification),
-          sender: user,
-        });
+        await notificationQueue.add(
+          NotificationJobName.LIKE_POST,
+          {
+            recipientId,
+            notification: {
+              ...(notification as Notification),
+              sender: user,
+            },
+          },
+          {
+            removeOnComplete: true,
+          },
+        );
       }
 
       return result;
@@ -287,10 +297,19 @@ export class PostService {
       );
 
       if (notification && recipientId) {
-        emitNewNotification(recipientId, {
-          ...(notification as Notification),
-          sender: user,
-        });
+        await notificationQueue.add(
+          NotificationJobName.COMMENT,
+          {
+            recipientId,
+            notification: {
+              ...(notification as Notification),
+              sender: user,
+            },
+          },
+          {
+            removeOnComplete: true,
+          },
+        );
       }
 
       return normalizeComment;
@@ -381,10 +400,19 @@ export class PostService {
       });
 
       if (notification && recipientId) {
-        emitNewNotification(recipientId, {
-          ...(notification as Notification),
-          sender: user,
-        });
+        await notificationQueue.add(
+          NotificationJobName.LIKE_COMMENT,
+          {
+            recipientId,
+            notification: {
+              ...(notification as Notification),
+              sender: user,
+            },
+          },
+          {
+            removeOnComplete: true,
+          },
+        );
       }
 
       return result;
