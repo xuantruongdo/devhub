@@ -29,7 +29,6 @@ import { Input } from "../ui/input";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { CurrentUserResponse } from "@/types/auth";
 import Link from "next/link";
-import { Locale } from "@/types/i18n";
 import { NotificationPanel } from "../Notification/NotificationPanel";
 import notificationService from "@/services/notification";
 import { LIMIT, MessageType } from "@/constants";
@@ -211,12 +210,15 @@ function UserDropdown({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56">
-        <Link href={`/${locale}/${user.username}`}>
-          <div className="px-3 py-2 border-b">
+        <DropdownMenuItem asChild className="block">
+          <Link
+            href={`/${locale}/${user.username}`}
+            className="px-3 py-2 cursor-pointer block"
+          >
             <p className="text-sm font-semibold">{user.fullName}</p>
             <p className="text-xs text-muted-foreground">@{user.username}</p>
-          </div>
-        </Link>
+          </Link>
+        </DropdownMenuItem>
 
         <div className="sm:hidden">
           <DropdownMenuItem

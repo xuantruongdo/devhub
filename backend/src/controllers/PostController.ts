@@ -7,6 +7,7 @@ import {
   Post,
   CurrentUser,
   Get,
+  QueryParam,
 } from "routing-controllers";
 import { Service } from "typedi";
 import { PostService } from "../services/PostService";
@@ -36,8 +37,11 @@ export class PostController {
   }
 
   @Get("/feed")
-  async getFeed(@CurrentUser() user: UserProps) {
-    return this.postService.getFeed(user);
+  async getFeed(
+    @CurrentUser() user: UserProps,
+    @QueryParam("cursor") cursor?: string,
+  ) {
+    return this.postService.getFeed(user, cursor);
   }
 
   @Get("/:id")

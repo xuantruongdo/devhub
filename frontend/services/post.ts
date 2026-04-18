@@ -1,14 +1,18 @@
 import instance from "@/lib/api";
 import { BaseService } from "./base";
-import { CommentInput } from "@/types/post";
+import { CommentInput, GetFeedParams } from "@/types/post";
 
 class PostService extends BaseService {
   constructor() {
     super("/posts");
   }
 
-  async getFeed() {
-    return await instance.get(`/posts/feed`);
+  async getFeed({ cursor }: GetFeedParams = {}) {
+    return await instance.get(`/posts/feed`, {
+      params: {
+        cursor,
+      },
+    });
   }
 
   async like(id: number) {

@@ -51,3 +51,7 @@ export type VisibilityOption = {
   value: PostVisibility;
   icon?: React.ReactNode;
 };
+
+export type GetFeedParams = {
+  cursor?: string;
+};

@@ -6,4 +6,8 @@ export class CacheService {
   async clearProfile(username: string) {
     await redis.del(`user:username:${username}`);
   }
+
+  async clearPost(id: number) {
+    await redis.del(`post:${id}`);
+  }
 }
