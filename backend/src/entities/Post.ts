@@ -21,6 +21,8 @@ export enum PostVisibility {
 }
 
 @Entity()
+@Index(["authorId", "createdAt"])
+@Index(["visibility", "createdAt"])
 export class Post {
   @PrimaryGeneratedColumn()
   id!: number;

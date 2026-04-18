@@ -144,7 +144,8 @@
     "like": "Likes",
     "cancelButton": "Cancel",
     "deleteButton": "Delete",
-    "noPosts": "No posts yet"
+    "noPosts": "No posts yet",
+    "noMorePosts": "No more posts"
   },
   "editPost": {
     "title": "Edit post",

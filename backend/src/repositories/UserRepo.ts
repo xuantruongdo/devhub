@@ -91,4 +91,14 @@ export class UserRepo extends BaseRepo<User> {
 
     return !!result;
   }
+
+  async getFollowerIds(userId: number): Promise<number[]> {
+    const rows = await this.createQueryBuilder("user")
+      .leftJoin("user.followings", "following")
+      .where("following.id = :userId", { userId })
+      .select("user.id", "id")
+      .getRawMany();
+
+    return rows.map((r) => r.id);
+  }
 }

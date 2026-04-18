@@ -144,7 +144,8 @@
     "like": "Thích",
     "cancelButton": "Hủy",
     "deleteButton": "Xóa",
-    "noPosts": "Chưa có bài viết nào"
+    "noPosts": "Chưa có bài viết nào",
+    "noMorePosts": "Không còn bài viết nào nữa"
   },
   "editPost": {
     "title": "Chỉnh sửa bài viết",

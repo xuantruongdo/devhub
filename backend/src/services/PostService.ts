@@ -14,16 +14,18 @@ import {
 } from "../constants/code";
 import { UserRepo } from "../repositories/UserRepo";
 import { AppDataSource } from "../config/data-source";
-import { Post } from "../entities/Post";
+import { Post, PostVisibility } from "../entities/Post";
 import { PostLike } from "../entities/PostLike";
 import { Comment } from "../entities/Comment";
 import { CommentLike } from "../entities/CommentLike";
 import { Notification, NotificationType } from "../entities/Notification";
 import { NotificationService } from "./NotificationService";
 import { notificationQueue } from "../queues";
-import { NotificationJobName } from "../constants";
+import { FEED_SIZE, NotificationJobName } from "../constants";
 import { redis } from "../libs/redis";
 import { CommentRepo } from "../repositories/CommentRepo";
+import { CacheService } from "./CacheService";
+import { decodeCursor, encodeCursor, scorePost } from "../libs/utils";
 
 @Service()
 export class PostService {
@@ -32,6 +34,7 @@ export class PostService {
     private readonly userRepo: UserRepo,
     private readonly commentRepo: CommentRepo,
     private readonly notificationService: NotificationService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async findOne(id: number, user: UserProps) {
@@ -122,51 +125,153 @@ export class PostService {
     }
   }
 
-  async getFeed(user: UserProps) {
+  async getFeed(user: UserProps, cursor?: string) {
     try {
       const currentUser = await this.userRepo.findById(user.id);
 
       if (!currentUser) {
         throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
       }
-      const followingIds = currentUser.followings.map((user) => user.id);
-      return this.postRepo.findAllFeed(user.id, followingIds);
+
+      const followingsIds = currentUser.followings.map((u) => u.id);
+      const followingsSet = new Set(followingsIds);
+
+      const version = Number(await redis.get(`feed_version:${user.id}`)) || 0;
+
+      // Cache key cho toàn bộ scored list (không phụ thuộc cursor)
+      const scoredCacheKey = `feed:${user.id}:v${version}:scored`;
+
+      let scored = [];
+
+      const cachedScored = await redis.get(scoredCacheKey);
+      if (cachedScored) {
+        // Dùng lại scored list đã tính sẵn
+        scored = JSON.parse(cachedScored);
+      } else {
+        const posts = await this.postRepo.findFeedCandidates(user.id);
+
+        scored = posts.map((post) => ({
+          ...post,
+          score: scorePost(post, user.id, followingsSet),
+        }));
+
+        scored.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return b.id - a.id;
+        });
+
+        // Cache scored list 60 giây
+        await redis.set(scoredCacheKey, JSON.stringify(scored), "EX", 60);
+      }
+
+      // Apply cursor filter
+      let filtered = scored;
+      const cursorObj = decodeCursor(cursor);
+
+      if (cursorObj) {
+        filtered = scored.filter((p: Post & { score: number }) => {
+          if (p.score < cursorObj.score) return true;
+          if (p.score === cursorObj.score && p.id < cursorObj.postId)
+            return true;
+          return false;
+        });
+      }
+
+      // Pagination
+      const page = filtered.slice(0, FEED_SIZE);
+
+      // Next cursor
+      let nextCursor: string | null = null;
+      if (filtered.length > FEED_SIZE) {
+        const last = page[page.length - 1];
+        nextCursor = encodeCursor(last.score, last.id);
+      }
+
+      // Attach isLiked (LUÔN chạy, không cache)
+      const postIds = page.map((p: Post) => p.id);
+
+      const interactionMap = await this.postRepo.getPostInteractionMetaForUser(
+        user.id,
+        postIds,
+      );
+
+      const finalData = page.map((post: Post) => {
+        const meta = interactionMap.get(post.id);
+        return {
+          ...post,
+          isLiked: meta?.isLiked ?? false,
+          likeCount: meta?.likeCount ?? 0,
+          commentCount: meta?.commentCount ?? 0,
+          shareCount: meta?.shareCount ?? 0,
+        };
+      });
+
+      return {
+        posts: finalData,
+        nextCursor,
+      };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
   }
 
   async create(data: CreatePostDto, user: UserProps) {
-    const post = await this.postRepo.save({
-      ...data,
-      authorId: user.id,
-    });
+    try {
+      const post = await this.postRepo.save({
+        ...data,
+        authorId: user.id,
+      });
 
-    return this.postRepo.findOne({
-      where: { id: post.id },
-      relations: {
-        author: true,
-      },
-      select: {
-        id: true,
-        content: true,
-        images: true,
-        visibility: true,
-        likeCount: true,
-        commentCount: true,
-        shareCount: true,
-        createdAt: true,
-        updatedAt: true,
-        author: {
-          id: true,
-          username: true,
-          fullName: true,
-          email: true,
-          avatar: true,
-          isVerified: true,
+      // Invalidate feed của chính mình
+      // Invalidate = làm cho cache cũ trở nên “không còn dùng nữa”
+      // Version sẽ tự tăng khi incr
+      await redis.incr(`feed_version:${user.id}`);
+
+      // Khi user đăng bài PUBLIC
+      // tất cả followers của user đó phải thấy bài mới
+      // Nên feed cache của họ phải bị “invalidate”
+      if (post.visibility === PostVisibility.PUBLIC) {
+        const followerIds = await this.userRepo.getFollowerIds(user.id);
+
+        if (followerIds.length) {
+          const pipeline = redis.pipeline();
+
+          followerIds.forEach((followerId) => {
+            pipeline.incr(`feed_version:${followerId}`);
+          });
+
+          await pipeline.exec();
+        }
+      }
+
+      return this.postRepo.findOne({
+        where: { id: post.id },
+        relations: {
+          author: true,
         },
-      },
-    });
+        select: {
+          id: true,
+          content: true,
+          images: true,
+          visibility: true,
+          likeCount: true,
+          commentCount: true,
+          shareCount: true,
+          createdAt: true,
+          updatedAt: true,
+          author: {
+            id: true,
+            username: true,
+            fullName: true,
+            email: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+      });
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
   }
 
   async update(id: number, data: UpdatePostDto, user: UserProps) {
@@ -180,11 +285,42 @@ export class PostService {
       if (post.authorId !== user.id)
         throw new BadRequestError(PostCodeError.UNAUTHORIZED);
 
-      const updatedPost = Object.assign(post, data);
+      // Lưu visibility cũ
+      const oldVisibility = post.visibility;
 
+      // Update dữ liệu
+      const updatedPost = Object.assign(post, data);
       await this.postRepo.save(updatedPost);
+
+      // Clear cache post detail
+      await this.cacheService.clearPost(id);
+
+      // Invalidate feed của chính mình
+      await redis.incr(`feed_version:${user.id}`);
+
+      // Xác định có cần invalidate followers không
+      const isNowPublic = updatedPost.visibility === PostVisibility.PUBLIC;
+      const wasPublic = oldVisibility === PostVisibility.PUBLIC;
+
+      const shouldInvalidateFollowers = isNowPublic || wasPublic;
+
+      // Invalidate feed followers nếu cần
+      if (shouldInvalidateFollowers) {
+        const followerIds = await this.userRepo.getFollowerIds(user.id);
+
+        if (followerIds.length) {
+          const pipeline = redis.pipeline();
+
+          followerIds.forEach((followerId) => {
+            pipeline.incr(`feed_version:${followerId}`);
+          });
+
+          await pipeline.exec();
+        }
+      }
+
       return this.postRepo.findOne({
-        where: { id: post.id },
+        where: { id: updatedPost.id },
         relations: {
           author: true,
         },
@@ -225,8 +361,30 @@ export class PostService {
         throw new BadRequestError(PostCodeError.UNAUTHORIZED);
 
       post.deletedAt = new Date();
+      await this.postRepo.save(post);
 
-      return this.postRepo.save(post);
+      // Clear cache post detail
+      await this.cacheService.clearPost(id);
+
+      // Invalidate feed của chính mình
+      await redis.incr(`feed_version:${user.id}`);
+
+      // Nếu post từng PUBLIC → invalidate followers
+      if (post.visibility === PostVisibility.PUBLIC) {
+        const followerIds = await this.userRepo.getFollowerIds(user.id);
+
+        if (followerIds.length) {
+          const pipeline = redis.pipeline();
+
+          followerIds.forEach((followerId) => {
+            pipeline.incr(`feed_version:${followerId}`);
+          });
+
+          await pipeline.exec();
+        }
+      }
+
+      return { success: true };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
