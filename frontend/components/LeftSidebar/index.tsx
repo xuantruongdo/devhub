@@ -39,7 +39,7 @@ export default function LeftSidebar() {
     {
       icon: Compass,
       label: t("leftSidebar.explore"),
-      href: `/${locale}/explore`,
+      href: `#`,
     },
     {
       icon: Mail,
@@ -49,7 +49,7 @@ export default function LeftSidebar() {
     {
       icon: Bookmark,
       label: t("leftSidebar.saved"),
-      href: `/${locale}/saved`,
+      href: `#`,
     },
   ];
 
@@ -71,9 +71,9 @@ export default function LeftSidebar() {
             (item.href !== `/${locale}` && pathname.startsWith(item.href));
 
           return (
-            <button
+            <Link
+              href={item.href}
               key={item.label}
-              onClick={() => router.push(item.href)}
               className={`flex items-center gap-4 px-6 py-3 rounded-full transition font-semibold text-lg ${
                 isActive
                   ? "bg-primary text-primary-foreground"
@@ -82,7 +82,7 @@ export default function LeftSidebar() {
             >
               <item.icon className="h-6 w-6" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           );
         })}
 

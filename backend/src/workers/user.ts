@@ -79,6 +79,7 @@ export class UserWorker {
         isVerified: user.isVerified,
         followerCount: user.followerCount,
       },
+      doc_as_upsert: true,
     });
   }
 

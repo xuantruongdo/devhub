@@ -101,4 +101,25 @@ export class UserRepo extends BaseRepo<User> {
 
     return rows.map((r) => r.id);
   }
+
+  async getSuggestedUsers(currentUserId: number) {
+    const currentUser = await this.findOne({
+      where: { id: currentUserId },
+      relations: {
+        followings: true,
+      },
+    });
+
+    const followingIds = currentUser?.followings.map((u) => u.id) || [];
+
+    return this.createQueryBuilder("user")
+      .where("user.id != :currentUserId", { currentUserId })
+      .andWhere(
+        followingIds.length ? "user.id NOT IN (:...followingIds)" : "1=1",
+        { followingIds },
+      )
+      .orderBy("user.createdAt", "DESC")
+      .limit(5)
+      .getMany();
+  }
 }
