@@ -1,6 +1,5 @@
 import { getIO } from "../config/socket";
 import { Conversation } from "../entities/Conversation";
-import { Notification } from "../entities/Notification";
 import { MessageWithSender, NotificationWithSender } from "../types/socket";
 
 export const SocketEvents = {

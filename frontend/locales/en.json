@@ -85,6 +85,12 @@
     "searchPlaceholder": "Search posts, people...",
     "settings": "Settings",
     "logout": "Logout",
+    "search": {
+      "loading": "Searching...",
+      "noResults": "No results found",
+      "users": "Users",
+      "viewAll": "View all results →"
+    },
     "notification": {
       "title": "Notifications",
       "markAll": "Mark all as read",
@@ -118,6 +124,15 @@
       "en": "English",
       "vi": "Vietnamese"
     }
+  },
+  "search": {
+    "searching": "Searching...",
+    "loading": "Loading...",
+    "loadMore": "Load more",
+    "followers": "Followers",
+    "noResults": "No results found",
+    "noMoreResult": "No more result",
+    "results": "Search results for"
   },
   "composePost": {
     "placeholder": "What's on your mind?",

@@ -13,3 +13,7 @@ export const emailQueue = new Queue(QueueName.EMAIL_QUEUE, {
 export const notificationQueue = new Queue(QueueName.NOTIFICATION_QUEUE, {
   connection,
 });
+
+export const userQueue = new Queue(QueueName.USER_QUEUE, {
+  connection,
+});

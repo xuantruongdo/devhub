@@ -27,6 +27,15 @@ class UserService extends BaseService {
   async getListFollow(id: number, followType: FollowType) {
     return await instance.get(`/users/${id}/follow/${followType}`);
   }
+
+  async search(params: {
+    q: string;
+    from?: number;
+    size?: number;
+    verified?: boolean;
+  }) {
+    return await instance.get("/users/search", { params });
+  }
 }
 
 const userService = new UserService();
