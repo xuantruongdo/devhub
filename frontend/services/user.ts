@@ -36,6 +36,10 @@ class UserService extends BaseService {
   }) {
     return await instance.get("/users/search", { params });
   }
+
+  async suggest() {
+    return await instance.get(`/users/suggest`);
+  }
 }
 
 const userService = new UserService();

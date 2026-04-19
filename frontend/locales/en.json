@@ -149,6 +149,13 @@
     "saved": "Saved",
     "post": "Post"
   },
+  "rightSidebar": {
+    "suggestedForYou": "Suggested for you",
+    "loading": "Loading...",
+    "noSuggestions": "No suggestions available",
+    "follow": "Follow",
+    "following": "Following"
+  },
   "post": {
     "edit": "Edit",
     "delete": "Delete",

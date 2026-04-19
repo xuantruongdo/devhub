@@ -149,6 +149,13 @@
     "saved": "Đã lưu",
     "post": "Đăng"
   },
+  "rightSidebar": {
+    "suggestedForYou": "Gợi ý cho bạn",
+    "loading": "Đang tải...",
+    "noSuggestions": "Không có gợi ý nào",
+    "follow": "Theo dõi",
+    "following": "Đang theo dõi"
+  },
   "post": {
     "edit": "Chỉnh sửa",
     "delete": "Xóa",

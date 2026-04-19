@@ -1,142 +1,136 @@
 "use client";
 
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-
-const trendingTopics = [
-  { tag: "#ReactJS", posts: "125K posts" },
-  { tag: "#WebDevelopment", posts: "98K posts" },
-  { tag: "#JavaScript", posts: "234K posts" },
-];
-
-const suggestedUsers = [
-  {
-    name: "Emily Rodriguez",
-    avatar: "",
-    handle: "@emilyrodriguez",
-    isVerified: false,
-  },
-  {
-    name: "James Thompson",
-    avatar: "",
-    handle: "@jamesthompson",
-    isVerified: true,
-  },
-  {
-    name: "Lisa Anderson",
-    avatar: "",
-    handle: "@lisaanderson",
-    isVerified: false,
-  },
-  {
-    name: "Chris Davidson",
-    avatar: "",
-    handle: "@chrisdavidson",
-    isVerified: true,
-  },
-];
+import { toastError } from "@/lib/toast";
+import userService from "@/services/user";
+import Image from "next/image";
+import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
+import { User } from "@/types/user";
 
 export default function RightSidebar() {
-  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
+  const { t, locale } = useTranslation();
 
-  const handleFollow = (handle: string) => {
-    const newFollowed = new Set(followedUsers);
-    if (newFollowed.has(handle)) {
-      newFollowed.delete(handle);
-    } else {
-      newFollowed.add(handle);
+  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchSuggested = async () => {
+    try {
+      setLoading(true);
+      const { data } = await userService.suggest();
+      setSuggestedUsers(data);
+    } catch (error: any) {
+      toastError(error);
+    } finally {
+      setLoading(false);
     }
-    setFollowedUsers(newFollowed);
+  };
+
+  useEffect(() => {
+    fetchSuggested();
+  }, []);
+
+  const handleFollow = async (userId: number) => {
+    const prevState = suggestedUsers;
+
+    try {
+      setSuggestedUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? { ...user, isFollowing: !user.isFollowing }
+            : user,
+        ),
+      );
+
+      await userService.toggleFollow(userId);
+    } catch (error: any) {
+      setSuggestedUsers(prevState);
+      toastError(error);
+    }
   };
 
   return (
     <aside className="hidden xl:flex w-80 bg-card flex-col border-l border-border overflow-hidden">
-      <div className="p-4">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search..."
-            className="w-full pl-10 pr-4 py-6 rounded-full bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition"
-          />
-        </div>
-      </div>
-
-      <Card className="mx-3 rounded-2xl">
-        <CardHeader className="pb-0">
-          <h2 className="text-xl font-bold text-foreground">{`What's Trending`}</h2>
-        </CardHeader>
-        <CardContent className="p-0">
-          {trendingTopics.map((topic, index) => (
-            <button
-              key={index}
-              className={`w-full px-4 py-4 hover:bg-secondary transition text-left ${
-                index !== trendingTopics.length - 1
-                  ? "border-b border-border"
-                  : ""
-              }`}
-            >
-              <p className="font-bold text-foreground">{topic.tag}</p>
-              <p className="text-sm text-muted-foreground">{topic.posts}</p>
-            </button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="mx-3 rounded-2xl bg-muted mt-4">
-        <CardHeader className="pb-0">
+      <div className="mt-4 mx-3 rounded-2xl bg-muted">
+        <div className="p-4 pb-2">
           <h2 className="text-xl font-bold text-foreground">
-            Suggested for you
+            {t("rightSidebar.suggestedForYou")}
           </h2>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div>
-            {suggestedUsers.map((user, index) => (
+        </div>
+
+        <div>
+          {loading ? (
+            <p className="px-4 py-3 text-sm text-muted-foreground">
+              {t("rightSidebar.loading")}
+            </p>
+          ) : suggestedUsers.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-muted-foreground">
+              {t("rightSidebar.noSuggestions")}
+            </p>
+          ) : (
+            suggestedUsers.map((user, index) => (
               <div
-                key={index}
-                className="flex items-center justify-between px-4 py-3 border-b border-border hover:bg-secondary transition"
+                key={user.id}
+                className={`flex items-center justify-between px-4 py-3 transition ${
+                  index !== suggestedUsers.length - 1
+                    ? "border-b border-border"
+                    : ""
+                }`}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Avatar size="lg">
+                <Link
+                  href={`/${locale}/${user.username}`}
+                  className="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <Avatar className="w-10 h-10">
                     {user.avatar ? (
-                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarImage src={user.avatar} />
                     ) : (
                       <AvatarFallback>
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.fullName?.charAt(0)?.toUpperCase()}
                       </AvatarFallback>
                     )}
                   </Avatar>
+
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-foreground truncate">
-                      {user.name}
-                    </p>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <p className="font-bold text-foreground truncate">
+                        {user.fullName}
+                      </p>
+
+                      {user.isVerified && (
+                        <Image
+                          src="/verification-badge.svg"
+                          alt="verified"
+                          width={16}
+                          height={16}
+                          className="flex-shrink-0"
+                        />
+                      )}
+                    </div>
+
                     <p className="text-sm text-muted-foreground truncate">
-                      {user.handle}
+                      @{user.username}
                     </p>
                   </div>
-                </div>
-                <Button
-                  onClick={() => handleFollow(user.handle)}
-                  className={`px-4 py-1.5 rounded-full font-bold transition flex-shrink-0 ml-2 text-sm ${
-                    followedUsers.has(user.handle)
-                      ? "bg-muted text-foreground border border-border hover:bg-destructive/10"
-                      : "bg-primary text-primary-foreground hover:shadow-lg"
+                </Link>
+
+                <button
+                  onClick={() => handleFollow(user.id)}
+                  className={`px-4 py-1.5 rounded-full font-bold transition text-sm flex-shrink-0 ml-2 disabled:opacity-50 ${
+                    user.isFollowing
+                      ? "bg-muted text-foreground border border-border"
+                      : "bg-primary text-primary-foreground hover:opacity-90"
                   }`}
                 >
-                  {followedUsers.has(user.handle) ? "Following" : "Follow"}
-                </Button>
+                  {user.isFollowing
+                    ? t("rightSidebar.following")
+                    : t("rightSidebar.follow")}
+                </button>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mt-auto p-4 text-xs text-muted-foreground">
-        <p>© 2024 DevHub. All rights reserved.</p>
+            ))
+          )}
+        </div>
       </div>
     </aside>
   );

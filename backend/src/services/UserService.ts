@@ -448,11 +448,15 @@ export class UserService {
 
         const currentUser = await manager.findOne(User, {
           where: { id: currentUserId },
-          relations: ["followings"],
+          relations: {
+            followings: true,
+          },
         });
         const targetUser = await manager.findOne(User, {
           where: { id: targetUserId },
-          relations: ["followers"],
+          relations: {
+            followers: true,
+          },
         });
 
         if (!currentUser || !targetUser) {
@@ -578,5 +582,9 @@ export class UserService {
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
+  }
+
+  async suggest(user: UserProps) {
+    return this.userRepo.getSuggestedUsers(user.id);
   }
 }

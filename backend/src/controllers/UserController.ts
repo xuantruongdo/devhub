@@ -86,6 +86,11 @@ export class UserController {
     );
   }
 
+  @Get("/suggest")
+  async suggest(@CurrentUser() user: UserProps) {
+    return await this.userService.suggest(user);
+  }
+
   @Get("/:username")
   async findByUsername(
     @Param("username") username: string,
