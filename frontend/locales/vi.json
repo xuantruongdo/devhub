@@ -85,6 +85,12 @@
     "searchPlaceholder": "Tìm kiếm bài viết, người dùng...",
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
+    "search": {
+      "loading": "Đang tìm kiếm...",
+      "noResults": "Không tìm thấy kết quả",
+      "users": "Người dùng",
+      "viewAll": "Xem tất cả kết quả →"
+    },
     "notification": {
       "title": "Thông báo",
       "markAll": "Đọc tất cả",
@@ -118,6 +124,15 @@
       "en": "Tiếng Anh",
       "vi": "Tiếng Việt"
     }
+  },
+  "search": {
+    "searching": "Đang tìm kiếm...",
+    "loading": "Đang tải...",
+    "loadMore": "Tải thêm",
+    "followers": "Người theo dõi",
+    "noResults": "Không tìm thấy kết quả",
+    "noMoreResult": "Không còn kết quả nào nữa",
+    "results": "Kết quả tìm kiếm cho"
   },
   "composePost": {
     "placeholder": "Bạn đang nghĩ gì?",

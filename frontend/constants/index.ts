@@ -1,5 +1,6 @@
 export const LIMIT = 10;
 export const MESSAGE_LIMIT = 20;
+export const SEARCH_LIMIT = 20;
 
 export enum LocaleType {
   EN = "en",

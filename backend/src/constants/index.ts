@@ -10,6 +10,7 @@ export enum FollowType {
 export enum QueueName {
   EMAIL_QUEUE = "email-queue",
   NOTIFICATION_QUEUE = "notification-queue",
+  USER_QUEUE = "user-queue",
 }
 
 export enum EmailJobName {
@@ -23,4 +24,10 @@ export enum NotificationJobName {
   LIKE_COMMENT = "like_comment",
   COMMENT = "comment",
   FOLLOW = "follow",
+}
+
+export enum UserJobName {
+  CREATE_USER_TO_ES = "create_user_to_es",
+  UPDATE_USER_TO_ES = "update_user_to_es",
+  DELETE_USER_FROM_ES = "delete_user_to_es",
 }

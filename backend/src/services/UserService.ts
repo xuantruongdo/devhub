@@ -18,12 +18,18 @@ import { UserProps } from "../types/auth";
 import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { EmailJobName, FollowType, NotificationJobName } from "../constants";
+import {
+  EmailJobName,
+  FollowType,
+  NotificationJobName,
+  UserJobName,
+} from "../constants";
 import { Notification, NotificationType } from "../entities/Notification";
 import { NotificationService } from "./NotificationService";
-import { emailQueue, notificationQueue } from "../queues";
+import { emailQueue, notificationQueue, userQueue } from "../queues";
 import { redis } from "../libs/redis";
 import { CacheService } from "./CacheService";
+import { SearchService } from "./SearchService";
 
 @Service()
 export class UserService {
@@ -33,6 +39,7 @@ export class UserService {
     private readonly jwtService: JwtService,
     private readonly notificationService: NotificationService,
     private readonly cacheService: CacheService,
+    private readonly searchService: SearchService,
   ) {}
 
   async register(data: RegisterDto) {
@@ -71,7 +78,11 @@ export class UserService {
         token: emailToken,
       });
 
-      const { password, ...rest } = user;
+      await userQueue.add(UserJobName.CREATE_USER_TO_ES, {
+        userId: user.id,
+      });
+
+      const { password, refreshToken, ...rest } = user;
       return rest;
     } catch (error: any) {
       throw new BadRequestError(error.message);
@@ -148,52 +159,56 @@ export class UserService {
   }
 
   async loginWithGoogle(body: LoginWithGoogleDto, res: Response) {
-    const { email, fullName, avatar } = body;
+    try {
+      const { email, fullName, avatar } = body;
 
-    let user = await this.userRepo.findByEmail(email);
-    if (!user) {
-      const username = await generateUsername(fullName, this.userRepo);
-      const newUser = this.userRepo.create({
-        email,
-        username,
-        fullName,
-        avatar,
-        isActive: true,
+      let user = await this.userRepo.findByEmail(email);
+      if (!user) {
+        const username = await generateUsername(fullName, this.userRepo);
+        const newUser = this.userRepo.create({
+          email,
+          username,
+          fullName,
+          avatar,
+          isActive: true,
+        });
+
+        user = await this.userRepo.save(newUser);
+      }
+
+      const payload = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+      };
+
+      const accessToken = this.jwtService.signAccessToken(payload);
+      const refreshToken = this.jwtService.signRefreshToken(payload);
+
+      user.refreshToken = refreshToken;
+      user.lastLogin = new Date();
+      await this.userRepo.update(user.id, {
+        refreshToken: user.refreshToken,
+        lastLogin: user.lastLogin,
       });
 
-      user = await this.userRepo.save(newUser);
+      const { password: _, refreshToken: __, ...userData } = user;
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+      });
+
+      return { accessToken, user: userData };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
     }
-
-    const payload = {
-      id: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-      isVerified: user.isVerified,
-    };
-
-    const accessToken = this.jwtService.signAccessToken(payload);
-    const refreshToken = this.jwtService.signRefreshToken(payload);
-
-    user.refreshToken = refreshToken;
-    user.lastLogin = new Date();
-    await this.userRepo.update(user.id, {
-      refreshToken: user.refreshToken,
-      lastLogin: user.lastLogin,
-    });
-
-    const { password: _, refreshToken: __, ...userData } = user;
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
-    });
-
-    return { accessToken, user: userData };
   }
 
   async refresh(req: Request, res: Response) {
@@ -315,6 +330,10 @@ export class UserService {
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
+      await userQueue.add(UserJobName.UPDATE_USER_TO_ES, {
+        userId: id,
+      });
+
       return { user: updatedUser, accessToken };
     } catch (error: any) {
       throw new BadRequestError(error.message);
@@ -359,6 +378,10 @@ export class UserService {
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      await userQueue.add(UserJobName.UPDATE_USER_TO_ES, {
+        userId: id,
       });
 
       return { user: updatedUser, accessToken };
@@ -413,86 +436,104 @@ export class UserService {
   }
 
   async toggleFollow(targetUserId: number, user: UserProps) {
-    let notification = null;
-    let recipientId: number | null = null;
+    try {
+      let notification = null;
+      let recipientId: number | null = null;
 
-    const result = await AppDataSource.transaction(async (manager) => {
-      const currentUserId = user.id;
-      if (currentUserId === targetUserId) {
-        throw new BadRequestError(UserCodeError.CANNOT_FOLLOW_YOURSELF);
-      }
+      const result = await AppDataSource.transaction(async (manager) => {
+        const currentUserId = user.id;
+        if (currentUserId === targetUserId) {
+          throw new BadRequestError(UserCodeError.CANNOT_FOLLOW_YOURSELF);
+        }
 
-      const currentUser = await manager.findOne(User, {
-        where: { id: currentUserId },
-        relations: ["followings"],
-      });
-      const targetUser = await manager.findOne(User, {
-        where: { id: targetUserId },
-        relations: ["followers"],
-      });
+        const currentUser = await manager.findOne(User, {
+          where: { id: currentUserId },
+          relations: ["followings"],
+        });
+        const targetUser = await manager.findOne(User, {
+          where: { id: targetUserId },
+          relations: ["followers"],
+        });
 
-      if (!currentUser || !targetUser) {
-        throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
-      }
+        if (!currentUser || !targetUser) {
+          throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+        }
 
-      const isFollowing = currentUser.followings.some(
-        (u) => u.id === targetUserId,
-      );
-
-      if (isFollowing) {
-        // UNFOLLOW
-        currentUser.followings = currentUser.followings.filter(
-          (u) => u.id !== targetUserId,
+        const isFollowing = currentUser.followings.some(
+          (u) => u.id === targetUserId,
         );
+
+        if (isFollowing) {
+          // UNFOLLOW
+          currentUser.followings = currentUser.followings.filter(
+            (u) => u.id !== targetUserId,
+          );
+          await manager.save(currentUser);
+
+          await manager.decrement(
+            User,
+            { id: targetUserId },
+            "followerCount",
+            1,
+          );
+          await manager.decrement(
+            User,
+            { id: currentUserId },
+            "followingCount",
+            1,
+          );
+
+          return {
+            following: false,
+            followerCount: targetUser.followerCount - 1,
+          };
+        }
+
+        currentUser.followings.push(targetUser);
         await manager.save(currentUser);
 
-        await manager.decrement(User, { id: targetUserId }, "followerCount", 1);
-        await manager.decrement(
+        await manager.increment(User, { id: targetUserId }, "followerCount", 1);
+        await manager.increment(
           User,
           { id: currentUserId },
           "followingCount",
           1,
         );
 
+        if (currentUserId !== targetUserId) {
+          notification = await this.notificationService.create({
+            recipientId: targetUserId,
+            senderId: currentUserId,
+            type: NotificationType.FOLLOW,
+          });
+
+          recipientId = targetUserId;
+        }
+
         return {
-          following: false,
-          followerCount: targetUser.followerCount - 1,
+          following: true,
+          followerCount: targetUser.followerCount + 1,
         };
-      }
-
-      currentUser.followings.push(targetUser);
-      await manager.save(currentUser);
-
-      await manager.increment(User, { id: targetUserId }, "followerCount", 1);
-      await manager.increment(User, { id: currentUserId }, "followingCount", 1);
-
-      if (currentUserId !== targetUserId) {
-        notification = await this.notificationService.create({
-          recipientId: targetUserId,
-          senderId: currentUserId,
-          type: NotificationType.FOLLOW,
-        });
-
-        recipientId = targetUserId;
-      }
-
-      return {
-        following: true,
-        followerCount: targetUser.followerCount + 1,
-      };
-    });
-
-    if (notification && recipientId) {
-      await notificationQueue.add(NotificationJobName.FOLLOW, {
-        recipientId,
-        notification: {
-          ...(notification as Notification),
-          sender: user,
-        },
       });
-    }
 
-    return result;
+      if (notification && recipientId) {
+        await notificationQueue.add(NotificationJobName.FOLLOW, {
+          recipientId,
+          notification: {
+            ...(notification as Notification),
+            sender: user,
+          },
+        });
+      }
+
+      await userQueue.add(UserJobName.UPDATE_USER_TO_ES, {
+        userId: targetUserId,
+      });
+
+      return result;
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
   }
 
   async getListFollow(
@@ -526,6 +567,14 @@ export class UserService {
         isVerified: u.isVerified,
         isFollowing: !!u.followers.find((f) => f.id === currentUser.id),
       }));
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async search(q: string, from: number, size: number, verified?: boolean) {
+    try {
+      return this.searchService.search({ q, from, size, verified });
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

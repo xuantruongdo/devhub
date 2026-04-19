@@ -8,6 +8,7 @@ import {
   CurrentUser,
   Param,
   Put,
+  QueryParam,
 } from "routing-controllers";
 import { Service } from "typedi";
 import { UserService } from "../services/UserService";
@@ -60,6 +61,29 @@ export class UserController {
   @Get("/current")
   async getCurrent(@CurrentUser() user: UserProps) {
     return user;
+  }
+
+  @Get("/search")
+  async search(
+    @QueryParam("q") q: string,
+    @QueryParam("from") from: number = 0,
+    @QueryParam("size") size: number = 20,
+    @QueryParam("verified") verified?: string,
+  ) {
+    if (!q || !q.trim()) {
+      return {
+        hits: [],
+        total: 0,
+        took: 0,
+      };
+    }
+
+    return this.userService.search(
+      q,
+      Number(from) || 0,
+      Number(size) || 20,
+      verified === undefined ? undefined : verified === "true",
+    );
   }
 
   @Get("/:username")
