@@ -18,6 +18,7 @@ export default function ProfilePage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function ProfilePage() {
         setUser(userRes.data);
         dispatch(setUserPosts(postRes.data));
       } catch (error: any) {
+        setNotFound(true);
         toastError(t(`profile.response.${error}`));
       } finally {
         setLoading(false);
@@ -44,7 +46,7 @@ export default function ProfilePage() {
 
   if (loading) return <LoadingPage />;
 
-  if (!user) return <NotFound />;
+  if (!user && notFound) return <NotFound />;
 
-  return <Profile user={user} />;
+  return <Profile user={user!} />;
 }
