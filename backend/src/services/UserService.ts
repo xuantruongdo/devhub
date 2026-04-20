@@ -115,6 +115,10 @@ export class UserService {
         throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
       }
 
+      if (!user.password) {
+        throw new UnauthorizedError(AuthCodeError.ACCOUNT_USE_GOOGLE_LOGIN);
+      }
+
       const isMatch = await bcrypt.compare(data.password, user.password);
       if (!isMatch) {
         throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
@@ -154,6 +158,7 @@ export class UserService {
 
       return { accessToken, user: userData };
     } catch (error: any) {
+      console.log(error);
       throw new BadRequestError(error.message);
     }
   }
@@ -174,6 +179,10 @@ export class UserService {
         });
 
         user = await this.userRepo.save(newUser);
+
+        await userQueue.add(UserJobName.CREATE_USER_TO_ES, {
+          userId: user.id,
+        });
       }
 
       const payload = {
@@ -457,6 +466,34 @@ export class UserService {
         ...profile,
         isFollowing,
       };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async findMetadata(username: string) {
+    try {
+      const profileKey = `user:username:${username}`;
+
+      let profile = null;
+
+      const cachedProfile = await redis.get(profileKey);
+
+      if (cachedProfile) {
+        profile = JSON.parse(cachedProfile);
+      } else {
+        const foundUser = await this.userRepo.findByUsername(username);
+
+        if (!foundUser) {
+          throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+        }
+
+        profile = foundUser;
+
+        await redis.set(profileKey, JSON.stringify(profile), "EX", 3600);
+      }
+
+      return profile;
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }

@@ -8,9 +8,9 @@ import {
 import { UserProps } from "../types/auth";
 import { BadRequestError, UnauthorizedError } from "routing-controllers";
 import {
-  AuthCodeError,
   CommentCodeError,
   PostCodeError,
+  UserCodeError,
 } from "../constants/code";
 import { UserRepo } from "../repositories/UserRepo";
 import { AppDataSource } from "../config/data-source";
@@ -130,7 +130,7 @@ export class PostService {
       const currentUser = await this.userRepo.findById(user.id);
 
       if (!currentUser) {
-        throw new UnauthorizedError(AuthCodeError.INVALID_CREDENTIALS);
+        throw new UnauthorizedError(UserCodeError.USER_NOT_FOUND);
       }
 
       const followingsIds = currentUser.followings.map((u) => u.id);

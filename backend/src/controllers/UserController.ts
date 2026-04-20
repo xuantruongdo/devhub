@@ -102,6 +102,12 @@ export class UserController {
     return await this.userService.findByUsername(username, user);
   }
 
+  @Public()
+  @Get("/metadata/:username")
+  async findMetadata(@Param("username") username: string) {
+    return await this.userService.findMetadata(username);
+  }
+
   @Get("/:username/posts")
   async findPostsByUsername(
     @Param("username") username: string,
