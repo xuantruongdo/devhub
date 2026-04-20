@@ -49,7 +49,7 @@ export function LoginForm() {
 
       dispatch(setCurrentUser(data.user));
       localStorage.setItem("accessToken", data.accessToken);
-      
+
       toastSuccess(t("auth.login.success.title"));
       router.push(`/${locale}`);
     } catch (error) {

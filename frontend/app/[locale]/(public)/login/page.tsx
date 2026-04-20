@@ -1,12 +1,33 @@
 import { LoginForm } from "@/components/Auth/LoginForm";
 import type { Metadata } from "next";
+import { getTranslations } from "@/lib/i18n";
+import type { Locale } from "@/types/i18n";
 
-export const metadata: Metadata = {
-  title: "Sign in",
-  description: "Sign in to your DevHub account and connect with developers.",
-};
+type Params = Promise<{ locale: Locale }>;
 
-const LoginPage = () => {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  const t = await getTranslations(locale);
+
+  return {
+    title: t.metadata.login.title,
+    description: t.metadata.login.description,
+
+    alternates: {
+      languages: {
+        en: "/en/login",
+        vi: "/vi/login",
+      },
+    },
+  };
+}
+
+const LoginPage = async () => {
   return <LoginForm />;
 };
 

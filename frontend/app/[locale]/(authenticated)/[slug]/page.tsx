@@ -10,12 +10,14 @@ import { useAppDispatch } from "@/redux/hooks";
 import { setUserPosts } from "@/redux/reducers/userPosts";
 import NotFound from "@/components/NotFound";
 import { useTranslation } from "@/hooks/useTranslation";
+import LoadingPage from "@/components/LoadingPage";
 
 export default function ProfilePage() {
   const { slug } = useParams();
   const { t, ready } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -32,11 +34,15 @@ export default function ProfilePage() {
         dispatch(setUserPosts(postRes.data));
       } catch (error: any) {
         toastError(t(`profile.response.${error}`));
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [slug, ready]);
+
+  if (loading) return <LoadingPage />;
 
   if (!user) return <NotFound />;
 

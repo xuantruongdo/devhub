@@ -1,4 +1,14 @@
 {
+  "metadata": {
+    "login": {
+      "title": "Đăng nhập",
+      "description": "Đăng nhập vào DevHub để kết nối với các lập trình viên."
+    },
+    "register": {
+      "title": "Đăng ký",
+      "description": "Tạo tài khoản DevHub và bắt đầu kết nối với các lập trình viên."
+    }
+  },
   "auth": {
     "register": {
       "title": "Tạo tài khoản",
@@ -75,9 +85,13 @@
         "loginRequired": "Vui lòng đăng nhập để tiếp tục"
       },
       "response": {
-        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không hợp lệ",
-        "ACCOUNT_DEACTIVATED": "Tài khoản của bạn đã bị vô hiệu hóa",
-        "UNKNOWN_ERROR": "Đã có lỗi xảy ra"
+        "EMAIL_ALREADY_EXISTS": "Email đã tồn tại.",
+        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
+        "ACCOUNT_DEACTIVATED": "Tài khoản đã bị vô hiệu hóa.",
+        "UNKNOWN_ERROR": "Có lỗi xảy ra.",
+        "MISSING_REFRESH_TOKEN": "Thiếu refresh token.",
+        "INVALID_REFRESH_TOKEN": "Refresh token không hợp lệ.",
+        "ACCOUNT_USE_GOOGLE_LOGIN": "Tài khoản này đăng nhập bằng Google. Vui lòng sử dụng Google để đăng nhập."
       }
     }
   },

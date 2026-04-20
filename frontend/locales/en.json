@@ -1,4 +1,14 @@
 {
+  "metadata": {
+    "login": {
+      "title": "Sign in",
+      "description": "Sign in to your DevHub account and connect with developers."
+    },
+    "register": {
+      "title": "Sign up",
+      "description": "Create your DevHub account and start connecting with developers."
+    }
+  },
   "auth": {
     "register": {
       "title": "Create an account",
@@ -75,9 +85,13 @@
         "loginRequired": "Please log in to continue"
       },
       "response": {
-        "INVALID_CREDENTIALS": "Invalid email or password",
-        "ACCOUNT_DEACTIVATED": "Your account has been deactivated",
-        "UNKNOWN_ERROR": "Something went wrong"
+        "EMAIL_ALREADY_EXISTS": "Email already exists.",
+        "INVALID_CREDENTIALS": "Invalid email or password.",
+        "ACCOUNT_DEACTIVATED": "Your account has been deactivated.",
+        "UNKNOWN_ERROR": "Something went wrong.",
+        "MISSING_REFRESH_TOKEN": "Missing refresh token.",
+        "INVALID_REFRESH_TOKEN": "Invalid refresh token.",
+        "ACCOUNT_USE_GOOGLE_LOGIN": "This account uses Google login. Please sign in with Google."
       }
     }
   },

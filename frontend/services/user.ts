@@ -12,6 +12,10 @@ class UserService extends BaseService {
     return await instance.get(`/users/${username}`);
   }
 
+  async findMetadata(username: string) {
+    return await instance.get(`/users/metadata/${username}`);
+  }
+
   async findPostsByUsername(username: string) {
     return await instance.get(`/users/${username}/posts`);
   }
