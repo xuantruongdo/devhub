@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import userService from "@/services/user";
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ locale: string; slug: string }>;
   children: React.ReactNode;
 };
 
