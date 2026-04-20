@@ -18,7 +18,7 @@ import { ChatController } from "./controllers/ChatController";
 import { initSocket } from "./config/socket";
 import http from "http";
 import { initWorkers } from "./config/worker";
-// import { initElasticSearch } from "./config/elastic-search";
+import { initElasticSearch } from "./config/elastic-search";
 
 useContainer(Container);
 
@@ -28,7 +28,7 @@ AppDataSource.initialize()
   .then(() => {
     console.log("✅ Connected to PostgreSQL");
 
-    // initElasticSearch();
+    initElasticSearch();
 
     initWorkers();
 
