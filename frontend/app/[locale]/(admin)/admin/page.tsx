@@ -1,194 +1,267 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Users,
+  CheckCircle2,
+  UserCheck,
+  FileText,
+  TrendingUp,
+  ExternalLink,
+  Heart,
+  MessageCircle,
+  Repeat2,
+} from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CheckCircle2, UserCheck, TrendingUp } from "lucide-react";
+import dashboardService from "@/services/dashboard";
+import { User } from "@/types/user";
+import { Post } from "@/types/post";
+import { toastError } from "@/lib/toast";
+import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "@/hooks/useTranslation";
+import Image from "next/image";
+import DashboardSkeleton from "@/components/Dashboard/DashboardSkeleton";
+import { DashboardStats } from "@/types";
+import moment from "moment";
+import { StatusBadge } from "@/components/Admin/StatusBadge";
+import UserPostChart from "@/components/Dashboard/UserPostChart";
+import UserGrowthChart from "@/components/Dashboard/UserGrowthChart";
 
-export const dashboardStats = {
-  totalUsers: 1284,
-  activeUsers: 842,
-  verifiedUsers: 963,
-  totalRevenue: 45230,
-};
-
-export type FakeUser = {
-  id: number;
-  fullName: string;
-  email: string;
-  avatar: string;
-  isActive: boolean;
-  role: "user" | "admin";
-};
-
-export const getUsers = (): FakeUser[] => {
-  return [
-    {
-      id: 1,
-      fullName: "Nguyễn Văn An",
-      email: "an.nguyen@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=an",
-      isActive: true,
-      role: "user",
-    },
-    {
-      id: 2,
-      fullName: "Trần Thị Bích",
-      email: "bich.tran@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bich",
-      isActive: true,
-      role: "user",
-    },
-    {
-      id: 3,
-      fullName: "Lê Hoàng Minh",
-      email: "minh.le@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=minh",
-      isActive: false,
-      role: "user",
-    },
-    {
-      id: 4,
-      fullName: "Phạm Thùy Dung",
-      email: "dung.pham@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=dung",
-      isActive: true,
-      role: "user",
-    },
-    {
-      id: 5,
-      fullName: "Hoàng Đức Anh",
-      email: "anh.hoang@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=anh",
-      isActive: true,
-      role: "admin",
-    },
-    {
-      id: 6,
-      fullName: "Võ Thanh Tùng",
-      email: "tung.vo@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=tung",
-      isActive: false,
-      role: "user",
-    },
-    {
-      id: 7,
-      fullName: "Đặng Ngọc Lan",
-      email: "lan.dang@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=lan",
-      isActive: true,
-      role: "user",
-    },
-    {
-      id: 8,
-      fullName: "Bùi Quốc Khánh",
-      email: "khanh.bui@example.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=khanh",
-      isActive: true,
-      role: "user",
-    },
-  ];
-};
 export default function AdminDashboard() {
-  const users = getUsers();
-  const stats = dashboardStats;
+  const { t, locale, ready } = useTranslation();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [userGrowth, setUserGrowth] = useState<any[]>([]);
+  const [postGrowth, setPostGrowth] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [statsRes, usersRes, postsRes, userGrowthRes, postGrowthRes] =
+          await Promise.all([
+            dashboardService.getStats(),
+            dashboardService.getRecentUsers(5),
+            dashboardService.getRecentPosts(5),
+            dashboardService.getUserGrowth(),
+            dashboardService.getPostGrowth(),
+          ]);
+
+        setStats(statsRes.data);
+        setUsers(usersRes.data);
+        setPosts(postsRes.data);
+        setUserGrowth(userGrowthRes.data);
+        setPostGrowth(postGrowthRes.data);
+      } catch (error: any) {
+        toastError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <DashboardSkeleton />;
+
+  if (!stats || !ready) return null;
 
   const statCards = [
     {
-      title: "Total Users",
+      title: t("admin.dashboard.stats.totalUsers"),
       value: stats.totalUsers,
       icon: Users,
-      description: "All registered users",
     },
     {
-      title: "Active Users",
+      title: t("admin.dashboard.stats.activeUsers"),
       value: stats.activeUsers,
       icon: UserCheck,
-      description: "Currently active",
     },
     {
-      title: "Verified Users",
+      title: t("admin.dashboard.stats.verifiedUsers"),
       value: stats.verifiedUsers,
       icon: CheckCircle2,
-      description: "Email verified",
     },
     {
-      title: "Revenue",
-      value: `$${stats.totalRevenue.toLocaleString()}`,
+      title: t("admin.dashboard.stats.totalPosts"),
+      value: stats.totalPosts,
+      icon: FileText,
+    },
+    {
+      title: t("admin.dashboard.stats.newUsersToday"),
+      value: stats.newUsersToday,
       icon: TrendingUp,
-      description: "Total revenue",
     },
   ];
 
   return (
     <div className="space-y-8 p-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">
-          Welcome to the admin dashboard
+        <h1 className="text-3xl font-bold">{t("admin.dashboard.title")}</h1>
+        <p className="text-muted-foreground mt-1">
+          {t("admin.dashboard.description")}
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="border border-border">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+            <Card key={stat.title}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm text-muted-foreground">
                   {stat.title}
                 </CardTitle>
                 <Icon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {stat.value}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {stat.description}
-                </p>
+                <div className="text-2xl font-bold">{stat.value}</div>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      <Card className="border border-border">
-        <CardHeader>
-          <CardTitle>Recent Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {users.slice(0, 5).map((user) => (
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>{t("admin.dashboard.chart.userPostGrowth")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserPostChart
+              data={userGrowth.map((u, i) => ({
+                date: u.date,
+                users: u.users,
+                posts: postGrowth[i]?.posts || 0,
+              }))}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>{t("admin.dashboard.chart.userGrowth")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UserGrowthChart data={userGrowth} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("admin.dashboard.users.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {users.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between border-b border-border pb-4 last:border-b-0"
+                className="flex items-center justify-between border-b pb-3 last:border-none"
               >
-                <div className="flex items-center gap-4">
-                  <img
-                    src={user.avatar}
-                    alt={user.fullName}
-                    className="h-10 w-10 rounded-full"
-                  />
+                <Link
+                  href={`/${locale}/${user.username}`}
+                  className="flex items-center gap-3"
+                  target="_blank"
+                >
+                  <Avatar size="lg">
+                    {user.avatar ? (
+                      <AvatarImage src={user.avatar} />
+                    ) : (
+                      <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                    )}
+                  </Avatar>
+
+                  <span className="font-medium">{user.fullName}</span>
+
+                  {user.isVerified && (
+                    <Image
+                      src="/verification-badge.svg"
+                      alt="verified"
+                      width={16}
+                      height={16}
+                    />
+                  )}
+
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
+
+                <StatusBadge value={user.isActive} />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("admin.dashboard.posts.title")}</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {posts.map((post) => (
+              <div key={post.id} className="border-b pb-3 last:border-none">
+                <div className="flex items-center gap-3 mb-2">
+                  <Link href={`/${locale}/${post.author.username}`}>
+                    <Avatar size="lg">
+                      {post.author.avatar ? (
+                        <AvatarImage src={post.author.avatar} />
+                      ) : (
+                        <AvatarFallback>
+                          {post.author.fullName.charAt(0)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </Link>
+
                   <div>
-                    <p className="font-medium text-foreground">
-                      {user.fullName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {user.email}
+                    <Link
+                      href={`/${locale}/${post.author.username}`}
+                      className="text-sm font-medium"
+                    >
+                      {post.author.fullName}
+                    </Link>
+
+                    <p className="text-xs text-muted-foreground">
+                      {moment(post.createdAt).format("DD/MM/YYYY")}
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                    user.isActive
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+
+                <Link
+                  href={`/${locale}/posts/${post.id}`}
+                  className="block space-y-2"
                 >
-                  {user.isActive ? "Active" : "Inactive"}
-                </span>
+                  <p className="text-sm text-muted-foreground line-clamp-2 hover:text-foreground transition">
+                    {post.content || t("admin.dashboard.posts.noContent")}
+                  </p>
+
+                  <div className="flex gap-4 text-xs text-muted-foreground mt-2">
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5" />
+                      {post.likeCount}
+                    </span>
+
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      {post.commentCount}
+                    </span>
+
+                    <span className="flex items-center gap-1">
+                      <Repeat2 className="w-3.5 h-3.5" />
+                      {post.shareCount}
+                    </span>
+                  </div>
+                </Link>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

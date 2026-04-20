@@ -5,11 +5,11 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface ClientError extends Error {
-  errorType: string;
-}
-
-export interface NavigationRes {
-  prevId?: number;
-  nextId?: number;
-}
+export type DashboardStats = {
+  totalUsers: number;
+  activeUsers: number;
+  verifiedUsers: number;
+  totalPosts: number;
+  newUsersToday: number;
+  newPostsToday: number;
+};

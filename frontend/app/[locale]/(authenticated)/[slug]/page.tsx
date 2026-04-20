@@ -8,15 +8,18 @@ import userService from "@/services/user";
 import { User } from "@/types/user";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUserPosts } from "@/redux/reducers/userPosts";
+import NotFound from "@/components/NotFound";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ProfilePage() {
   const { slug } = useParams();
+  const { t, ready } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || !ready) return;
 
     const fetchData = async () => {
       try {
@@ -28,14 +31,14 @@ export default function ProfilePage() {
         setUser(userRes.data);
         dispatch(setUserPosts(postRes.data));
       } catch (error: any) {
-        toastError(error);
+        toastError(t(`profile.response.${error}`));
       }
     };
 
     fetchData();
-  }, [slug]);
+  }, [slug, ready]);
 
-  if (!user) return null;
+  if (!user) return <NotFound />;
 
-  return <>{user && <Profile user={user} />}</>;
+  return <Profile user={user} />;
 }

@@ -214,7 +214,10 @@
     "profileUpdatedSuccess": "Cập nhật hồ sơ thành công",
     "avatarUpdatedSuccess": "Cập nhật ảnh đại diện thành công",
     "noFollowers": "Chưa có người theo dõi.",
-    "noFollowing": "Chưa theo dõi ai."
+    "noFollowing": "Chưa theo dõi ai.",
+    "response": {
+      "USER_NOT_FOUND": "Không tìm thấy người dùng"
+    }
   },
   "loading": {
     "title": "Đang tải...",
@@ -277,6 +280,28 @@
       "dashboard": "Tổng quan",
       "users": "Người dùng"
     },
+    "dashboard": {
+      "title": "Bảng điều khiển quản trị",
+      "description": "Tổng quan thống kê hệ thống",
+      "stats": {
+        "totalUsers": "Tổng người dùng",
+        "activeUsers": "Người dùng hoạt động",
+        "verifiedUsers": "Đã xác minh",
+        "totalPosts": "Tổng bài viết",
+        "newUsersToday": "Người dùng mới hôm nay"
+      },
+      "chart": {
+        "userPostGrowth": "Tăng trưởng người dùng & bài viết",
+        "userGrowth": "Tăng trưởng người dùng"
+      },
+      "users": {
+        "title": "Người dùng gần đây"
+      },
+      "posts": {
+        "title": "Bài viết gần đây",
+        "noContent": "Không có nội dung"
+      }
+    },
     "users": {
       "title": "Người dùng",
       "search": "Tìm kiếm theo tên...",
@@ -287,5 +312,15 @@
         "deleteButton": "Delete"
       }
     }
+  },
+  "forbidden": {
+    "title": "403 Không có quyền",
+    "description": "Bạn không có quyền truy cập trang này.",
+    "backHome": "Quay về trang chủ"
+  },
+  "notFound": {
+    "title": "404 Không tìm thấy",
+    "description": "Trang bạn đang tìm không tồn tại.",
+    "backHome": "Quay về trang chủ"
   }
 }
