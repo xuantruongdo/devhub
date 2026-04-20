@@ -149,7 +149,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                       className="flex items-center gap-2"
                     >
                       <Edit className="h-4 w-4" />
-                      {t("post.edit")}
+                      {t("post.editLabel")}
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
@@ -157,19 +157,19 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
                       className="flex items-center gap-2 text-destructive"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
-                      {t("post.delete")}
+                      {t("post.deleteLabel")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
                 <ConfirmDeleteDialog
                   open={isDialogOpen}
-                  title={t("post.deleteTitle")}
-                  description={t("post.deleteDescription")}
+                  title={t("post.delete.title")}
+                  description={t("post.delete.description")}
                   onCancel={closeModal}
                   onConfirm={handleDelete}
-                  cancelText={t("post.cancelButton")}
-                  confirmText={t("post.deleteButton")}
+                  cancelText={t("post.delete.cancelButton")}
+                  confirmText={t("post.delete.deleteButton")}
                 />
 
                 <EditPostDialog
@@ -248,7 +248,7 @@ export default function PostCard({ post, onUpdate, onDelete }: PostCardProps) {
             </button>
 
             <Link
-              href={`/posts/${post.id}`}
+              href={`/${locale}/posts/${post.id}`}
               className="flex items-center gap-1 group"
               scroll={false}
             >

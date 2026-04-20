@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Moon,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { ModeToggle } from "../ModeToggle";
 import { LanguageToggle } from "../LanguageToggle";
@@ -20,31 +21,32 @@ import {
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { CurrentUserResponse } from "@/types/auth";
 import Link from "next/link";
+import { useAppSelector } from "@/redux/hooks";
+import { UserRole } from "@/constants";
+
 export function UserDropdown({
-  user,
   onLogout,
   unreadNotifs,
   unreadMsgs,
 }: {
-  user: CurrentUserResponse;
   onLogout: () => void;
   unreadNotifs: number;
   unreadMsgs: number;
 }) {
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const currentUser = useAppSelector((state) => state.currentUser);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar size="lg" className="cursor-pointer">
-          {user.avatar ? (
-            <AvatarImage src={user.avatar} alt={user.fullName} />
+          {currentUser.avatar ? (
+            <AvatarImage src={currentUser.avatar} alt={currentUser.fullName} />
           ) : (
             <AvatarFallback>
-              {user.fullName.charAt(0).toUpperCase()}
+              {currentUser.fullName.charAt(0).toUpperCase()}
             </AvatarFallback>
           )}
         </Avatar>
@@ -53,11 +55,13 @@ export function UserDropdown({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem asChild className="block">
           <Link
-            href={`/${locale}/${user.username}`}
+            href={`/${locale}/${currentUser.username}`}
             className="px-3 py-2 cursor-pointer block"
           >
-            <p className="text-sm font-semibold">{user.fullName}</p>
-            <p className="text-xs text-muted-foreground">@{user.username}</p>
+            <p className="text-sm font-semibold">{currentUser.fullName}</p>
+            <p className="text-xs text-muted-foreground">
+              @{currentUser.username}
+            </p>
           </Link>
         </DropdownMenuItem>
 
@@ -129,9 +133,21 @@ export function UserDropdown({
           <DropdownMenuSeparator />
         </div>
 
+        {currentUser.role === UserRole.ADMIN && (
+          <DropdownMenuItem asChild>
+            <Link
+              href={`/${locale}/admin`}
+              className="flex items-center gap-2 cursor-pointer w-full"
+            >
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              {t("header.dropdown.manager")}
+            </Link>
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
-          {t("header.settings")}
+          {t("header.dropdown.settings")}
         </DropdownMenuItem>
 
         <DropdownMenuItem
@@ -139,7 +155,7 @@ export function UserDropdown({
           onClick={onLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          {t("header.logout")}
+          {t("header.dropdown.logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

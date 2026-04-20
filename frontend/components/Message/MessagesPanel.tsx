@@ -48,18 +48,28 @@ export function MessagesPanel({
       </div>
 
       <div ref={containerRef} className="max-h-[400px] overflow-y-auto">
-        {conversations.map((c) => (
-          <MessageItem
-            key={c.id}
-            conversation={c}
-            onOpenConversation={onOpenConversation}
-          />
-        ))}
+        {conversations.length === 0 ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            {t("header.message.noConversations")}
+          </div>
+        ) : (
+          conversations.map((c) => (
+            <MessageItem
+              key={c.id}
+              conversation={c}
+              onOpenConversation={onOpenConversation}
+            />
+          ))
+        )}
       </div>
 
       <div className="px-4 py-2 border-t border-border">
         <Link
-          href={`/${locale}/messages/${conversations[0].id}`}
+          href={
+            conversations.length > 0
+              ? `/${locale}/messages/${conversations[0].id}`
+              : `/${locale}/messages`
+          }
           onClick={onClose}
           className="flex w-full justify-center text-xs text-primary hover:underline"
         >

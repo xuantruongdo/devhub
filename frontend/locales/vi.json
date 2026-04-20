@@ -83,8 +83,11 @@
   },
   "header": {
     "searchPlaceholder": "Tìm kiếm bài viết, người dùng...",
-    "settings": "Cài đặt",
-    "logout": "Đăng xuất",
+    "dropdown": {
+      "manager": "Quản lý",
+      "settings": "Cài đặt",
+      "logout": "Đăng xuất"
+    },
     "search": {
       "loading": "Đang tìm kiếm...",
       "noResults": "Không tìm thấy kết quả",
@@ -112,7 +115,8 @@
       "call": "Đã hoàn thành cuộc gọi",
       "file": "Đã gửi một file",
       "image": "Đã gửi một ảnh",
-      "viewAll": "Xem tất cả tin nhắn"
+      "viewAll": "Xem tất cả tin nhắn",
+      "noConversations": "Chưa có cuộc trò chuyện nào"
     },
     "theme": {
       "title": "Chủ đề",
@@ -157,17 +161,19 @@
     "following": "Đang theo dõi"
   },
   "post": {
-    "edit": "Chỉnh sửa",
-    "delete": "Xóa",
-    "deleteTitle": "Xóa bài viết?",
-    "deleteDescription": "Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.",
+    "editLabel": "Chỉnh sửa",
+    "deleteLabel": "Xóa",
     "comment": "Bình luận",
     "share": "Chia sẻ",
     "like": "Thích",
-    "cancelButton": "Hủy",
-    "deleteButton": "Xóa",
     "noPosts": "Chưa có bài viết nào",
-    "noMorePosts": "Không còn bài viết nào nữa"
+    "noMorePosts": "Không còn bài viết nào nữa",
+    "delete": {
+      "title": "Xóa bài viết ?",
+      "description": "Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.",
+      "cancelButton": "Hủy",
+      "deleteButton": "Xóa"
+    }
   },
   "editPost": {
     "title": "Chỉnh sửa bài viết",
@@ -261,6 +267,25 @@
       "title": "Link không hợp lệ hoặc đã hết hạn",
       "desc": "Vui lòng yêu cầu gửi lại email xác thực.",
       "back": "Quay lại đăng ký"
+    }
+  },
+  "admin": {
+    "header": {
+      "logout": "Đăng xuất"
+    },
+    "sidebar": {
+      "dashboard": "Tổng quan",
+      "users": "Người dùng"
+    },
+    "users": {
+      "title": "Người dùng",
+      "search": "Tìm kiếm theo tên...",
+      "delete": {
+        "title": "Delete user ?",
+        "description": "This action cannot be undone.",
+        "cancelButton": "Cancel",
+        "deleteButton": "Delete"
+      }
     }
   }
 }
