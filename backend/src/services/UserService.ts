@@ -17,7 +17,7 @@ import { AuthCodeError, UserCodeError } from "../constants/code";
 import { UserProps } from "../types/auth";
 import { PostRepo } from "../repositories/PostRepo";
 import { AppDataSource } from "../config/data-source";
-import { User } from "../entities/User";
+import { User, UserRole } from "../entities/User";
 import {
   EmailJobName,
   FollowType,
@@ -296,9 +296,15 @@ export class UserService {
     res: Response,
   ) {
     try {
-      const user = await this.userRepo.findById(id);
+      const user = await this.userRepo.findOne({
+        where: {
+          id,
+        },
+      });
+
       if (!user) throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
-      if (user.id !== currentUser.id)
+
+      if (user.id !== currentUser.id && currentUser.role !== UserRole.ADMIN)
         throw new BadRequestError(UserCodeError.NO_PERMISSION_TO_UPDATE);
 
       Object.assign(user, data);
@@ -385,6 +391,28 @@ export class UserService {
       });
 
       return { user: updatedUser, accessToken };
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  async remove(id: number, currentUser: UserProps) {
+    try {
+      const user = await this.userRepo.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!user) throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
+
+      if (currentUser.role !== UserRole.ADMIN || user.role === UserRole.ADMIN)
+        throw new BadRequestError(UserCodeError.NO_PERMISSION_TO_DELETE);
+
+      user.deletedAt = new Date();
+      await this.userRepo.save(user);
+
+      return { success: true };
     } catch (error: any) {
       throw new BadRequestError(error.message);
     }
@@ -586,5 +614,13 @@ export class UserService {
 
   async suggest(user: UserProps) {
     return this.userRepo.getSuggestedUsers(user.id);
+  }
+
+  async getAllUsers(page = 1, limit = 10, search?: string) {
+    try {
+      return await this.userRepo.pagination(page, limit, search);
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
   }
 }

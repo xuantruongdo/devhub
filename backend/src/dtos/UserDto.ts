@@ -1,8 +1,7 @@
 import {
-  IsDate,
+  IsBoolean,
   IsDateString,
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -74,6 +73,14 @@ export class UpdateUserDto {
     { message: "Birthday must be a valid ISO date string (YYYY-MM-DD)" },
   )
   birthday?: string;
+
+  @IsOptional()
+  @IsBoolean({ message: "isActive must be a boolean" })
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean({ message: "isVerified must be a boolean" })
+  isVerified?: boolean;
 }
 
 export class UpdateMediaDto {

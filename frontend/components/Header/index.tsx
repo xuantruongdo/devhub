@@ -355,7 +355,6 @@ export default function Header() {
           <ModeToggle />
 
           <UserDropdown
-            user={currentUser}
             onLogout={onLogout}
             unreadNotifs={unreadNotifs}
             unreadMsgs={unreadMsgs}
@@ -364,7 +363,6 @@ export default function Header() {
 
         <div className="sm:hidden">
           <UserDropdown
-            user={currentUser}
             onLogout={onLogout}
             unreadNotifs={unreadNotifs}
             unreadMsgs={unreadMsgs}

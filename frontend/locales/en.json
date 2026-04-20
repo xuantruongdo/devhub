@@ -83,8 +83,11 @@
   },
   "header": {
     "searchPlaceholder": "Search posts, people...",
-    "settings": "Settings",
-    "logout": "Logout",
+    "dropdown": {
+      "manager": "Manager",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
     "search": {
       "loading": "Searching...",
       "noResults": "No results found",
@@ -112,7 +115,8 @@
       "call": "Call ended",
       "file": "Sent a file",
       "image": "Sent an image",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "noConversations": "No conversations yet"
     },
     "theme": {
       "title": "Theme",
@@ -157,17 +161,19 @@
     "following": "Following"
   },
   "post": {
-    "edit": "Edit",
-    "delete": "Delete",
-    "deleteTitle": "Delete post?",
-    "deleteDescription": "Are you sure you want to delete this item? This action cannot be undone.",
+    "editLabel": "Edit",
+    "deleteLabel": "Delete",
     "comment": "Comments",
     "share": "Shares",
     "like": "Likes",
-    "cancelButton": "Cancel",
-    "deleteButton": "Delete",
     "noPosts": "No posts yet",
-    "noMorePosts": "No more posts"
+    "noMorePosts": "No more posts",
+    "delete": {
+      "title": "Xóa bài viết ?",
+      "description": "Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.",
+      "cancelButton": "Hủy",
+      "deleteButton": "Xóa"
+    }
   },
   "editPost": {
     "title": "Edit post",
@@ -262,6 +268,25 @@
       "title": "Invalid or expired link",
       "desc": "Please request a new verification email.",
       "back": "Back to Register"
+    }
+  },
+  "admin": {
+    "header": {
+      "logout": "Logout"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "users": "Users"
+    },
+    "users": {
+      "title": "Users",
+      "search": "Search by name...",
+      "delete": {
+        "title": "Xóa người dùng ?",
+        "description": "Hành động này không thể hoàn tác.",
+        "cancelButton": "Hủy",
+        "deleteButton": "Xóa"
+      }
     }
   }
 }
