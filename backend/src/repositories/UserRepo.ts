@@ -3,11 +3,51 @@ import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
 import { FindUserOptions } from "../types/auth";
 import { BaseRepo } from "./BaseRepo";
+import { ILike } from "typeorm";
 
 @Service()
 export class UserRepo extends BaseRepo<User> {
   constructor() {
     super(User, AppDataSource);
+  }
+
+  async pagination(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          fullName: ILike(`%${search}%`),
+        }
+      : {};
+
+    const [data, total] = await this.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: {
+        createdAt: "DESC",
+      },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        email: true,
+        avatar: true,
+        role: true,
+        isVerified: true,
+        isActive: true,
+        lastLogin: true,
+        postCount: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findById(id: number, options: FindUserOptions = {}) {

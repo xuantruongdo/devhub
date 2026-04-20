@@ -9,6 +9,8 @@ import {
   Param,
   Put,
   QueryParam,
+  Delete,
+  Authorized,
 } from "routing-controllers";
 import { Service } from "typedi";
 import { UserService } from "../services/UserService";
@@ -24,6 +26,7 @@ import { Request, Response } from "express";
 import { Public } from "../decorators/public.route.decorator";
 import { UserProps } from "../types/auth";
 import { FollowType } from "../constants";
+import { UserRole } from "../entities/User";
 
 @Service()
 @JsonController("/users")
@@ -124,6 +127,15 @@ export class UserController {
     return await this.userService.getListFollow(id, followType, user);
   }
 
+  @Get()
+  async getAll(
+    @QueryParam("page") page: number,
+    @QueryParam("limit") limit: number,
+    @QueryParam("search") search: string,
+  ) {
+    return this.userService.getAllUsers(+page, +limit, search);
+  }
+
   @Public()
   @Post("/refresh")
   async refresh(@Req() req: Request, @Res() res: Response) {
@@ -153,5 +165,11 @@ export class UserController {
     @Res() res: Response,
   ) {
     return await this.userService.updateMedia(id, body, user, res);
+  }
+
+  @Authorized([UserRole.ADMIN])
+  @Delete("/:id")
+  async remove(@Param("id") id: number, @CurrentUser() user: UserProps) {
+    return await this.userService.remove(id, user);
   }
 }
