@@ -172,9 +172,9 @@ export default function UsersPage() {
       key: "createdAt",
       title: "Joined",
       dataIndex: "createdAt",
-      render: (v) => (
+      render: (value) => (
         <span className="text-sm text-muted-foreground">
-          {moment(v).format("DD/MM/YYYY")}
+          {moment(value).format("DD/MM/YYYY")}
         </span>
       ),
     },

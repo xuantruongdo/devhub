@@ -19,6 +19,7 @@ import { initSocket } from "./config/socket";
 import http from "http";
 import { initWorkers } from "./config/worker";
 import { initElasticSearch } from "./config/elastic-search";
+import { DashboardController } from "./controllers/DashboardController";
 
 useContainer(Container);
 
@@ -47,6 +48,7 @@ AppDataSource.initialize()
         StorageController,
         NotificationController,
         ChatController,
+        DashboardController,
       ],
       middlewares: [ErrorHandler, AuthMiddleware],
       authorizationChecker: authorizationChecker,

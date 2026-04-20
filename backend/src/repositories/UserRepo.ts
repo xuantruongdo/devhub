@@ -1,7 +1,6 @@
 import { Service } from "typedi";
 import { AppDataSource } from "../config/data-source";
 import { User } from "../entities/User";
-import { FindUserOptions } from "../types/auth";
 import { BaseRepo } from "./BaseRepo";
 import { ILike } from "typeorm";
 
@@ -50,9 +49,7 @@ export class UserRepo extends BaseRepo<User> {
     };
   }
 
-  async findById(id: number, options: FindUserOptions = {}) {
-    const { includeRefreshToken = false } = options;
-
+  async findById(id: number) {
     const qb = this.createQueryBuilder("user")
       .leftJoinAndSelect("user.followers", "follower")
       .leftJoinAndSelect("user.followings", "following")
@@ -78,10 +75,6 @@ export class UserRepo extends BaseRepo<User> {
       "following.avatar",
       "following.isVerified",
     ];
-
-    if (includeRefreshToken) {
-      selectFields.push("user.refreshToken");
-    }
 
     qb.select(selectFields);
 

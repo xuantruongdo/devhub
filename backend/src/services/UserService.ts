@@ -220,8 +220,10 @@ export class UserService {
 
       const decoded = this.jwtService.verifyRefreshToken(token);
 
-      const user = await this.userRepo.findById(decoded.id, {
-        includeRefreshToken: true,
+      const user = await this.userRepo.findOne({
+        where: {
+          id: decoded.id,
+        },
       });
 
       if (!user || user.refreshToken !== token) {
@@ -353,7 +355,12 @@ export class UserService {
     res: Response,
   ) {
     try {
-      const user = await this.userRepo.findById(id);
+      const user = await this.userRepo.findOne({
+        where: {
+          id,
+        },
+      });
+
       if (!user) throw new BadRequestError(UserCodeError.USER_NOT_FOUND);
 
       if (user.id !== currentUser.id)

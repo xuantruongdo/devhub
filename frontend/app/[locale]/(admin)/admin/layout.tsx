@@ -2,7 +2,9 @@
 
 import { HeaderAdmin } from "@/components/Admin/HeaderAdmin";
 import { SidebarAdmin } from "@/components/Admin/SidebarAdmin";
+import Forbidden from "@/components/Forbidden";
 import LoadingPage from "@/components/LoadingPage";
+import { UserRole } from "@/constants";
 import { useModal } from "@/hooks/useModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toastError } from "@/lib/toast";
@@ -41,7 +43,9 @@ export default function LayoutAdmin({
     fetchInitData();
   }, [dispatch, router, ready]);
 
-  if (loading || !currentUser?.id) return <LoadingPage />;
+  if (loading || !currentUser.id) return <LoadingPage />;
+
+  if (currentUser.role !== UserRole.ADMIN) return <Forbidden />;
 
   return (
     <div className="flex h-screen bg-background">
