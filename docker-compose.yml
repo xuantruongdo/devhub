@@ -3,10 +3,7 @@ services:
   # ===== BACKEND =====
   backend:
     # Định nghĩa service tên "backend"
-    build:
-      # Cấu hình cách build Docker image
-      context: ./backend # Thư mục gốc chứa source code backend (context để COPY file)
-      dockerfile: Dockerfile # Tên file Dockerfile dùng để build image
+    image: xuantruongdo/devhub:backend
     container_name: backend # Đặt tên cố định cho container (không dùng tên random)
     ports:
       - "4040:4040" # Map port host:container — truy cập localhost:4040 → container:4040
@@ -45,10 +42,7 @@ services:
 
   # ===== MIGRATION =====
   migration:
-    # Định nghĩa service chạy database migration (chạy 1 lần rồi thoát, không restart)
-    build:
-      # Cấu hình build image — dùng chung source code với backend
-      context: ./backend # Dùng cùng thư mục source code backend (có chứa các file migration)
+    image: xuantruongdo/devhub:backend
     container_name: migration # Đặt tên cố định cho container migration
     env_file:
       - .env # Nạp biến môi trường từ .env (cần DB_HOST, DB_PORT, DB_USER... để kết nối postgres)
@@ -62,10 +56,7 @@ services:
   # ===== FRONTEND =====
   frontend:
     # Định nghĩa service tên "frontend"
-    build:
-      # Cấu hình cách build Docker image cho frontend
-      context: ./frontend # Thư mục gốc chứa source code frontend
-      dockerfile: Dockerfile # Tên file Dockerfile dùng để build image frontend
+    image: xuantruongdo/devhub:frontend
     container_name: frontend # Đặt tên cố định cho container frontend
     ports:
       - "3000:3000" # Map port 3000 host → 3000 container (thường là Next.js / React)

@@ -1,38 +1,114 @@
 # 🚀 DevHub Docker Setup Guide
 
-Hướng dẫn setup Docker cho hệ thống DevHub gồm Backend, Frontend, PostgreSQL, Redis và Elasticsearch.
+Hướng dẫn setup hệ thống DevHub gồm Backend, Frontend, PostgreSQL, Redis và Elasticsearch bằng Docker.
 
 ---
 
-# 📦 1. Cấu trúc project
+# 📦 1. Giới thiệu
+
+DevHub là hệ thống fullstack gồm:
+
+* Backend: Node.js (Express / TypeORM)
+* Frontend: React / Next.js
+* Database: PostgreSQL
+* Cache: Redis
+* Search engine: Elasticsearch
+* Containerization: Docker + Docker Compose
+
+---
+
+# 📁 2. Cấu trúc project
 
 ```
 devhub/
 ├── backend/
+│   ├── src/
+│   ├── Dockerfile
+│   ├── .dockerignore
 ├── frontend/
+│   ├── src/
+│   ├── Dockerfile
+│   ├── .dockerignore
 ├── docker-compose.yml
 ├── .env
+└── README.md
 ```
-
-* `backend/`: Node.js API server
-* `frontend/`: UI application
-* `docker-compose.yml`: cấu hình toàn bộ services
-* `.env`: biến môi trường chung
 
 ---
 
-# 🐳 2. Dockerfile & .dockerignore
+# ⚙️ 3. Biến môi trường (.env)
 
-## Backend & Frontend
+Tạo file `.env` ở root:
 
-Mỗi service cần:
+```env
+# Backend
+PORT=4040
+NODE_ENV=development
 
-* Dockerfile
-* .dockerignore
+# PostgreSQL
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USER=devhub
+POSTGRES_PASSWORD=devhub123
+POSTGRES_DB=devhub_db
 
-Ví dụ `.dockerignore`:
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
 
+# Elasticsearch
+ELASTICSEARCH_NODE=http://elasticsearch:9200
 ```
+
+---
+
+# 🐳 4. Dockerfile
+
+## Backend Dockerfile
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 4040
+
+CMD ["npm", "run", "start"]
+```
+
+---
+
+## Frontend Dockerfile
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start"]
+```
+
+---
+
+## .dockerignore
+
+```gitignore
 node_modules
 npm-debug.log
 .env
@@ -42,21 +118,92 @@ npm-debug.log
 
 ---
 
-# ⚙️ 3. Docker Compose
+# 🧩 5. Docker Compose
 
-Chạy toàn bộ hệ thống:
+```yaml
+version: '3.9'
+
+services:
+  # ================= BACKEND =================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: devhub-backend
+    ports:
+      - "4040:4040"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+
+  # ================= FRONTEND =================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: devhub-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+  # ================= POSTGRES =================
+  postgres:
+    image: postgres:16
+    container_name: devhub-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: devhub
+      POSTGRES_PASSWORD: devhub123
+      POSTGRES_DB: devhub_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ================= REDIS =================
+  redis:
+    image: redis:7
+    container_name: devhub-redis
+    ports:
+      - "6379:6379"
+
+  # ================= ELASTICSEARCH =================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: devhub-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+
+volumes:
+  pgdata:
+```
+
+---
+
+# 🚀 6. Chạy project
+
+## Start hệ thống
 
 ```bash
 docker compose up -d
 ```
 
-Dừng hệ thống:
+## Stop hệ thống
 
 ```bash
 docker compose down
 ```
 
-Xoá luôn volume:
+## Xoá toàn bộ (kèm volume)
 
 ```bash
 docker compose down -v
@@ -64,190 +211,27 @@ docker compose down -v
 
 ---
 
-# 🧠 4. Các lệnh Docker cơ bản
+# 🧠 7. Lệnh Docker quan trọng
 
-## 📌 Kiểm tra Docker
-
-```bash
-docker --version
-docker info
-```
-
----
-
-## 📦 Image
-
-### Xem image
-
-```bash
-docker images
-```
-
-### Pull image
-
-```bash
-docker pull nginx
-```
-
-### Build image
-
-```bash
-docker build -t my-app .
-```
-
-### Xoá image
-
-```bash
-docker rmi image_id
-```
-
----
-
-## 🚀 Container
-
-### Chạy container
-
-```bash
-docker run nginx
-```
-
-### Chạy nền + map port
-
-```bash
-docker run -d -p 8080:80 nginx
-```
-
-### Xem container đang chạy
+## Container
 
 ```bash
 docker ps
-```
-
-### Xem tất cả container
-
-```bash
-docker ps -a
-```
-
-### Stop container
-
-```bash
+docker logs -f container_id
+docker exec -it container_name sh
 docker stop container_id
-```
-
-### Start container
-
-```bash
-docker start container_id
-```
-
-### Restart container
-
-```bash
-docker restart container_id
-```
-
-### Xoá container
-
-```bash
 docker rm container_id
 ```
 
----
-
-## 📜 Logs & Debug
-
-### Xem logs
+## Image
 
 ```bash
-docker logs container_id
+docker images
+docker build -t name .
+docker rmi image_id
 ```
 
-### Xem logs realtime
-
-```bash
-docker logs -f container_id
-```
-
-### Inspect container
-
-```bash
-docker inspect container_name
-```
-
-### Vào container
-
-```bash
-docker exec -it container_name sh <docker exec -it backend sh>
-```
-
----
-
-## 🧩 Docker Compose
-
-### Start services
-
-```bash
-docker compose up
-```
-
-### Chạy nền
-
-```bash
-docker compose up -d
-```
-
-### Build lại
-
-```bash
-docker compose build
-```
-
-### Stop
-
-```bash
-docker compose down
-```
-
-### Stop + xoá volume
-
-```bash
-docker compose down -v
-```
-
----
-
-## 💾 Volume
-
-### Xem volume
-
-```bash
-docker volume ls
-```
-
-### Inspect volume
-
-```bash
-docker volume inspect volume_name
-```
-
-### Xoá volume
-
-```bash
-docker volume rm volume_name
-```
-
----
-
-## 🧹 Dọn rác Docker
-
-### Dọn cơ bản
-
-```bash
-docker system prune
-```
-
-### Dọn toàn bộ (mạnh tay)
+## System cleanup
 
 ```bash
 docker system prune -a
@@ -255,12 +239,76 @@ docker system prune -a
 
 ---
 
-# ⚡ Ghi nhớ nhanh
+# 🐳 8. Docker Hub (Build & Push)
 
-* `docker compose up -d` → chạy hệ thống
+## Login Docker Hub
+
+```bash
+docker login
+```
+
+---
+
+## 📦 Backend
+
+### Build image
+
+```bash
+docker build -t xuantruongdo/devhub:backend ./backend
+```
+
+### Push image
+
+```bash
+docker push xuantruongdo/devhub:backend
+```
+
+---
+
+## 🎨 Frontend
+
+### Build image
+
+```bash
+docker build -t xuantruongdo/devhub:frontend ./frontend
+```
+
+### Push image
+
+```bash
+docker push xuantruongdo/devhub:frontend
+```
+
+---
+
+## 📥 Pull image
+
+```bash
+docker pull xuantruongdo/devhub:backend
+docker pull xuantruongdo/devhub:frontend
+```
+
+---
+
+# ⚡ 9. Ghi nhớ nhanh
+
+* `docker compose up -d` → chạy toàn hệ thống
 * `docker ps` → xem container
 * `docker logs -f` → debug
 * `docker exec -it` → vào container
-* `docker inspect` → xem chi tiết cấu hình
+* `docker build` → build image
+* `docker push` → đẩy image lên Docker Hub
 
 ---
+
+# 🧭 10. Gợi ý nâng cấp
+
+* Thêm CI/CD (GitHub Actions)
+* Tách staging / production environment
+* Thêm Nginx reverse proxy
+* Thêm SSL (Let’s Encrypt)
+* Monitoring (Prometheus + Grafana)
+
+---
+
+🔥 DevHub Docker setup hoàn chỉnh — sẵn sàng deploy!
