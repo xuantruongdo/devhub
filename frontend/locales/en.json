@@ -165,7 +165,12 @@
     "explore": "Explore",
     "messages": "Messages",
     "saved": "Saved",
-    "post": "Post"
+    "post": "Post",
+    "dropdown": {
+      "manager": "Manager",
+      "settings": "Settings",
+      "logout": "Logout"
+    }
   },
   "rightSidebar": {
     "suggestedForYou": "Suggested for you",

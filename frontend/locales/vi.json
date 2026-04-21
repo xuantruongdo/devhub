@@ -165,7 +165,12 @@
     "explore": "Khám phá",
     "messages": "Tin nhắn",
     "saved": "Đã lưu",
-    "post": "Đăng"
+    "post": "Đăng",
+    "dropdown": {
+      "manager": "Quản lý",
+      "settings": "Cài đặt",
+      "logout": "Đăng xuất"
+    }
   },
   "rightSidebar": {
     "suggestedForYou": "Gợi ý cho bạn",

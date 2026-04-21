@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Settings,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -23,9 +24,10 @@ import authService from "@/services/auth";
 import { toastError } from "@/lib/toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
+import { UserRole } from "@/constants";
 
 export default function LeftSidebar() {
-  const user = useAppSelector((state) => state.currentUser);
+  const currentUser = useAppSelector((state) => state.currentUser);
   const router = useRouter();
   const pathname = usePathname();
   const { t, locale } = useTranslation();
@@ -97,20 +99,23 @@ export default function LeftSidebar() {
             <button className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-muted transition">
               <div className="flex items-center gap-3 flex-1">
                 <Avatar size="lg">
-                  {user.avatar ? (
-                    <AvatarImage src={user.avatar} alt={user.fullName} />
+                  {currentUser.avatar ? (
+                    <AvatarImage
+                      src={currentUser.avatar}
+                      alt={currentUser.fullName}
+                    />
                   ) : (
                     <AvatarFallback>
-                      {user.fullName.charAt(0).toUpperCase()}
+                      {currentUser.fullName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 <div className="text-left min-w-0">
                   <p className="font-bold text-foreground truncate">
-                    {user.fullName}
+                    {currentUser.fullName}
                   </p>
                   <p className="text-sm text-muted-foreground truncate">
-                    @{user.username}
+                    @{currentUser.username}
                   </p>
                 </div>
               </div>
@@ -120,19 +125,31 @@ export default function LeftSidebar() {
 
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-3 py-2 border-b">
-              <Link href={`/${locale}/${user.username}`}>
+              <Link href={`/${locale}/${currentUser.username}`}>
                 <p className="text-sm font-semibold text-foreground">
-                  {user.fullName}
+                  {currentUser.fullName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  @{user.username}
+                  @{currentUser.username}
                 </p>
               </Link>
             </div>
 
+            {currentUser.role === UserRole.ADMIN && (
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/${locale}/admin`}
+                  className="flex items-center gap-2 cursor-pointer w-full"
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  {t("leftSidebar.dropdown.manager")}
+                </Link>
+              </DropdownMenuItem>
+            )}
+
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
-              {t("header.settings")}
+              {t("leftSidebar.dropdown.settings")}
             </DropdownMenuItem>
 
             <DropdownMenuItem
@@ -140,7 +157,7 @@ export default function LeftSidebar() {
               onClick={onLogout}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              {t("header.logout")}
+              {t("leftSidebar.dropdown.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
