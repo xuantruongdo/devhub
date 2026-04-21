@@ -1,13 +1,6 @@
-# 🚀 DevHub Docker Setup Guide (Backend + Frontend + PostgreSQL + Redis)
+# 🚀 DevHub Docker Setup Guide
 
-Tài liệu này tổng kết cách setup project với Docker, tập trung vào:
-
-* Dockerfile
-* `.dockerignore`
-* `.env`
-* `docker-compose.yml`
-* Giải thích **vì sao phải cấu hình như vậy**
-* Các lệnh Docker thường dùng
+Hướng dẫn setup Docker cho hệ thống DevHub gồm Backend, Frontend, PostgreSQL, Redis và Elasticsearch.
 
 ---
 
@@ -16,338 +9,54 @@ Tài liệu này tổng kết cách setup project với Docker, tập trung vào
 ```
 devhub/
 ├── backend/
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   └── src/
 ├── frontend/
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   └── ...
 ├── docker-compose.yml
 ├── .env
 ```
 
----
-
-# 🐳 2. Dockerfile
-
-## Backend (Node.js + TypeScript)
-
-```Dockerfile
-FROM node:20-alpine
-```
-
-👉 Dùng image nhẹ (alpine) → giảm size, build nhanh hơn
-
-```
-WORKDIR /app
-```
-
-👉 Set thư mục làm việc trong container
-
-```
-COPY package.json pnpm-lock.yaml ./
-```
-
-👉 Copy dependency trước để tận dụng **Docker cache**
-→ nếu code thay đổi nhưng deps không đổi → không cần cài lại
-
-```
-RUN npm install -g pnpm && pnpm install
-```
-
-👉 Cài package manager + dependencies
-
-```
-COPY . .
-```
-
-👉 Copy toàn bộ source code vào container
-
-```
-EXPOSE 4040
-```
-
-👉 Document port (không phải publish port)
-
-```
-CMD ["pnpm", "dev"]
-```
-
-👉 Chạy dev server
+* `backend/`: Node.js API server
+* `frontend/`: UI application
+* `docker-compose.yml`: cấu hình toàn bộ services
+* `.env`: biến môi trường chung
 
 ---
 
-## ❗ Tại sao viết Dockerfile như vậy?
+# 🐳 2. Dockerfile & .dockerignore
 
-| Quyết định              | Lý do                        |
-| ----------------------- | ---------------------------- |
-| COPY package.json trước | tận dụng cache → build nhanh |
-| dùng alpine             | nhẹ hơn ~80%                 |
-| không copy node_modules | tránh conflict OS            |
-| CMD dev                 | phù hợp môi trường dev       |
+## Backend & Frontend
 
----
+Mỗi service cần:
 
-## Frontend (Next.js)
+* Dockerfile
+* .dockerignore
 
-```Dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["pnpm", "dev"]
-```
-
-👉 giống backend → đảm bảo consistency
-
----
-
-# 🚫 3. .dockerignore (RẤT QUAN TRỌNG)
-
-## backend/.dockerignore
+Ví dụ `.dockerignore`:
 
 ```
 node_modules
-dist
-.git
+npm-debug.log
 .env
-Dockerfile
-docker-compose.yml
-```
-
-## frontend/.dockerignore
-
-```
-node_modules
-.next
 .git
-.env
+.gitignore
 ```
 
 ---
 
-## ❗ Vì sao cần `.dockerignore`?
+# ⚙️ 3. Docker Compose
 
-| Không ignore | Hậu quả             |
-| ------------ | ------------------- |
-| node_modules | build chậm + lỗi OS |
-| .env         | leak secret         |
-| .git         | tăng size image     |
-| dist/.next   | build lại không cần |
-
-👉 `.dockerignore` giúp:
-
-* build nhanh hơn
-* image nhỏ hơn
-* bảo mật tốt hơn
-
----
-
-# 🔐 4. File .env
-
-```env
-PORT=4040
-
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=devhub
-```
-
----
-
-## ❗ Vì sao dùng `.env`?
-
-* tách config khỏi code
-* dễ đổi môi trường (dev / prod)
-* dùng chung cho docker-compose
-
----
-
-# ⚙️ 5. docker-compose.yml
-
-```yaml
-services:
-  backend:
-    build: ./backend
-```
-
-👉 build từ Dockerfile local
-
-```
-    ports:
-      - "4040:4040"
-```
-
-👉 map port máy thật → container
-
-```
-    env_file:
-      - .env
-```
-
-👉 inject biến môi trường
-
-```
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-```
-
-👉 **CỰC KỲ QUAN TRỌNG**
-
-| service  | condition | lý do                 |
-| -------- | --------- | --------------------- |
-| postgres | healthy   | cần DB ready thật     |
-| redis    | started   | redis start rất nhanh |
-
----
-
-## Frontend
-
-```yaml
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-```
-
-👉 frontend chỉ phụ thuộc backend:
-
-```
-    depends_on:
-      backend:
-        condition: service_started
-```
-
----
-
-## PostgreSQL
-
-```yaml
-  postgres:
-    image: postgres:15
-```
-
-👉 dùng image official ổn định
-
-```
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-```
-
-👉 giữ data khi container restart
-
-```
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-```
-
-👉 đảm bảo DB ready thật
-
----
-
-## Redis
-
-```yaml
-  redis:
-    image: redis:7
-```
-
-```
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-```
-
-👉 kiểm tra Redis hoạt động
-
----
-
-## Volumes
-
-```yaml
-volumes:
-  postgres_data:
-```
-
-👉 lưu dữ liệu lâu dài
-
----
-
-# ❗ Vì sao docker-compose phải viết như vậy?
-
-## 1. Không dùng depends_on kiểu cũ
-
-```yaml
-depends_on:
-  - postgres ❌
-```
-
-👉 chỉ đảm bảo container start
-👉 KHÔNG đảm bảo service ready
-
----
-
-## 2. Phải dùng healthcheck
-
-👉 tránh lỗi:
-
-```
-ECONNREFUSED
-```
-
----
-
-## 3. Volume là bắt buộc cho DB
-
-👉 nếu không:
-
-* restart container → mất dữ liệu
-
----
-
-## 4. Tách service rõ ràng
-
-| Service  | Vai trò        |
-| -------- | -------------- |
-| backend  | business logic |
-| frontend | UI             |
-| postgres | database       |
-| redis    | cache          |
-
-👉 giúp scale dễ hơn sau này
-
----
-
-# 🧹 6. Các lệnh Docker quan trọng
-
-## Start
+Chạy toàn bộ hệ thống:
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
----
-
-## Stop
+Dừng hệ thống:
 
 ```bash
 docker compose down
-
 ```
 
----
-
-## Stop + xoá data
+Xoá luôn volume:
 
 ```bash
 docker compose down -v
@@ -355,85 +64,203 @@ docker compose down -v
 
 ---
 
-## Logs
+# 🧠 4. Các lệnh Docker cơ bản
+
+## 📌 Kiểm tra Docker
 
 ```bash
-docker compose logs -f backend
+docker --version
+docker info
 ```
 
 ---
 
-## Vào container
+## 📦 Image
+
+### Xem image
 
 ```bash
-docker exec -it backend sh
+docker images
+```
+
+### Pull image
+
+```bash
+docker pull nginx
+```
+
+### Build image
+
+```bash
+docker build -t my-app .
+```
+
+### Xoá image
+
+```bash
+docker rmi image_id
 ```
 
 ---
 
-## Clean toàn bộ Docker
+## 🚀 Container
+
+### Chạy container
 
 ```bash
-docker system prune -a --volumes
+docker run nginx
+```
+
+### Chạy nền + map port
+
+```bash
+docker run -d -p 8080:80 nginx
+```
+
+### Xem container đang chạy
+
+```bash
+docker ps
+```
+
+### Xem tất cả container
+
+```bash
+docker ps -a
+```
+
+### Stop container
+
+```bash
+docker stop container_id
+```
+
+### Start container
+
+```bash
+docker start container_id
+```
+
+### Restart container
+
+```bash
+docker restart container_id
+```
+
+### Xoá container
+
+```bash
+docker rm container_id
 ```
 
 ---
 
-# ⚠️ 7. Lỗi thường gặp
+## 📜 Logs & Debug
 
-## ❌ Database chưa ready
+### Xem logs
 
-→ backend connect fail
+```bash
+docker logs container_id
+```
 
-✔ Fix:
+### Xem logs realtime
 
-* dùng healthcheck
-* dùng depends_on đúng
+```bash
+docker logs -f container_id
+```
 
----
+### Inspect container
 
-## ❌ Build chậm
+```bash
+docker inspect container_name
+```
 
-→ do không có dockerignore
+### Vào container
 
----
-
-## ❌ Port conflict
-
-→ port đã bị chiếm
-
----
-
-# 🧠 8. Best Practices
-
-* luôn dùng image official
-* luôn có healthcheck cho DB
-* không commit `.env`
-* tận dụng Docker cache
-* tách service rõ ràng
+```bash
+docker exec -it container_name sh <docker exec -it backend sh>
+```
 
 ---
 
-# 🎯 Kết luận
+## 🧩 Docker Compose
 
-Setup này đảm bảo:
+### Start services
 
-* chạy ổn định
-* tránh race condition (service chưa ready)
-* dễ maintain
-* dễ scale
+```bash
+docker compose up
+```
 
-👉 Đây là base chuẩn cho:
+### Chạy nền
 
-* SaaS
-* microservice
-* production-ready backend
+```bash
+docker compose up -d
+```
+
+### Build lại
+
+```bash
+docker compose build
+```
+
+### Stop
+
+```bash
+docker compose down
+```
+
+### Stop + xoá volume
+
+```bash
+docker compose down -v
+```
 
 ---
 
-docker logs <tên_container> dùng để xem log (nhật ký chạy) của một container Docker.
+## 💾 Volume
 
-docker inspect <tên_container> dùng để xem toàn bộ thông tin chi tiết (metadata) của container hoặc image trong Docker.
+### Xem volume
 
-Khác với docker logs (chỉ xem log), thì docker inspect giống như “soi tận ruột” container.
+```bash
+docker volume ls
+```
 
+### Inspect volume
+
+```bash
+docker volume inspect volume_name
+```
+
+### Xoá volume
+
+```bash
+docker volume rm volume_name
+```
+
+---
+
+## 🧹 Dọn rác Docker
+
+### Dọn cơ bản
+
+```bash
+docker system prune
+```
+
+### Dọn toàn bộ (mạnh tay)
+
+```bash
+docker system prune -a
+```
+
+---
+
+# ⚡ Ghi nhớ nhanh
+
+* `docker compose up -d` → chạy hệ thống
+* `docker ps` → xem container
+* `docker logs -f` → debug
+* `docker exec -it` → vào container
+* `docker inspect` → xem chi tiết cấu hình
+
+---
