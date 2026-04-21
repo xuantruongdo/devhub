@@ -323,8 +323,14 @@ export function useVideoCall({
           initiator: true,
           stream,
           trickle: true,
+          config: {
+            iceServers: [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:stun1.l.google.com:19302" },
+              // TURN server ở đây nếu có
+            ],
+          },
         });
-
         peerRef.current = peer;
 
         peer.on("signal", (data: SignalData) => {
@@ -382,42 +388,64 @@ export function useVideoCall({
 
     if (!incomingOffer || !remoteUserIdRef.current) return;
 
-    updateCallState(CallState.CALLING);
+    try {
+      const stream = await getLocalStream();
 
-    const stream = await getLocalStream();
+      // Tạo peer TRƯỚC khi signal offer
+      const peer = new SimplePeer({
+        initiator: false,
+        stream,
+        trickle: true,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+            // Thêm TURN server nếu có:
+            // {
+            //   urls: "turn:your-turn-server.com:3478",
+            //   username: "user",
+            //   credential: "pass",
+            // },
+          ],
+        },
+      });
 
-    const peer = new SimplePeer({
-      initiator: false,
-      stream,
-      trickle: true,
-    });
+      // Đăng ký events TRƯỚC khi signal bất kỳ thứ gì
+      setupPeerEvents(peer);
 
-    peerRef.current = peer;
+      peer.on("signal", (data: SignalData) => {
+        const to = remoteUserIdRef.current;
+        if (!to) return;
 
-    peer.on("signal", (data: SignalData) => {
-      const to = remoteUserIdRef.current;
-      if (!to) return;
+        if ("type" in data && data.type === "answer") {
+          socket.emit("call:answer", { to, from: currentUserId, answer: data });
+        } else {
+          socket.emit("call:ice-candidate", {
+            to,
+            from: currentUserId,
+            candidate: data,
+          });
+        }
+      });
 
-      if ("type" in data && data.type === "answer") {
-        socket.emit("call:answer", {
-          to,
-          from: currentUserId,
-          answer: data,
-        });
-      } else {
-        socket.emit("call:ice-candidate", {
-          to,
-          from: currentUserId,
-          candidate: data,
-        });
-      }
-    });
+      // Gán ref TRƯỚC khi signal để handleIceCandidate không queue thêm
+      peerRef.current = peer;
 
-    peer.signal(incomingOffer);
-    setupPeerEvents(peer);
+      // Flush queued candidates TRƯỚC khi signal offer
+      // vì signal offer sẽ trigger answer generation ngay lập tức
+      const queued = iceCandidateQueue.current.splice(0);
 
-    iceCandidateQueue.current.forEach((candidate) => peer.signal(candidate));
-    iceCandidateQueue.current = [];
+      // Signal offer
+      peer.signal(incomingOffer);
+
+      // Flush sau offer — peer đã có internal state từ offer
+      queued.forEach((c) => peer.signal(c));
+
+      updateCallState(CallState.CALLING);
+    } catch (error) {
+      console.error("[useVideoCall] acceptCall error:", error);
+      cleanup();
+    }
   }, [
     socket,
     currentUserId,
@@ -426,6 +454,7 @@ export function useVideoCall({
     setupPeerEvents,
     clearAutoRejectTimer,
     updateCallState,
+    cleanup,
   ]);
 
   /**
