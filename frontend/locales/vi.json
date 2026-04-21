@@ -260,7 +260,11 @@
     "window": {
       "title": "Chat",
       "typeMessage": "Nhập tin nhắn...",
-      "newMessages": "Tin nhắn mới"
+      "newMessages": "Tin nhắn mới",
+      "empty": {
+        "title": "Chọn một cuộc trò chuyện để bắt đầu nhắn tin",
+        "description": "Các cuộc trò chuyện của bạn sẽ hiển thị tại đây"
+      }
     },
     "call": {
       "calling": {

@@ -142,12 +142,21 @@ export default function ChatWindow({
 
     const checkAndScroll = (el: HTMLDivElement | null) => {
       if (!el) return;
-      const distanceFromBottom =
-        el.scrollHeight - el.scrollTop - el.clientHeight;
-      const threshold = el.clientHeight * 0.5;
+
+      const { scrollHeight, clientHeight, scrollTop } = el;
+
+      if (scrollHeight <= clientHeight) {
+        scrollToBottom(el, false);
+        setShowNew(false);
+        return;
+      }
+
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      const threshold = clientHeight * 0.5;
 
       if (distanceFromBottom < threshold) {
         scrollToBottom(el, true);
+        setShowNew(false);
       } else {
         setShowNew(true);
       }

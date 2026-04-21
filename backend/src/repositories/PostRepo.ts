@@ -170,7 +170,7 @@ export class PostRepo extends BaseRepo<Post> {
   async findFeedCandidates(currentUserId: number) {
     const query = this.createQueryBuilder("post")
       // join author để hiển thị thông tin user
-      .leftJoin("post.author", "author")
+      .leftJoin("post.author", "author", "author.deletedAt IS NULL")
 
       // chỉ select field cần thiết
       .select([
@@ -199,6 +199,9 @@ export class PostRepo extends BaseRepo<Post> {
           currentUserId,
         },
       )
+
+      // Đảm bảo chỉ lấy post có author hợp lệ
+      .andWhere("author.id IS NOT NULL")
 
       // ưu tiên lấy post mới
       .orderBy("post.createdAt", "DESC")

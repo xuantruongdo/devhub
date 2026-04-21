@@ -261,7 +261,11 @@
     "window": {
       "title": "Chat",
       "typeMessage": "Type a message...",
-      "newMessages": "New messages"
+      "newMessages": "New messages",
+      "empty": {
+        "title": "Select a chat to start messaging",
+        "description": "Your conversations will appear here"
+      }
     },
     "call": {
       "calling": {
