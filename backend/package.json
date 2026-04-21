@@ -18,7 +18,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
-    "@elastic/elasticsearch": "^9.3.4",
+    "@elastic/elasticsearch": "^9.3.3",
     "aws-sdk": "^2.1693.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.74.1",

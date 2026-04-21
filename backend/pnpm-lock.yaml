@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@elastic/elasticsearch':
-        specifier: ^9.3.4
+        specifier: ^9.3.3
         version: 9.3.4
       aws-sdk:
         specifier: ^2.1693.0

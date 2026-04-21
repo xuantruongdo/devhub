@@ -8,9 +8,9 @@ class ElasticSearchClient {
       this.instance = new Client({
         node: process.env.ES_URL!,
         auth: {
-          // username: process.env.ES_USERNAME!,
-          // password: process.env.ES_PASSWORD!,
-          apiKey: process.env.ES_API_KEY!,
+          username: process.env.ES_USERNAME!,
+          password: process.env.ES_PASSWORD!,
+          // apiKey: process.env.ES_API_KEY!,
         },
         tls: {
           rejectUnauthorized: false,
