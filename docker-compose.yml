@@ -61,8 +61,6 @@ services:
     ports:
       - "3000:3000" # Map port 3000 host → 3000 container (thường là Next.js / React)
     restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công
-    env_file:
-      - .env # Nạp biến môi trường từ .env (ví dụ: NEXT_PUBLIC_API_URL)
     depends_on:
       backend:
         condition: service_healthy # Chờ backend healthy rồi mới start frontend (tránh gọi API khi backend chưa sẵn sàng)
