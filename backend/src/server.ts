@@ -42,7 +42,7 @@ AppDataSource.initialize()
         const dbStatus = AppDataSource.isInitialized;
 
         res.json({
-          status: "ok",
+          status: "123123",
           uptime: process.uptime(),
           timestamp: new Date().toISOString(),
           services: {
