@@ -1,4 +1,4 @@
-name: 🚀 Deploy DevHub
+name: Deploy DevHub
 
 on:
   push:
