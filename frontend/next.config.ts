@@ -17,12 +17,16 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
   },
   async rewrites() {
-    return [
-      {
-        source: "/images/:slug*",
-        destination: `${process.env.NEXT_PUBLIC_S3_DOMAIN}/images/:slug*`,
-      },
-    ];
+    const s3 = process.env.NEXT_PUBLIC_S3_DOMAIN;
+
+    return s3
+      ? [
+          {
+            source: "/images/:slug*",
+            destination: `${s3}/images/:slug*`,
+          },
+        ]
+      : [];
   },
 };
 
