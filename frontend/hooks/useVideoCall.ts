@@ -317,47 +317,83 @@ export function useVideoCall({
   const startCall = useCallback(
     async (toUserId: number, conversationId: number) => {
       try {
+        // Lấy camera + mic của user hiện tại
+        // → trả về MediaStream (video + audio)
         const stream = await getLocalStream();
 
+        // Tạo WebRTC peer (người gọi - initiator)
+        // initiator: true = bạn là người BẮT ĐẦU cuộc gọi
         const peer = new SimplePeer({
           initiator: true,
+
+          // gắn camera + mic vào WebRTC để gửi sang người kia
           stream,
+
+          // bật trickle ICE:
+          // → gửi ICE candidate ngay khi tìm thấy (không đợi gom hết)
           trickle: true,
+
+          // cấu hình server hỗ trợ tìm đường mạng
           config: {
             iceServers: [
+              // STUN server: giúp tìm IP public của bạn
               { urls: "stun:stun.l.google.com:19302" },
+
+              // STUN backup server (dự phòng)
               { urls: "stun:stun1.l.google.com:19302" },
-              // TURN server ở đây nếu có
+
+              // TURN server (chưa dùng)
+              // → dùng khi không thể kết nối P2P trực tiếp
             ],
           },
         });
+
+        // lưu peer vào ref để dùng ở các hàm khác (endCall, acceptCall...)
         peerRef.current = peer;
 
+        // xử lý dữ liệu WebRTC phát sinh (signal event)
+        // → SimplePeer sẽ tự tạo:
+        //    - offer (SDP)
+        //    - ICE candidate
         peer.on("signal", (data: SignalData) => {
+          // TRƯỜNG HỢP 1: OFFER (SDP ban đầu)
+          // → dùng để bắt đầu cuộc gọi
           if ("type" in data && data.type === "offer") {
             socket.emit("call:offer", {
-              to: toUserId,
-              from: currentUserId,
-              offer: data,
-              conversationId,
-              callerName: currentUserFullName,
-              callerAvatar: currentUserAvatar,
+              to: toUserId, // người nhận
+              from: currentUserId, // người gọi
+              offer: data, // SDP offer
+              conversationId, // id cuộc chat
+              callerName: currentUserFullName, // tên người gọi
+              callerAvatar: currentUserAvatar, // avatar người gọi
             });
-          } else {
+          }
+
+          // TRƯỜNG HỢP 2: ICE CANDIDATE
+          // → các đường mạng để 2 máy tìm nhau
+          else {
+            // Cả 2 bên liên tục gửi ICE -> Kết nối thành công
             socket.emit("call:ice-candidate", {
               to: toUserId,
               from: currentUserId,
-              candidate: data,
+              candidate: data, // thông tin IP/port/route
             });
           }
         });
 
+        // gắn event lifecycle cho peer
+        // → stream: nhận video người kia
+        // → connect: kết nối thành công
+        // → close/error: cleanup
         setupPeerEvents(peer);
 
+        // lưu metadata cuộc gọi
+        // → dùng cho reject / end / save message
         callerIdRef.current = currentUserId;
         remoteUserIdRef.current = toUserId;
         conversationIdRef.current = conversationId;
 
+        // → trạng thái: đang gọi (CALLING)
         setRemoteUserId(toUserId);
         updateCallState(CallState.CALLING);
       } catch (error) {
@@ -420,6 +456,7 @@ export function useVideoCall({
         if ("type" in data && data.type === "answer") {
           socket.emit("call:answer", { to, from: currentUserId, answer: data });
         } else {
+          // Cả 2 bên liên tục gửi ICE -> Kết nối thành công
           socket.emit("call:ice-candidate", {
             to,
             from: currentUserId,
@@ -431,14 +468,18 @@ export function useVideoCall({
       // Gán ref TRƯỚC khi signal để handleIceCandidate không queue thêm
       peerRef.current = peer;
 
-      // Flush queued candidates TRƯỚC khi signal offer
-      // vì signal offer sẽ trigger answer generation ngay lập tức
+      // Lấy ra tất cả ICE candidate (các “đường mạng”) đã đến sớm và đang bị tạm giữ
+      // (vì lúc này peer chưa sẵn sàng nên chưa xử lý được)
       const queued = iceCandidateQueue.current.splice(0);
 
-      // Signal offer
+      // Bước 1: xử lý OFFER trước
+      // → nhận “lời mời cuộc gọi” từ bên kia
+      // → giúp peer biết đây là cuộc gọi nào và thiết lập phiên kết nối ban đầu
       peer.signal(incomingOffer);
 
-      // Flush sau offer — peer đã có internal state từ offer
+      // Bước 2: sau khi đã nhận offer xong
+      // → peer lúc này đã sẵn sàng
+      // → đem các ICE candidate đã lưu trước đó ra xử lý lại
       queued.forEach((c) => peer.signal(c));
 
       updateCallState(CallState.CALLING);
