@@ -1,4 +1,4 @@
-name: Deploy DevHub
+name: 🚀 Deploy DevHub
 
 on:
   push:
@@ -6,37 +6,50 @@ on:
       - main
 
 jobs:
+  # 🐳 BUILD & PUSH DOCKER
   build:
     runs-on: ubuntu-latest
     environment: production
 
-    strategy:
-      matrix:
-        service: [frontend, backend]
-
     steps:
+      # 1. Checkout source
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. Login Docker Hub
       - name: Login Docker
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & Push
+      # 🔥 BUILD FRONTEND
+      - name: Build & Push Frontend
         run: |
-          docker build -t xuantruongdo/devhub:${{ matrix.service }} ./${{ matrix.service }}
-          docker push xuantruongdo/devhub:${{ matrix.service }}
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_S3_DOMAIN=${{ secrets.NEXT_PUBLIC_S3_DOMAIN }} \
+            --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET }} \
+            --build-arg NEXT_PUBLIC_GOOGLE_REDIRECT_URI=${{ secrets.NEXT_PUBLIC_GOOGLE_REDIRECT_URI }} \
+            -t xuantruongdo/devhub:frontend ./frontend
 
+          docker push xuantruongdo/devhub:frontend
+
+      # 🔥 BUILD BACKEND
+      - name: Build & Push Backend
+        run: |
+          docker build -t xuantruongdo/devhub:backend ./backend
+          docker push xuantruongdo/devhub:backend
+
+  # 🚀 DEPLOY VPS
   deploy:
     runs-on: ubuntu-latest
-    needs: build  # chỉ chạy khi build xong
-
+    needs: build
     environment: production
 
     steps:
-      - name: Deploy VPS
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -44,5 +57,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd ~/devhub
+
             docker compose pull
-            docker compose up -d
+
+            docker compose up -d --remove-orphans
+
+            docker image prune -f
