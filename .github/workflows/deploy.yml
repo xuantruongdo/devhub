@@ -30,7 +30,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build   # chỉ chạy khi build xong
+    needs: build  # chỉ chạy khi build xong
 
     steps:
       - name: Deploy VPS
