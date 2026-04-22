@@ -37,6 +37,27 @@ AppDataSource.initialize()
 
     app.use(cookieParser());
 
+    app.get("/health", async (req, res) => {
+      try {
+        const dbStatus = AppDataSource.isInitialized;
+
+        res.json({
+          status: "ok",
+          uptime: process.uptime(),
+          timestamp: new Date().toISOString(),
+          services: {
+            database: dbStatus ? "up" : "down",
+            elasticsearch: "unknown",
+          },
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: "error",
+          message: "Health check failed",
+        });
+      }
+    });
+
     app.get("/", (req, res) => {
       res.send("API is running...");
     });

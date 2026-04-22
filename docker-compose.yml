@@ -1,0 +1,191 @@
+services:
+
+  # ===== BACKEND =====
+  backend:
+    # Định nghĩa service tên "backend"
+    image: xuantruongdo/devhub:backend
+    container_name: backend # Đặt tên cố định cho container (không dùng tên random)
+    ports:
+      - "4040:4040" # Map port host:container — truy cập localhost:4040 → container:4040
+    restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công bằng docker stop
+    env_file:
+      - .env # Nạp toàn bộ biến môi trường từ file .env vào container
+    depends_on:
+      # Khai báo thứ tự khởi động — backend chờ các service sau sẵn sàng
+      postgres:
+        condition: service_healthy # Chờ postgres báo healthy rồi mới start backend
+      redis:
+        condition: service_healthy # Chờ redis báo healthy rồi mới start backend
+      elasticsearch:
+        condition: service_healthy # Chờ elasticsearch báo healthy rồi mới start backend
+    healthcheck:
+      # Cấu hình kiểm tra sức khỏe định kỳ của container backend
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4040/health', r =>
+            process.exit(r.statusCode === 200 ? 0 : 1))",
+        ] # Gọi HTTP đến /health, thoát 0 nếu status 200 (healthy), thoát 1 nếu không
+      interval: 15s # Chạy healthcheck mỗi 15 giây một lần
+      timeout: 10s # Nếu healthcheck không trả lời trong 10s thì coi là failed
+      retries: 5 # Thử lại tối đa 5 lần trước khi đánh dấu container unhealthy
+      start_period: 120s # Bỏ qua failed trong 120s đầu để backend có thời gian khởi động
+    networks:
+      - app_network # Kết nối container vào mạng nội bộ app_network để giao tiếp với các service khác
+    logging:
+      driver: "json-file" # Ghi log ra file dạng JSON (driver mặc định của Docker)
+      options:
+        max-size: "10m" # Mỗi file log tối đa 10MB rồi bắt đầu rotate
+        max-file: "3" # Giữ tối đa 3 file log xoay vòng, tránh log chiếm đầy đĩa
+
+  # ===== MIGRATION =====
+  migration:
+    image: xuantruongdo/devhub:backend
+    container_name: migration # Đặt tên cố định cho container migration
+    env_file:
+      - .env # Nạp biến môi trường từ .env (cần DB_HOST, DB_PORT, DB_USER... để kết nối postgres)
+    depends_on:
+      postgres:
+        condition: service_healthy # Chờ postgres healthy rồi mới chạy migration, tránh kết nối DB thất bại
+    command: pnpm migration:run # Ghi đè lệnh mặc định: chạy script migration thay vì start server
+    networks:
+      - app_network # Kết nối vào mạng nội bộ để có thể kết nối tới container postgres
+
+  # ===== FRONTEND =====
+  frontend:
+    # Định nghĩa service tên "frontend"
+    image: xuantruongdo/devhub:frontend
+    container_name: frontend # Đặt tên cố định cho container frontend
+    ports:
+      - "3000:3000" # Map port 3000 host → 3000 container (thường là Next.js / React)
+    restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công
+    env_file:
+      - .env # Nạp biến môi trường từ .env (ví dụ: NEXT_PUBLIC_API_URL)
+    depends_on:
+      backend:
+        condition: service_healthy # Chờ backend healthy rồi mới start frontend (tránh gọi API khi backend chưa sẵn sàng)
+    networks:
+      - app_network # Kết nối vào mạng nội bộ app_network
+    logging:
+      driver: "json-file" # Ghi log ra file JSON
+      options:
+        max-size: "10m" # Giới hạn mỗi file log tối đa 10MB
+        max-file: "3" # Giữ tối đa 3 file log, file cũ nhất bị xóa khi vượt giới hạn
+
+  # ===== POSTGRES =====
+  postgres:
+    # Định nghĩa service database PostgreSQL
+    image: postgres:15 # Dùng image PostgreSQL version 15 từ Docker Hub (không tự build)
+    container_name: postgres # Đặt tên cố định cho container postgres
+    restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công
+    environment:
+      # Biến môi trường cấu hình PostgreSQL khi khởi tạo lần đầu
+      POSTGRES_USER: ${POSTGRES_USER} # Tên superuser của database, lấy từ .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Password của superuser, lấy từ .env
+      POSTGRES_DB: ${POSTGRES_DB} # Tên database mặc định sẽ được tạo khi init, lấy từ .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Mount volume để data DB không mất khi container restart/xóa
+    healthcheck:
+      # Kiểm tra postgres đã sẵn sàng nhận kết nối chưa
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ] # pg_isready: tool built-in kiểm tra DB có accept connection không
+      interval: 10s # Chạy healthcheck mỗi 10 giây
+      timeout: 5s # Timeout mỗi lần kiểm tra là 5 giây
+      retries: 5 # Thử lại tối đa 5 lần trước khi đánh dấu unhealthy
+      start_period: 20s # Bỏ qua lỗi trong 20s đầu (postgres cần thời gian init data lần đầu)
+    networks:
+      - app_network # Kết nối vào mạng nội bộ, backend kết nối DB qua hostname "postgres"
+    logging:
+      driver: "json-file" # Ghi log ra file JSON
+      options:
+        max-size: "10m" # Giới hạn mỗi file log 10MB
+        max-file: "3" # Giữ tối đa 3 file log xoay vòng
+
+  # ===== REDIS =====
+  redis:
+    # Định nghĩa service cache Redis
+    image: redis:7 # Dùng image Redis version 7 từ Docker Hub
+    container_name: redis # Đặt tên cố định cho container redis
+    restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công
+    command: >
+      redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000 --appendonly yes
+    volumes:
+      - redis_data:/data # Mount volume lưu file snapshot (dump.rdb) và AOF (appendonly.aof)
+    healthcheck:
+      # Kiểm tra Redis có đang chạy và phản hồi không
+      test: [ "CMD", "redis-cli", "ping" ] # Gửi lệnh PING tới Redis, healthy nếu trả về PONG
+      interval: 10s # Chạy healthcheck mỗi 10 giây
+      timeout: 5s # Timeout mỗi lần kiểm tra là 5 giây
+      retries: 5 # Thử lại tối đa 5 lần trước khi đánh dấu unhealthy
+      start_period: 10s # Bỏ qua lỗi trong 10s đầu để Redis có thời gian load AOF từ đĩa
+    networks:
+      - app_network # Kết nối vào mạng nội bộ, backend kết nối Redis qua hostname "redis"
+    logging:
+      driver: "json-file" # Ghi log ra file JSON
+      options:
+        max-size: "10m" # Giới hạn mỗi file log 10MB
+        max-file: "3" # Giữ tối đa 3 file log xoay vòng
+
+  # ===== ELASTICSEARCH =====
+  elasticsearch:
+    # Định nghĩa service full-text search Elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.3 # Image chính thức từ Elastic registry (không phải Docker Hub)
+    container_name: elasticsearch # Đặt tên cố định cho container elasticsearch
+    restart: unless-stopped # Tự restart khi crash, trừ khi bị stop thủ công
+    environment:
+      # Biến môi trường cấu hình Elasticsearch
+      - node.name=es01 # Tên của node này trong cluster Elasticsearch
+      - discovery.type=single-node # Chế độ 1 node: không tìm kiếm node khác để join cluster
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD} # Password cho user "elastic" (superuser), lấy từ .env
+      - xpack.security.enabled=true # Bật xác thực bảo mật (yêu cầu username/password khi gọi API)
+      - xpack.security.http.ssl.enabled=false # Tắt HTTPS (dùng HTTP thuần, để reverse proxy xử lý TLS)
+      - bootstrap.memory_lock=true # Khóa RAM vật lý, không cho OS swap ES ra đĩa (tăng hiệu năng đáng kể)
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # JVM heap min=max=512MB (bằng nhau để tránh GC pause khi JVM resize heap)
+      - cluster.routing.allocation.disk.threshold_enabled=true # Bật tính năng giám sát dung lượng đĩa
+      - cluster.routing.allocation.disk.watermark.low=85% # Cảnh báo khi đĩa đạt 85%, ngừng phân bổ shard mới
+      - cluster.routing.allocation.disk.watermark.high=90% # Khi đĩa đạt 90%, bắt đầu di chuyển shard sang node khác
+    ulimits:
+      # Giới hạn tài nguyên hệ thống cho container (override giới hạn mặc định của OS)
+      memlock:
+        # Cấu hình giới hạn memlock — bắt buộc phải unlimited vì đã bật bootstrap.memory_lock
+        soft: -1 # Giới hạn mềm memlock: không giới hạn (-1 = unlimited)
+        hard: -1 # Giới hạn cứng memlock: không giới hạn (-1 = unlimited)
+      nofile:
+        # Số file descriptor tối đa — ES mở rất nhiều file index segment đồng thời
+        soft: 65536 # Giới hạn mềm: tối đa 65536 file mở đồng thời
+        hard: 65536 # Giới hạn cứng: tối đa 65536 file mở đồng thời
+    volumes:
+      - es_data:/usr/share/elasticsearch/data # Mount volume lưu toàn bộ index data, không mất khi restart
+    healthcheck:
+      # Kiểm tra Elasticsearch cluster có healthy không
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -u elastic:$${ELASTIC_PASSWORD}
+            http://localhost:9200/_cluster/health | grep -q '\"status\"'",
+        ] # Gọi API cluster/health, kiểm tra JSON trả về có trường "status" không ($$ để tránh Docker Compose expand biến sớm)
+      interval: 15s # Chạy healthcheck mỗi 15 giây
+      timeout: 10s # Timeout mỗi lần kiểm tra là 10 giây
+      retries: 10 # Thử lại tối đa 10 lần (ES khởi động chậm, cần nhiều retry hơn các service khác)
+      start_period: 90s # Bỏ qua lỗi trong 90s đầu (ES cần ~60-90s để khởi tạo JVM + load index)
+    networks:
+      - app_network # Kết nối vào mạng nội bộ, backend kết nối ES qua hostname "elasticsearch"
+    logging:
+      driver: "json-file" # Ghi log ra file JSON
+      options:
+        max-size: "10m" # Giới hạn mỗi file log 10MB
+        max-file: "3" # Giữ tối đa 3 file log xoay vòng
+
+# ===== VOLUMES =====
+volumes:
+  postgres_data: # Volume lưu data PostgreSQL — Docker quản lý tại /var/lib/docker/volumes/
+  redis_data: # Volume lưu data Redis — bao gồm dump.rdb (snapshot RDB) và appendonly.aof (AOF)
+  es_data:
+    # Volume lưu data Elasticsearch — index, segments, translog...
+
+    # ===== NETWORKS =====
+networks:
+  app_network:
+    # Định nghĩa mạng nội bộ dùng chung cho toàn bộ app
+    driver: bridge # Driver "bridge": tạo switch ảo riêng, các container cùng network giao tiếp qua tên service
