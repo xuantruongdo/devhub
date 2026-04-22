@@ -40,19 +40,6 @@ services:
         max-size: "10m" # Mỗi file log tối đa 10MB rồi bắt đầu rotate
         max-file: "3" # Giữ tối đa 3 file log xoay vòng, tránh log chiếm đầy đĩa
 
-  # ===== MIGRATION =====
-  migration:
-    image: xuantruongdo/devhub:backend
-    container_name: migration # Đặt tên cố định cho container migration
-    env_file:
-      - .env # Nạp biến môi trường từ .env (cần DB_HOST, DB_PORT, DB_USER... để kết nối postgres)
-    depends_on:
-      postgres:
-        condition: service_healthy # Chờ postgres healthy rồi mới chạy migration, tránh kết nối DB thất bại
-    command: pnpm migration:run # Ghi đè lệnh mặc định: chạy script migration thay vì start server
-    networks:
-      - app_network # Kết nối vào mạng nội bộ để có thể kết nối tới container postgres
-
   # ===== FRONTEND =====
   frontend:
     # Định nghĩa service tên "frontend"
